@@ -1,85 +1,115 @@
 
----
-
 # AgentGraph: Intelligent SQL-agent Q&A and RAG System for Chatting with Multiple Databases
 
-This project demonstrates how to build an agentic system using Large Language Models (LLMs) that can interact with multiple databases and utilize various tools. It highlights the use of SQL agents to efficiently query large databases. The key frameworks used in this project include OpenAI, LangChain, LangGraph, LangSmith, and Gradio. The end product is an end-to-end chatbot, designed to perform these tasks, with LangSmith used to monitor the performance of the agents.
+This project demonstrates how to build an agentic system using Large Language Models (LLMs) that can interact with multiple databases and utilize various tools. It highlights the use of SQL agents to efficiently query large databases. The key frameworks used in this project include OpenAI, LangChain, LangGraph, LangSmith, and various web frameworks.
+
+The system provides multiple interfaces:
+
+- **FastAPI**: REST API for programmatic access
+- **React Frontend**: Modern web interface
+- **Gradio**: Interactive demo interface
 
 ---
 
-## Video Explanation: 
+## 🏗️ Project Structure
+
+```
+agent-graph-system/
+├── backend/           # Python backend services
+├── frontend/          # React TypeScript frontend
+├── data/             # Databases, documents, vector stores
+├── notebooks/        # Jupyter notebooks for development
+├── docs/             # Documentation
+├── assets/           # Static assets (images, icons)
+├── scripts/          # Build and deployment scripts
+└── tests/            # Integration tests
+```
+
+## Video Explanation
+
 A detailed explanation of the project is available in the following YouTube video:
 
 Automating LLM Agents to Chat with Multiple/Large Databases (Combining RAG and SQL Agents): [Link](https://youtu.be/xsCedrNP9w8?si=v-3k-BoDky_1IRsg)
 
----
-
 ## Requirements
 
-- **Operating System:** Linux or Windows (Tested on Windows 11 with Python 3.9.11)
-- **OpenAI API Key:** Required for GPT functionality.
-- **Tavily Credentials:** Required for search tools (Free from your Tavily profile).
-- **LangChain Credentials:** Required for LangSmith (Free from your LangChain profile).
-- **Dependencies:** The necessary libraries are provided in `requirements.txt` file.
----
+- **Operating System:** Linux or Windows (Tested on Windows 11 with Python 3.9+)
+- **Node.js:** Version 16+ (for React frontend)
+- **Python:** Version 3.9+
+- **API Keys Required:**
+  - OpenAI API Key (for GPT functionality)
+  - Tavily API Key (for search tools - free from Tavily profile)
+  - LangChain API Key (for LangSmith monitoring - free from LangChain profile)
 
-## Installation and Execution
+## Quick Start
 
-To set up the project, follow these steps:
+### 1. Clone and Setup
 
-1. Clone the repository:
-   ```bash
-   git clone <repo_address>
-   ```
-2. Install Python and create a virtual environment:
-   ```bash
-   python -m venv venv
-   ```
-3. Activate the virtual environment:
-   - On Windows:
-     ```bash
-     venv\Scripts\activate
-     ```
-   - On Linux/macOS:
-     ```bash
-     source venv/bin/activate
-     ```
-4. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. Download the travel sql database from this link and paste it into the `data` folder.
+```bash
+git clone <repo_address>
+cd agent-graph-system
+```
 
-6. Download the chinook SQL database from this link and paste it into the `data` folder.
+### 2. Backend Setup
 
-7. Prepare the `.env` file and add your `OPEN_AI_API_KEY`, `TAVILY_API_KEY`, and `LANGCHAIN_API_KEY`.
+```bash
+cd backend
+python -m venv venv
 
-8. Run `prepare_vector_db.py` module once to prepare both vector databases.
-   ```bash
-   python src\prepare_vector_db.py
-   ```
-9. Run the app:
-   ```bash
-   python src\app.py
-   ```
-Open the Gradio URL generated in the terminal and start chatting.
+# On Windows:
+venv\Scripts\activate
 
-*Sample questions are available in `sample_questions.txt`.*
+# On Linux/macOS:
+source venv/bin/activate
 
----
+pip install -r requirements.txt
+```
 
-### Using Your Own Database
+### 3. Frontend Setup (Optional)
 
-To use your own data:
-1. Place your data in the `data` folder.
-2. Update the configurations in `tools_config.yml`.
-3. Load the configurations in `src\agent_graph\load_tools_config.py`.
+```bash
+cd frontend
+npm install
+```
 
-For unstructured data using Retrieval-Augmented Generation (RAG):
-1. Run the following command with your data directory's configuration:
-   ```bash
-   python src\prepare_vector_db.py
-   ```
+### 4. Environment Configuration
+
+Copy `.env.example` to `.env` and configure your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+- `OPENAI_API_KEY=your_openai_api_key`
+- `TAVILY_API_KEY=your_tavily_api_key`
+- `LANGCHAIN_API_KEY=your_langchain_api_key`
+
+### 5. Prepare Vector Database
+
+```bash
+cd backend
+python scripts/prepare_vector_db.py
+```
+
+### 6. Run the Application
+
+Choose your preferred interface:
+
+```bash
+# FastAPI (REST API) - http://localhost:8000
+python main.py fastapi
+
+# Gradio (Demo UI) - http://localhost:7860
+python main.py gradio
+```
+
+### 7. React Frontend (Optional)
+
+```bash
+cd frontend
+npm start  # http://localhost:3000
+```
 
 All configurations are managed through YAML files in the `configs` folder, loaded by `src\chatbot\load_config.py` and `src\agent_graph\load_tools_config.py`. These modules are used for a clean distribution of configurations throughout the project.
 

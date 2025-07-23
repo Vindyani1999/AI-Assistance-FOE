@@ -2,6 +2,31 @@
 
 An AI assistant platform containing multi-agent system
 
+
+<!-- Image 5 -->
+<img src="https://github.com/user-attachments/assets/feffae57-3ee0-4833-88db-e832659b9950" width="800" style="margin-bottom: 20px;" />
+<br>
+</br>
+<!-- Image 6 -->
+<img src="https://github.com/user-attachments/assets/949ace59-c6f4-4af9-86c9-003aadb87c0d" width="800" style="margin-bottom: 20px;" />
+<br>
+</br>
+<img src="https://github.com/user-attachments/assets/b8f517b2-2066-4525-b548-b932c313cee6" width="800" style="margin-bottom: 10;" />
+<br>
+</br>
+
+<!-- Image 2 -->
+<img src="https://github.com/user-attachments/assets/331cd8cc-51ac-41c4-a67f-125a28c53c1c" width="800" style="margin-bottom: 20px;" />
+<br>
+</br>
+<img src="https://github.com/user-attachments/assets/3a1ed740-f6b6-448d-a686-58130a586c1d" width="800" style="margin-bottom: 20px;" />
+
+<br>
+</br>
+<!-- Image 3 -->
+<img src="https://github.com/user-attachments/assets/92c66f4f-a1f2-46b3-a4ac-b3cefcbaed1e" width="800" style="margin-bottom: 20px;" />
+
+
 ## Project Structure
 
 - `backend/` — Python backend (FastAPI)
@@ -17,17 +42,17 @@ An AI assistant platform containing multi-agent system
 - [x] Database integration
 - [x] Vector database preparation
 - [x] Backend setup (FastAPI)
-    - [ ] Web search tool for Guidance Agent
-    - [ ] RAG tool for Guidance Agent
-    - [ ] SQL tool (mini databases) for Guidance Agent
-- [ ] Frontend setup with React + Typescript
-    - [ ] Chat interface for GA
-    - [ ] Landing page 
+    - [x] Web search tool for Guidance Agent
+    - [x] RAG tool for Guidance Agent
+    - [x] SQL tool (mini databases) for Guidance Agent
+- [x] Frontend setup with React + Typescript
+    - [x] Chat interface for GA
+    - [x] Landing page 
     - [ ] University email login
     - [ ] User separated chat interfaces
 - [x] Agent can select required tool based on user query
-- [ ] Agent can understand user queries whether they are grammatically wrong
-- [ ] Agent has chat history
+- [x] Agent can understand user queries whether they are grammatically wrong
+- [x] Agent has chat history
 - [x] Rearrange folder structure
 
 ## Quick Start

@@ -22,6 +22,19 @@ export interface FeedbackRequest {
   feedback_type: 'like' | 'dislike';
 }
 
+export interface ChatSession {
+  session_id: string;
+  topic: string;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatSessionsResponse {
+  sessions: ChatSession[];
+  total_count: number;
+}
+
 class ApiService {
   private baseUrl: string;
 
@@ -122,6 +135,22 @@ class ApiService {
       return await response.json();
     } catch (error) {
       console.error('Error checking health:', error);
+      throw error;
+    }
+  }
+
+  // Get all chat sessions
+  async getChatSessions(): Promise<ChatSessionsResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/sessions`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting chat sessions:', error);
       throw error;
     }
   }

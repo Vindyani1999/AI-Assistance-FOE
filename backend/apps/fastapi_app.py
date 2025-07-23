@@ -5,6 +5,8 @@ from typing import List, Dict, Any
 import uvicorn
 import sys
 import os
+from datetime import datetime
+import re
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -31,6 +33,47 @@ TOOLS_CFG = LoadToolsConfig()
 
 # In-memory storage for chat sessions (in production, use a database)
 chat_sessions: Dict[str, List[tuple]] = {}
+session_metadata: Dict[str, Dict] = {}
+
+def extract_topic_from_messages(messages: List[tuple]) -> str:
+    """Extract a meaningful topic from the first user message"""
+    if not messages:
+        return "New Chat"
+    
+    first_message = messages[0][0]  # First user message
+    
+    # Remove common words and extract key terms
+    words = re.findall(r'\b\w+\b', first_message.lower())
+    stop_words = {'i', 'am', 'is', 'are', 'was', 'were', 'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'can', 'you', 'help', 'me', 'my', 'what', 'how', 'when', 'where', 'why', 'do', 'does', 'did', 'will', 'would', 'could', 'should'}
+    
+    meaningful_words = [word for word in words if len(word) > 3 and word not in stop_words]
+    
+    if meaningful_words:
+        # Take first 2-3 meaningful words and capitalize
+        topic_words = meaningful_words[:3]
+        topic = ' '.join(word.capitalize() for word in topic_words)
+        return topic if len(topic) <= 50 else topic[:47] + "..."
+    
+    # Fallback: Use first few words of the message
+    words = first_message.split()[:4]
+    topic = ' '.join(words)
+    return topic if len(topic) <= 50 else topic[:47] + "..."
+
+def update_session_metadata(session_id: str, messages: List[tuple]):
+    """Update metadata for a chat session"""
+    if session_id not in session_metadata:
+        session_metadata[session_id] = {
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat(),
+            'message_count': 0,
+            'topic': 'New Chat'
+        }
+    
+    session_metadata[session_id].update({
+        'updated_at': datetime.now().isoformat(),
+        'message_count': len(messages),
+        'topic': extract_topic_from_messages(messages)
+    })
 
 # Pydantic models for request/response
 class ChatMessage(BaseModel):
@@ -46,6 +89,17 @@ class FeedbackRequest(BaseModel):
     session_id: str
     message_index: int
     feedback_type: str  # "like" or "dislike"
+
+class ChatSession(BaseModel):
+    session_id: str
+    topic: str
+    message_count: int
+    created_at: str
+    updated_at: str
+
+class ChatSessionsResponse(BaseModel):
+    sessions: List[ChatSession]
+    total_count: int
 
 @app.get("/")
 async def root():
@@ -70,8 +124,9 @@ async def chat_endpoint(chat_message: ChatMessage):
         # Use the existing ChatBot.respond method
         _, updated_chatbot = ChatBot.respond(current_history, user_message)
         
-        # Update session history
+        # Update session history and metadata
         chat_sessions[session_id] = updated_chatbot
+        update_session_metadata(session_id, updated_chatbot)
         
         # Format response for React frontend
         conversation_history = []
@@ -117,6 +172,8 @@ async def clear_chat(session_id: str):
     try:
         if session_id in chat_sessions:
             del chat_sessions[session_id]
+        if session_id in session_metadata:
+            del session_metadata[session_id]
         
         return {"message": f"Chat history cleared for session {session_id}", "status": "success"}
         
@@ -145,6 +202,35 @@ async def get_chat_history(session_id: str):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting chat history: {str(e)}")
+
+@app.get("/chat/sessions", response_model=ChatSessionsResponse)
+async def get_chat_sessions():
+    """
+    Get all chat sessions with metadata (topic, timestamps, message count)
+    """
+    try:
+        sessions = []
+        for session_id, metadata in session_metadata.items():
+            # Only include sessions that still have chat data
+            if session_id in chat_sessions:
+                sessions.append(ChatSession(
+                    session_id=session_id,
+                    topic=metadata['topic'],
+                    message_count=metadata['message_count'],
+                    created_at=metadata['created_at'],
+                    updated_at=metadata['updated_at']
+                ))
+        
+        # Sort by updated_at (most recent first)
+        sessions.sort(key=lambda x: x.updated_at, reverse=True)
+        
+        return ChatSessionsResponse(
+            sessions=sessions,
+            total_count=len(sessions)
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting chat sessions: {str(e)}")
 
 @app.get("/health")
 async def health_check():

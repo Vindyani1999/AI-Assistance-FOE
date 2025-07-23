@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiService, ChatMessage } from '../services/api';
+import { apiService, ChatMessage, ChatSession } from '../services/api';
 import './ChatInterface.css';
 
 interface ChatInterfaceProps {
@@ -14,6 +14,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
@@ -28,6 +31,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
   // Load chat history on component mount
   useEffect(() => {
     loadChatHistory();
+    loadChatSessions();
   }, [sessionId]);
 
   const loadChatHistory = async () => {
@@ -38,6 +42,87 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
       console.error('Error loading chat history:', error);
       setError('Failed to load chat history');
     }
+  };
+
+  const loadChatSessions = async () => {
+    try {
+      setSessionsLoading(true);
+      setSessionsError(null);
+      const sessionsData = await apiService.getChatSessions();
+      setChatSessions(sessionsData.sessions);
+    } catch (error) {
+      console.error('Error loading chat sessions:', error);
+      setSessionsError('Failed to load chat history');
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  const formatTimeAgo = (timestamp: string): string => {
+    const now = new Date();
+    const messageTime = new Date(timestamp);
+    const diffInHours = Math.floor((now.getTime() - messageTime.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    }
+  };
+
+  const formatMessage = (content: string): JSX.Element => {
+    // Split content into paragraphs
+    const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
+    
+    return (
+      <div className="formatted-message">
+        {paragraphs.map((paragraph, index) => {
+          // Check if paragraph is a numbered list item (e.g., "1. **Sources**:")
+          const numberedListMatch = paragraph.match(/^(\d+)\.\s*\*\*(.*?)\*\*:\s*([\s\S]*)/);
+          if (numberedListMatch) {
+            const [, number, title, content] = numberedListMatch;
+            return (
+              <div key={index} className="message-section">
+                <div className="section-header">
+                  <span className="section-number">{number}.</span>
+                  <span className="section-title">{title}</span>
+                </div>
+                <div className="section-content">{content.trim()}</div>
+              </div>
+            );
+          }
+
+          // Check if paragraph starts with ** (bold heading)
+          const boldHeadingMatch = paragraph.match(/^\*\*(.*?)\*\*:\s*([\s\S]*)/);
+          if (boldHeadingMatch) {
+            const [, title, content] = boldHeadingMatch;
+            return (
+              <div key={index} className="message-section">
+                <div className="section-title-only">{title}</div>
+                <div className="section-content">{content.trim()}</div>
+              </div>
+            );
+          }
+
+          // Regular paragraph with inline formatting
+          const formattedText = paragraph
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+            .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
+            .replace(/`(.*?)`/g, '<code>$1</code>'); // Code text
+
+          return (
+            <div 
+              key={index} 
+              className="message-paragraph"
+              dangerouslySetInnerHTML={{ __html: formattedText }}
+            />
+          );
+        })}
+      </div>
+    );
   };
 
   const sendMessage = async () => {
@@ -58,6 +143,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
       // Add assistant response to UI
       const assistantMessage: ChatMessage = { role: 'assistant', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Refresh chat sessions to update metadata
+      loadChatSessions();
     } catch (error) {
       console.error('Error sending message:', error);
       setError('Failed to send message. Please try again.');
@@ -150,36 +238,43 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
         <div className="chat-history-section">
           <h3>Chat History</h3>
           <div className="chat-history-list">
-            <div className="chat-history-item active">
-              <div className="chat-title">Academic Research Help</div>
-              <div className="chat-timestamp">
-                {messages.length} messages
+            {sessionsLoading ? (
+              <div className="chat-history-loading">
+                Loading chat history...
               </div>
-            </div>
-            <div className="chat-history-item">
-              <div className="chat-title">Course Planning Guide</div>
-              <div className="chat-timestamp">
-                2h ago
+            ) : sessionsError ? (
+              <div className="chat-history-error">
+                {sessionsError}
+                <button 
+                  onClick={loadChatSessions}
+                  className="retry-btn"
+                >
+                  Retry
+                </button>
               </div>
-            </div>
-            <div className="chat-history-item">
-              <div className="chat-title">Assignment Support</div>
-              <div className="chat-timestamp">
-                5h ago
+            ) : chatSessions.length === 0 ? (
+              <div className="chat-history-empty">
+                No chat history yet. Start a conversation!
               </div>
-            </div>
-            <div className="chat-history-item">
-              <div className="chat-title">Database Query Help</div>
-              <div className="chat-timestamp">
-                1d ago
-              </div>
-            </div>
-            <div className="chat-history-item">
-              <div className="chat-title">Project Documentation</div>
-              <div className="chat-timestamp">
-                3d ago
-              </div>
-            </div>
+            ) : (
+              chatSessions.map((session) => (
+                <div 
+                  key={session.session_id}
+                  className={`chat-history-item ${session.session_id === sessionId ? 'active' : ''}`}
+                  onClick={() => {
+                    if (session.session_id !== sessionId) {
+                      // Navigate to this session (you might want to implement session switching)
+                      window.location.href = `/chat/${session.session_id}`;
+                    }
+                  }}
+                >
+                  <div className="chat-title">{session.topic}</div>
+                  <div className="chat-timestamp">
+                    {session.message_count} messages • {formatTimeAgo(session.updated_at)}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -209,7 +304,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                   </div>
                 )}
                 <div className="message-content">
-                  <div className="message-text">{message.content}</div>
+                  <div className="message-text">
+                    {message.role === 'assistant' ? formatMessage(message.content) : message.content}
+                  </div>
                 </div>
                 {message.role === 'user' && (
                   <div className="message-avatar">

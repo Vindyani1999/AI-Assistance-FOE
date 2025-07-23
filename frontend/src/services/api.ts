@@ -8,6 +8,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   message: string;
   session_id?: string;
+  user_id?: string;
 }
 
 export interface ChatResponse {
@@ -20,6 +21,7 @@ export interface FeedbackRequest {
   session_id: string;
   message_index: number;
   feedback_type: 'like' | 'dislike';
+  user_id?: string;
 }
 
 export interface ChatSession {
@@ -43,7 +45,7 @@ class ApiService {
   }
 
   // Send a chat message to the backend
-  async sendMessage(message: string, sessionId: string = 'default'): Promise<ChatResponse> {
+  async sendMessage(message: string, sessionId: string = 'default', userId?: string): Promise<ChatResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/chat`, {
         method: 'POST',
@@ -53,6 +55,7 @@ class ApiService {
         body: JSON.stringify({
           message,
           session_id: sessionId,
+          user_id: userId,
         }),
       });
 
@@ -68,7 +71,7 @@ class ApiService {
   }
 
   // Send feedback for a message
-  async sendFeedback(sessionId: string, messageIndex: number, feedbackType: 'like' | 'dislike'): Promise<void> {
+  async sendFeedback(sessionId: string, messageIndex: number, feedbackType: 'like' | 'dislike', userId?: string): Promise<void> {
     try {
       const response = await fetch(`${this.baseUrl}/feedback`, {
         method: 'POST',
@@ -79,6 +82,7 @@ class ApiService {
           session_id: sessionId,
           message_index: messageIndex,
           feedback_type: feedbackType,
+          user_id: userId,
         }),
       });
 
@@ -92,9 +96,14 @@ class ApiService {
   }
 
   // Clear chat history
-  async clearChat(sessionId: string = 'default'): Promise<void> {
+  async clearChat(sessionId: string = 'default', userId?: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/chat/${sessionId}`, {
+      const url = new URL(`${this.baseUrl}/chat/${sessionId}`);
+      if (userId) {
+        url.searchParams.append('user_id', userId);
+      }
+      
+      const response = await fetch(url.toString(), {
         method: 'DELETE',
       });
 
@@ -108,9 +117,14 @@ class ApiService {
   }
 
   // Get chat history
-  async getChatHistory(sessionId: string = 'default'): Promise<{ conversation_history: ChatMessage[]; session_id: string }> {
+  async getChatHistory(sessionId: string = 'default', userId?: string): Promise<{ conversation_history: ChatMessage[]; session_id: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/chat/${sessionId}/history`);
+      const url = new URL(`${this.baseUrl}/chat/${sessionId}/history`);
+      if (userId) {
+        url.searchParams.append('user_id', userId);
+      }
+      
+      const response = await fetch(url.toString());
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -140,9 +154,14 @@ class ApiService {
   }
 
   // Get all chat sessions
-  async getChatSessions(): Promise<ChatSessionsResponse> {
+  async getChatSessions(userId?: string): Promise<ChatSessionsResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/chat/sessions`);
+      const url = new URL(`${this.baseUrl}/chat/sessions`);
+      if (userId) {
+        url.searchParams.append('user_id', userId);
+      }
+      
+      const response = await fetch(url.toString());
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -32,8 +32,10 @@ PROJECT_CFG = LoadProjectConfig()
 TOOLS_CFG = LoadToolsConfig()
 
 # In-memory storage for chat sessions (in production, use a database)
-chat_sessions: Dict[str, List[tuple]] = {}
-session_metadata: Dict[str, Dict] = {}
+# Structure: {user_id: {session_id: List[tuple]}}
+user_chat_sessions: Dict[str, Dict[str, List[tuple]]] = {}
+# Structure: {user_id: {session_id: Dict}}
+user_session_metadata: Dict[str, Dict[str, Dict]] = {}
 
 def extract_topic_from_messages(messages: List[tuple]) -> str:
     """Extract a meaningful topic from the first user message"""
@@ -59,17 +61,20 @@ def extract_topic_from_messages(messages: List[tuple]) -> str:
     topic = ' '.join(words)
     return topic if len(topic) <= 50 else topic[:47] + "..."
 
-def update_session_metadata(session_id: str, messages: List[tuple]):
-    """Update metadata for a chat session"""
-    if session_id not in session_metadata:
-        session_metadata[session_id] = {
+def update_session_metadata(user_id: str, session_id: str, messages: List[tuple]):
+    """Update metadata for a specific user's session"""
+    if user_id not in user_session_metadata:
+        user_session_metadata[user_id] = {}
+    
+    if session_id not in user_session_metadata[user_id]:
+        user_session_metadata[user_id][session_id] = {
             'created_at': datetime.now().isoformat(),
             'updated_at': datetime.now().isoformat(),
             'message_count': 0,
             'topic': 'New Chat'
         }
     
-    session_metadata[session_id].update({
+    user_session_metadata[user_id][session_id].update({
         'updated_at': datetime.now().isoformat(),
         'message_count': len(messages),
         'topic': extract_topic_from_messages(messages)
@@ -79,6 +84,7 @@ def update_session_metadata(session_id: str, messages: List[tuple]):
 class ChatMessage(BaseModel):
     message: str
     session_id: str = "default"
+    user_id: str = "anonymous"
 
 class ChatResponse(BaseModel):
     response: str
@@ -89,6 +95,7 @@ class FeedbackRequest(BaseModel):
     session_id: str
     message_index: int
     feedback_type: str  # "like" or "dislike"
+    user_id: str = "anonymous"
 
 class ChatSession(BaseModel):
     session_id: str
@@ -113,21 +120,27 @@ async def chat_endpoint(chat_message: ChatMessage):
     """
     try:
         session_id = chat_message.session_id
+        user_id = chat_message.user_id
         user_message = chat_message.message
-        
-        # Get or create chat history for this session
-        if session_id not in chat_sessions:
-            chat_sessions[session_id] = []
-        
-        current_history = chat_sessions[session_id]
-        
+        print(f"[CHAT] user_id={user_id}, session_id={session_id}, message={user_message}")
+
+        # Initialize user storage if needed
+        if user_id not in user_chat_sessions:
+            user_chat_sessions[user_id] = {}
+
+        # Get or create chat history for this user's session
+        if session_id not in user_chat_sessions[user_id]:
+            user_chat_sessions[user_id][session_id] = []
+
+        current_history = user_chat_sessions[user_id][session_id]
+
         # Use the existing ChatBot.respond method
         _, updated_chatbot = ChatBot.respond(current_history, user_message)
-        
+
         # Update session history and metadata
-        chat_sessions[session_id] = updated_chatbot
-        update_session_metadata(session_id, updated_chatbot)
-        
+        user_chat_sessions[user_id][session_id] = updated_chatbot
+        update_session_metadata(user_id, session_id, updated_chatbot)
+
         # Format response for React frontend
         conversation_history = []
         for user_msg, bot_msg in updated_chatbot:
@@ -135,16 +148,16 @@ async def chat_endpoint(chat_message: ChatMessage):
                 {"role": "user", "content": user_msg},
                 {"role": "assistant", "content": bot_msg}
             ])
-        
+
         # Get the latest bot response
         latest_response = updated_chatbot[-1][1] if updated_chatbot else "Sorry, I couldn't process your message."
-        
+
         return ChatResponse(
             response=latest_response,
             conversation_history=conversation_history,
             session_id=session_id
         )
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing message: {str(e)}")
 
@@ -155,8 +168,8 @@ async def feedback_endpoint(feedback: FeedbackRequest):
     """
     try:
         # In a real application, you'd store this feedback in a database
-        # For now, we'll just log it
-        print(f"Feedback received for session {feedback.session_id}: "
+        # For now, we'll just log it with user information
+        print(f"Feedback received from user {feedback.user_id} for session {feedback.session_id}: "
               f"Message {feedback.message_index} was {feedback.feedback_type}d")
         
         return {"message": "Feedback received", "status": "success"}
@@ -165,15 +178,15 @@ async def feedback_endpoint(feedback: FeedbackRequest):
         raise HTTPException(status_code=500, detail=f"Error processing feedback: {str(e)}")
 
 @app.delete("/chat/{session_id}")
-async def clear_chat(session_id: str):
+async def clear_chat(session_id: str, user_id: str = "anonymous"):
     """
-    Clear chat history for a specific session
+    Clear chat history for a specific user's session
     """
     try:
-        if session_id in chat_sessions:
-            del chat_sessions[session_id]
-        if session_id in session_metadata:
-            del session_metadata[session_id]
+        if user_id in user_chat_sessions and session_id in user_chat_sessions[user_id]:
+            del user_chat_sessions[user_id][session_id]
+        if user_id in user_session_metadata and session_id in user_session_metadata[user_id]:
+            del user_session_metadata[user_id][session_id]
         
         return {"message": f"Chat history cleared for session {session_id}", "status": "success"}
         
@@ -181,54 +194,57 @@ async def clear_chat(session_id: str):
         raise HTTPException(status_code=500, detail=f"Error clearing chat: {str(e)}")
 
 @app.get("/chat/{session_id}/history")
-async def get_chat_history(session_id: str):
+async def get_chat_history(session_id: str, user_id: str = "anonymous"):
     """
-    Get chat history for a specific session
+    Get chat history for a specific user's session
     """
     try:
-        if session_id not in chat_sessions:
+        print(f"[HISTORY] user_id={user_id}, session_id={session_id}")
+        if user_id not in user_chat_sessions or session_id not in user_chat_sessions[user_id]:
             return {"conversation_history": [], "session_id": session_id}
-        
-        current_history = chat_sessions[session_id]
+
+        current_history = user_chat_sessions[user_id][session_id]
         conversation_history = []
-        
+
         for user_msg, bot_msg in current_history:
             conversation_history.extend([
                 {"role": "user", "content": user_msg},
                 {"role": "assistant", "content": bot_msg}
             ])
-        
+
         return {"conversation_history": conversation_history, "session_id": session_id}
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting chat history: {str(e)}")
 
 @app.get("/chat/sessions", response_model=ChatSessionsResponse)
-async def get_chat_sessions():
+async def get_chat_sessions(user_id: str = "anonymous"):
     """
-    Get all chat sessions with metadata (topic, timestamps, message count)
+    Get all chat sessions for a specific user with metadata (topic, timestamps, message count)
     """
     try:
+        print(f"[SESSIONS] user_id={user_id}")
         sessions = []
-        for session_id, metadata in session_metadata.items():
-            # Only include sessions that still have chat data
-            if session_id in chat_sessions:
-                sessions.append(ChatSession(
-                    session_id=session_id,
-                    topic=metadata['topic'],
-                    message_count=metadata['message_count'],
-                    created_at=metadata['created_at'],
-                    updated_at=metadata['updated_at']
-                ))
-        
+        if user_id in user_session_metadata:
+            for session_id, metadata in user_session_metadata[user_id].items():
+                # Only include sessions that still have chat data
+                if user_id in user_chat_sessions and session_id in user_chat_sessions[user_id]:
+                    sessions.append(ChatSession(
+                        session_id=session_id,
+                        topic=metadata['topic'],
+                        message_count=metadata['message_count'],
+                        created_at=metadata['created_at'],
+                        updated_at=metadata['updated_at']
+                    ))
+
         # Sort by updated_at (most recent first)
         sessions.sort(key=lambda x: x.updated_at, reverse=True)
-        
+
         return ChatSessionsResponse(
             sessions=sessions,
             total_count=len(sessions)
         )
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting chat sessions: {str(e)}")
 
@@ -237,16 +253,20 @@ async def health_check():
     """
     Health check endpoint for monitoring
     """
+    # Count total active sessions across all users
+    total_sessions = sum(len(sessions) for sessions in user_chat_sessions.values())
+    
     return {
         "status": "healthy",
         "message": "AI Agent API is running",
-        "active_sessions": len(chat_sessions)
+        "active_sessions": total_sessions,
+        "total_users": len(user_chat_sessions)
     }
 
 if __name__ == "__main__":
     # Run the API server
     uvicorn.run(
-        "api_backend:app",
+        "apps.fastapi_app:app",
         host="127.0.0.1",
         port=8000,
         reload=True,

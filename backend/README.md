@@ -1,6 +1,6 @@
-# AgentGraph Backend
+# AI Assitance Backend
 
-This is the backend ser### 3. Run the Application
+3. Run the Application
 
 The backend provides a FastAPI REST API interface designed to work with the React frontend:
 

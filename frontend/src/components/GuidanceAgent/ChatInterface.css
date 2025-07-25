@@ -70,6 +70,10 @@
   border-radius: 8px 0 0 0;
 }
 
+.quick-actions-section {
+  padding: 1rem;
+}
+
 .back-btn {
   position: absolute;
   top: 1rem;

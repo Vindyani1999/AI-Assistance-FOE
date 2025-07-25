@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useGlobalLoader } from '../../context/GlobalLoaderContext';
 import { useNavigate } from 'react-router-dom';
 import './HomePage.css';
 // Material UI Icons
@@ -30,6 +31,9 @@ const HomePage: React.FC = () => {
   const [showUserProfile, setShowUserProfile] = useState<boolean>(false);
   const [userSession, setUserSession] = useState<any>(null);
 
+  // Global loader context
+  const { showLoader, hideLoader } = useGlobalLoader();
+
   // Check authentication status on component mount
   useEffect(() => {
     // Simulate checking authentication status
@@ -45,11 +49,12 @@ const HomePage: React.FC = () => {
         setUserSession(null);
       }
       setIsLoading(false);
+      hideLoader();
     };
 
-    // Simulate API call delay
+    showLoader();
     setTimeout(checkAuthStatus, 1000);
-  }, []);
+  }, [showLoader, hideLoader]);
 
   // OTP Timer countdown effect
   useEffect(() => {
@@ -64,7 +69,7 @@ const HomePage: React.FC = () => {
           }
           return prev - 1;
         });
-      }, 1000);
+      }, 2000);
     }
 
     return () => {

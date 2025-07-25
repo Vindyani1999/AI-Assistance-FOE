@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiService, ChatMessage, ChatSession } from '../services/api';
+import { apiService, ChatMessage, ChatSession } from '../../services/api';
 import './ChatInterface.css';
+import QuickActions, { getQuickActionsExceptAgent } from '../QuickActions/QuickActions';
+
+
 
 interface ChatInterfaceProps {
   sessionId?: string;
@@ -228,9 +231,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     }
   };
 
-  const openExternalLink = (url: string) => {
-    window.open(url, '_blank');
-  };
 
   const toggleTheme = () => {
     setIsDarkTheme(!isDarkTheme);
@@ -277,49 +277,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
             )}
           </button>
         </div>
+        {/* Control which quick actions are visible here, e.g. by id or other logic */}
+      {/* Show quick actions for the 'guidance' agent, or change as needed */}
+      <div className="quick-actions-section">
+        <QuickActions actions={getQuickActionsExceptAgent("guidance")} />
+      </div>
+      
         
-        <div className="chat-history-section">
-          <h3>Chat History</h3>
-          <div className="chat-history-list">
-            {sessionsLoading ? (
-              <div className="chat-history-loading">
-                Loading chat history...
-              </div>
-            ) : sessionsError ? (
-              <div className="chat-history-error">
-                {sessionsError}
-                <button 
-                  onClick={loadChatSessions}
-                  className="retry-btn"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : chatSessions.length === 0 ? (
-              <div className="chat-history-empty">
-                No chat history yet. Start a conversation!
-              </div>
-            ) : (
-              chatSessions.map((session) => (
-                <div 
-                  key={session.session_id}
-                  className={`chat-history-item ${session.session_id === sessionId ? 'active' : ''}`}
-                  onClick={() => {
-                    if (session.session_id !== sessionId) {
-                      // Navigate to this session (you might want to implement session switching)
-                      window.location.href = `/chat/${session.session_id}`;
-                    }
-                  }}
-                >
-                  <div className="chat-title">{session.topic}</div>
-                  <div className="chat-timestamp">
-                    {session.message_count} messages • {formatTimeAgo(session.updated_at)}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       </div>
 
       <div className="chat-container">
@@ -465,50 +429,52 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
         </div>
       </div>
 
+
       <div className="sidebar">
-        <div className="sidebar-section">
-          <h3>Quick Actions</h3>
-          
-          <button
-            onClick={() => openExternalLink('https://www.youtube.com/watch?v=FwOTs4UxQS4')}
-            className="agent-btn"
-          >
-            <img 
-              src="/booking.png" 
-              alt="Booking" 
-              className="agent-btn-icon"
-              onError={(e) => {
-                console.error('Failed to load Booking image');
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-            <div className="agent-btn-content">
-              <span className="agent-btn-title">Booking Agent</span>
-              <span className="agent-btn-description">Book lecture halls & facilities</span>
-            </div>
-          </button>
-          
-          <button
-            onClick={() => openExternalLink('http://localhost:7862')}
-            className="agent-btn"
-          >
-            <img 
-              src="/planner.png" 
-              alt="Planner" 
-              className="agent-btn-icon"
-              onError={(e) => {
-                console.error('Failed to load Planner image');
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-            <div className="agent-btn-content">
-              <span className="agent-btn-title">Planner Agent</span>
-              <span className="agent-btn-description">Plan academic time tables</span>
-            </div>
-          </button>
+      <div className="chat-history-section">
+          <h3>Chat History</h3>
+          <div className="chat-history-list">
+            {sessionsLoading ? (
+              <div className="chat-history-loading">
+                Loading chat history...
+              </div>
+            ) : sessionsError ? (
+              <div className="chat-history-error">
+                {sessionsError}
+                <button 
+                  onClick={loadChatSessions}
+                  className="retry-btn"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : chatSessions.length === 0 ? (
+              <div className="chat-history-empty">
+                No chat history yet. Start a conversation!
+              </div>
+            ) : (
+              chatSessions.map((session) => (
+                <div 
+                  key={session.session_id}
+                  className={`chat-history-item ${session.session_id === sessionId ? 'active' : ''}`}
+                  onClick={() => {
+                    if (session.session_id !== sessionId) {
+                      // Navigate to this session (you might want to implement session switching)
+                      window.location.href = `/chat/${session.session_id}`;
+                    }
+                  }}
+                >
+                  <div className="chat-title">{session.topic}</div>
+                  <div className="chat-timestamp">
+                    {session.message_count} messages • {formatTimeAgo(session.updated_at)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        <div className="sidebar-section">
+        {/* <div className="sidebar-section">
           <h3>Chat Statistics</h3>
           <div className="stats">
             <div className="stat-item">
@@ -524,7 +490,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
               <span className="stat-value">{messages.filter(m => m.role === 'assistant').length}</span>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

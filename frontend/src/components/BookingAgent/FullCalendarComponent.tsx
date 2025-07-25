@@ -3,13 +3,13 @@ import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import axios from 'axios';
+import { EventInput } from '@fullcalendar/core';
 import {
   FormControl,
   InputLabel,
   MenuItem,
   Select,
-  Box,
-  Typography
+  Box
 } from '@mui/material';
 
 const roomOptions = ['LT1', 'LT2', 'Lab1', 'Lab2']; // Add as needed
@@ -18,7 +18,7 @@ interface Props {
   refreshKey?: any;
 }
 const FullCalendarComponent: React.FC<Props> = ({ refreshKey}) => {
-  const [eventData, setEventData] = useState([]);
+  const [eventData, setEventData] = useState<EventInput[]>([]);
   const [roomName, setRoomName] = useState('LT1');
 
   useEffect(() => {
@@ -65,20 +65,20 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey}) => {
         </Select>
       </FormControl>
 
-      <FullCalendar
-        plugins={[timeGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
-        selectable={true}
-        editable={true}
-        nowIndicator={true}
-        headerToolbar={{
+      {React.createElement(FullCalendar as any, {
+        plugins: [timeGridPlugin, interactionPlugin],
+        initialView: "timeGridWeek",
+        selectable: true,
+        editable: true,
+        nowIndicator: true,
+        headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'timeGridDay,timeGridWeek',
-        }}
-        events={eventData}
-        height="auto"
-      />
+        },
+        events: eventData,
+        height: "auto"
+      })}
     </Box>
   );
 };

@@ -36,6 +36,24 @@ export const quickActionsList: QuickAction[] = [
     image: "/attendance.png",
     agent: "guidance",
     visible: true
+  },
+  {
+    id: "gpa",
+    name: "GPA Agent (Coming Soon)",
+    description: "Calculate and track your GPA (Coming Soon)",
+    link: "#",
+    image: "/gpa.png",
+    agent: "gpa",
+    visible: true
+  },
+  {
+    id: "resume",
+    name: "Resume Agent (Coming Soon)",
+    description: "Build and review your resume (Coming Soon)",
+    link: "#",
+    image: "/resume.png",
+    agent: "resume",
+    visible: true
   }
   // Add more actions as needed
 ];

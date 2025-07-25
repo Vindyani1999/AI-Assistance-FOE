@@ -8,6 +8,7 @@ import './components/GlobalLoader/GlobalLoader.css';
 import BookingChatInterface from './components/BookingAgent/BookingChatInterface';
 import GlobalLoader from './components/GlobalLoader/GlobalLoader';
 import { GlobalLoaderProvider, useGlobalLoader } from './context/GlobalLoaderContext';
+import PlannerChatInterface from './components/PlannerAgent/PlannerChatInterface';
 
 
 const AppContent = () => {
@@ -20,6 +21,7 @@ const AppContent = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/guidance-chat" element={<ChatInterface />} />
           <Route path="/booking-chat" element={<BookingChatInterface />} />
+          <Route path="/planner-chat" element={<PlannerChatInterface />} />
         </Routes>
       </Router>
     </div>

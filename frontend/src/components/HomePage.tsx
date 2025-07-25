@@ -194,7 +194,7 @@ const HomePage: React.FC = () => {
       title: 'Facility Booking 🏢',
       description: 'Book lecture halls, meeting rooms, and campus facilities with ease',
       image: '/booking.png',
-      url: 'https://www.youtube.com/watch?v=FwOTs4UxQS4'
+      url: 'booking-chat'
     },
     {
       id: 'planner',

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './FullCalendarTheme.css';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -16,8 +17,9 @@ const roomOptions = ['LT1', 'LT2', 'Lab1', 'Lab2']; // Add as needed
 
 interface Props {
   refreshKey?: any;
+  onCellClick?: (cell: any) => void;
 }
-const FullCalendarComponent: React.FC<Props> = ({ refreshKey}) => {
+const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => {
   const [eventData, setEventData] = useState<EventInput[]>([]);
   const [roomName, setRoomName] = useState('LT1');
 
@@ -45,41 +47,59 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey}) => {
     }
   };
 
+  // Handler for clicking a cell
+  const handleDateClick = (arg: any) => {
+    if (onCellClick) {
+      onCellClick({
+        date: arg.dateStr,
+        allDay: arg.allDay,
+        resource: arg.resource ? arg.resource.title : undefined
+      });
+    }
+  };
+
   return (
     <Box p={3}>
       {/* <Typography variant="h5" mb={2}>Room Booking Calendar</Typography> */}
 
       {/* Dropdown to select room */}
-      <FormControl fullWidth style={{ maxWidth: 300, marginBottom: '20px' }}>
-        <InputLabel id="room-select-label">Select Room</InputLabel>
-        <Select
-          labelId="room-select-label"
-          id="room-select"
-          value={roomName}
-          label="Select Room"
-          onChange={(e) => setRoomName(e.target.value)}
-        >
-          {roomOptions.map((room) => (
-            <MenuItem key={room} value={room}>{room}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <div className="room-select-row">
+        <FormControl style={{ minWidth: 120, maxWidth: 160, marginBottom: 0, backgroundColor: 'transparent' }}>
+          <InputLabel id="room-select-label">Select Room</InputLabel>
+          <Select
+            labelId="room-select-label"
+            id="room-select"
+            value={roomName}
+            label="Select Room"
+            onChange={(e) => setRoomName(e.target.value)}
+          >
+            {roomOptions.map((room) => (
+              <MenuItem key={room} value={room}>{room}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </div>
 
-      {React.createElement(FullCalendar as any, {
-        plugins: [timeGridPlugin, interactionPlugin],
-        initialView: "timeGridWeek",
-        selectable: true,
-        editable: true,
-        nowIndicator: true,
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'timeGridDay,timeGridWeek',
-        },
-        events: eventData,
-        height: "auto"
-      })}
+      <div style={{position: 'relative'}}>
+        {React.createElement(FullCalendar as any, {
+          plugins: [timeGridPlugin, interactionPlugin],
+          initialView: "timeGridWeek",
+          selectable: true,
+          editable: true,
+          nowIndicator: true,
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay,timeGridWeek',
+          },
+          events: eventData,
+          height: "auto",
+          dateClick: handleDateClick
+        })}
+      </div>
+      
     </Box>
+
   );
 };
 

@@ -1,3 +1,76 @@
+/* Improved room select dropdown alignment and style */
+.calendar-scroll-container {
+  position: relative;
+}
+.calendar-scroll-container .room-select-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 10px;
+  background-color: transparent;
+}
+.calendar-scroll-container .MuiFormControl-root {
+  min-width: 120px;
+  max-width: 160px;
+  width: 100%;
+  margin: 0;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.dark-theme .calendar-scroll-container .MuiFormControl-root {
+  background: #232323;
+}
+.calendar-scroll-container .MuiInputBase-root,
+.calendar-scroll-container .MuiSelect-select {
+  font-size: 0.95rem;
+  padding: 4px 12px;
+}
+.calendar-scroll-container .MuiInputLabel-root {
+  font-size: 0.95rem;
+  right: 0;
+  left: auto;
+  text-align: right;
+}
+/* Sticky room select dropdown in calendar */
+.calendar-scroll-container .MuiFormControl-root {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #DDDDDD;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.dark-theme .calendar-scroll-container .MuiFormControl-root {
+  background: #232323;
+}
+/* Room select dropdown styles for Booking Agent calendar */
+.calendar-scroll-container .MuiFormControl-root {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.calendar-scroll-container .MuiInputBase-root,
+.calendar-scroll-container .MuiSelect-select {
+  min-width: 100px;
+  max-width: 140px;
+  font-size: 0.95rem;
+  padding: 4px 12px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.dark-theme .calendar-scroll-container .MuiInputBase-root,
+.dark-theme .calendar-scroll-container .MuiSelect-select {
+  background: #232323;
+  color: #fff;
+}
+.calendar-scroll-container .MuiInputLabel-root {
+  font-size: 0.95rem;
+  right: 0;
+  left: auto;
+  text-align: right;
+}
 /* Dark Theme */
 [data-theme="dark"],
 .dark-theme {
@@ -18,6 +91,7 @@
   --shadow: rgba(0, 0, 0, 0.5);
 }
 
+
 /* Light Theme */
 [data-theme="light"],
 .light-theme {
@@ -36,6 +110,13 @@
   --assistant-message-bg: #f8f8f8;
   --code-bg: #f8f9fa;
   --shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Booking Agent: Left and Right Columns Light Theme */
+.light-theme .left-sidebar-header,
+.light-theme .left-sidebar-booking,
+.light-theme .calendar-scroll-container {
+  background: #DDDDDD !important;
 }
 
 /* Main Layout - Three Column */

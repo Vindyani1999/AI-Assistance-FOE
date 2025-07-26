@@ -5,6 +5,9 @@
 The backend provides a FastAPI REST API interface designed to work with the React frontend:
 
 ```bash
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
 python main.py
 ```
 

@@ -58,15 +58,27 @@ An AI assistant platform containing multi-agent system
 ## Quick Start
 
 1. **Backend:**
-   - `cd backend`
-   - Create and activate a Python 3.9+ virtual environment
-   - `pip install -r requirements.txt`
-   - Run: `python main.py fastapi` or `python main.py gradio`
+   
+   The backend provides a FastAPI REST API interface designed to work with the React frontend:
+
+```bash
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+Required environment variables:
+- `OPENAI_API_KEY`: Your OpenAI API key
+- `TAVILY_API_KEY`: Your Tavily search API key
+- `LANGCHAIN_API_KEY`: Your LangChain API key
 
 2. **Frontend (optional):**
-   - `cd frontend`
-   - `npm install`
-   - `npm start`
+
+```bash
+cd frontend
+npm install
+npm start
+```
 
 3. **Prepare vector DB:**
    - `cd backend`

@@ -2,7 +2,9 @@
 
 An AI assistant platform containing multi-agent system
 
+![alt text](image.png)
 
+![alt text](image-1.png)
 <!-- Image 5 -->
 <img src="https://github.com/user-attachments/assets/feffae57-3ee0-4833-88db-e832659b9950" width="800" style="margin-bottom: 20px;" />
 <br>

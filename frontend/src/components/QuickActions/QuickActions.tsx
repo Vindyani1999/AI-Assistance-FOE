@@ -1,14 +1,10 @@
 
-import React, { useState } from "react";
-import { useGlobalLoader } from '../../context/GlobalLoaderContext';
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { quickActionsList, QuickAction } from "./quickActionsList";
+import { quickActionsList, QuickAction } from "../../utils/quickActionsList";
 
 export function getQuickActionsExceptAgent(agent: string): QuickAction[] {
   return quickActionsList.filter(action => action.agent !== agent && action.visible !== false);
-
-// Helper to get upcoming/coming soon actions
-
 }
 
 export interface QuickActionsProps {
@@ -17,25 +13,16 @@ export interface QuickActionsProps {
 
 const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
   const navigate = useNavigate();
-  const { showLoader, hideLoader } = useGlobalLoader();
-  const [loading, setLoading] = useState(false); // keep for sidebar spinner if needed
-  // Helper to check if link is local (starts with / or http(s)://localhost)
   const isLocalLink = (url: string) => {
     return url.startsWith("/") || url.startsWith("http://localhost") || url.startsWith("https://localhost");
   };
   const handleClick = (action: QuickAction) => {
     if (isLocalLink(action.link)) {
-      showLoader();
-      setTimeout(() => {
-        let path = action.link.replace(/^https?:\/\/localhost:\d+/, "");
-        navigate(path);
-        hideLoader();
-      }, 800); // 800ms delay for animation
+      navigate(action.link.replace(/^https?:\/\/localhost:\d+/, ""));
     } else {
       window.open(action.link, '_blank');
     }
   };
-  // Get coming soon actions (GPA, Resume)
   const comingSoonActions = quickActionsList.filter(action => ["gpa", "resume"].includes(action.agent));
   return (
     <div className="sidebar-section">

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useGlobalLoader } from '../../context/GlobalLoaderContext';
 import { useNavigate } from 'react-router-dom';
 import './HomePage.css';
-// Material UI Icons
 import { Send } from '@mui/icons-material';
+import { agentCardData } from '../../utils/AgentCardData';
 
 interface Agent {
   id: string;
@@ -15,10 +14,15 @@ interface Agent {
 }
 
 const HomePage: React.FC = () => {
+  // Helper for deep equality check
+  const isUserSessionEqual = (a: any, b: any) => {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return JSON.stringify(a) === JSON.stringify(b);
+  };
   const navigate = useNavigate();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // Email and OTP authentication states
   const [authStep, setAuthStep] = useState<'email' | 'otp'>('email');
@@ -31,30 +35,23 @@ const HomePage: React.FC = () => {
   const [showUserProfile, setShowUserProfile] = useState<boolean>(false);
   const [userSession, setUserSession] = useState<any>(null);
 
-  // Global loader context
-  const { showLoader, hideLoader } = useGlobalLoader();
-
-  // Check authentication status on component mount
   useEffect(() => {
-    // Simulate checking authentication status
-    const checkAuthStatus = () => {
-      const authToken = localStorage.getItem('auth_token');
-      const userSessionData = localStorage.getItem('user_session');
-      
-      if (authToken && userSessionData) {
+    const authToken = localStorage.getItem('auth_token');
+    const userSessionData = localStorage.getItem('user_session');
+    if (authToken && userSessionData) {
+      const parsedSession = JSON.parse(userSessionData);
+      if (!isAuthenticated || !isUserSessionEqual(userSession, parsedSession)) {
         setIsAuthenticated(true);
-        setUserSession(JSON.parse(userSessionData));
-      } else {
+        setUserSession(parsedSession);
+      }
+    } else {
+      if (isAuthenticated || userSession) {
         setIsAuthenticated(false);
         setUserSession(null);
       }
-      setIsLoading(false);
-      hideLoader();
-    };
-
-    showLoader();
-    setTimeout(checkAuthStatus, 1000);
-  }, [showLoader, hideLoader]);
+    }
+    // eslint-disable-next-line
+  }, []);
 
   // OTP Timer countdown effect
   useEffect(() => {
@@ -71,7 +68,6 @@ const HomePage: React.FC = () => {
         });
       }, 2000);
     }
-
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -184,32 +180,7 @@ const HomePage: React.FC = () => {
     setShowUserProfile(!showUserProfile);
   };
 
-  const agents: Agent[] = [
-    {
-      id: 'guidance',
-      name: 'Guidance Agent',
-      title: 'Academic Assistant 🎓',
-      description: 'The faculty assistant for guide and support you',
-      image: '/guidance.png',
-      url: '/chat'
-    },
-    {
-      id: 'booking',
-      name: 'Booking Agent',
-      title: 'Facility Booking 🏢',
-      description: 'Book lecture halls, meeting rooms, and campus facilities with ease',
-      image: '/booking.png',
-      url: 'booking-chat'
-    },
-    {
-      id: 'planner',
-      name: 'Planner Agent',
-      title: 'Schedule Planner 📅',
-      description: 'Plan and organize your academic timetables and schedules efficiently',
-      image: '/planner.png',
-      url: 'http://localhost:7862'
-    }
-  ];
+  const agents = agentCardData;
 
   const handleAgentSelect = (agent: Agent) => {
     if (!isAuthenticated) {
@@ -224,30 +195,23 @@ const HomePage: React.FC = () => {
     if (selectedAgent && isAuthenticated) {
       const agent = agents.find(a => a.id === selectedAgent);
       if (agent) {
-        // Navigate to the selected agent
+        // Always show loader animation before navigating to any agent
+        //showLoader();
         setTimeout(() => {
-          if (agent.id === 'guidance') {
-            navigate('/chat');
+          //hideLoader();
+          if (agent.url.startsWith('/')) {
+            navigate(agent.url);
           } else if (agent.url.startsWith('http')) {
             window.open(agent.url, '_blank');
           } else {
             navigate(agent.url);
           }
-        }, 300);
+        }, 2000); // 2000ms delay for animation
       }
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="home-page loading">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Remove loading spinner logic
 
   return (
     <div className="home-page">

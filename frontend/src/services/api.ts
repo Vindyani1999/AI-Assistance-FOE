@@ -1,4 +1,5 @@
-// API service to communicate with FastAPI backend
+
+
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -36,6 +37,8 @@ export interface ChatSessionsResponse {
   sessions: ChatSession[];
   total_count: number;
 }
+
+
 
 class ApiService {
   private baseUrl: string;

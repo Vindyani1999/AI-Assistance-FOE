@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import OtpInput, { InputProps } from 'react-otp-input';
+import Countdown from 'react-countdown';
 import { useNavigate } from 'react-router-dom';
 import './HomePage.css';
 import { Send } from '@mui/icons-material';
 import { agentCardData } from '../../utils/AgentCardData';
+import { requestOtp, verifyOtp } from '../../services/authAPI';
 
 interface Agent {
   id: string;
@@ -23,14 +26,11 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  
-  // Email and OTP authentication states
   const [authStep, setAuthStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState<string>('');
   const [otp, setOtp] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [generatedOtp, setGeneratedOtp] = useState<string>('');
-  const [otpTimer, setOtpTimer] = useState<number>(0);
+  const [otpTimerKey, setOtpTimerKey] = useState<number>(0); // for resetting timer
   const [otpExpired, setOtpExpired] = useState<boolean>(false);
   const [showUserProfile, setShowUserProfile] = useState<boolean>(false);
   const [userSession, setUserSession] = useState<any>(null);
@@ -53,37 +53,10 @@ const HomePage: React.FC = () => {
     // eslint-disable-next-line
   }, []);
 
-  // OTP Timer countdown effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (otpTimer > 0) {
-      interval = setInterval(() => {
-        setOtpTimer((prev) => {
-          if (prev <= 1) {
-            setOtpExpired(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 2000);
-    }
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [otpTimer]);
-
-  // Email and OTP authentication functions
+  // University email validation
   const validateEmail = (email: string): boolean => {
-    // More flexible regex to handle various university email formats
     const facultyEmailRegex = /^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.(edu|ac\.lk|ac\.uk|university\.edu|ruh\.ac\.lk|engug\.ruh\.ac\.lk)$/;
     return facultyEmailRegex.test(email);
-  };
-
-  const generateOTP = (): string => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -92,23 +65,12 @@ const HomePage: React.FC = () => {
       alert('Please enter a valid faculty email address');
       return;
     }
-
     setIsSubmitting(true);
     try {
-      // Simulate sending OTP to email
-      const otp = generateOTP();
-      setGeneratedOtp(otp);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Show OTP in console for testing (in real app, this would be sent via email)
-      console.log(`OTP sent to ${email}: ${otp}`);
-      alert(`OTP sent to ${email}! (Check console for testing: ${otp})`);
-      
-      // Start 1-minute countdown timer
-      setOtpTimer(60);
+      await requestOtp(email);
+      alert(`OTP sent to ${email}! Please check your email inbox.`);
       setOtpExpired(false);
+      setOtpTimerKey(prev => prev + 1); // reset timer
       setAuthStep('otp');
     } catch (error) {
       console.error('Failed to send OTP:', error);
@@ -120,23 +82,14 @@ const HomePage: React.FC = () => {
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (otpExpired) {
       alert('OTP has expired. Please request a new one.');
       return;
     }
-    
-    if (otp !== generatedOtp) {
-      alert('Invalid OTP. Please try again.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      // Simulate OTP verification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate successful authentication
+      await verifyOtp(email, otp);
+      // Simulate successful authentication (replace with backend token/session if available)
       const mockToken = `auth_token_faculty_${Date.now()}`;
       const mockUserSession = {
         user: {
@@ -147,10 +100,8 @@ const HomePage: React.FC = () => {
         },
         loginTime: new Date().toISOString()
       };
-      
       localStorage.setItem('auth_token', mockToken);
       localStorage.setItem('user_session', JSON.stringify(mockUserSession));
-      
       setUserSession(mockUserSession);
       setIsAuthenticated(true);
     } catch (error) {
@@ -165,7 +116,6 @@ const HomePage: React.FC = () => {
     setAuthStep('email');
     setEmail('');
     setOtp('');
-    setGeneratedOtp('');
   };
 
   const handleLogout = () => {
@@ -210,8 +160,6 @@ const HomePage: React.FC = () => {
       }
     }
   };
-
-  // Remove loading spinner logic
 
   return (
     <div className="home-page">
@@ -319,26 +267,53 @@ const HomePage: React.FC = () => {
                     <form onSubmit={handleOtpSubmit} className="auth-form">
                       <div className="form-group">
                         {/* <label htmlFor="otp">Enter OTP</label> */}
-                        <input
-                          type="text"
-                          id="otp"
+                        <OtpInput
                           value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          placeholder="123456"
-                          maxLength={6}
-                          required
-                          disabled={isSubmitting}
+                          onChange={setOtp}
+                          numInputs={6}
+                          inputType="number"
+                          shouldAutoFocus
+                          renderInput={(props: InputProps, index: number) => (
+                            <input 
+                              key={index} 
+                              {...props} 
+                              className="otp-input" 
+                              type="text" 
+                              maxLength={1} 
+                            />
+                          )}
+                          inputStyle={{
+                            width: '2.5rem',
+                            height: '2.5rem',
+                            margin: '0 0.25rem',
+                            fontSize: '0.875rem',
+                            borderRadius: '4px',
+                            border: '1px solid #ccc',
+                          }}
+                          containerStyle={{ justifyContent: 'center' }}
+                          //disabled={isSubmitting}
                         />
-                        {otpTimer > 0 && (
-                          <div className="timer-display">
-                            OTP expires in: {otpTimer}s
-                          </div>
-                        )}
-                        {otpExpired && (
-                          <div className="expired-message">
-                            OTP has expired.
-                          </div>
-                        )}
+                        <div style={{ marginTop: '0.5rem' }}>
+                          {!otpExpired && (
+                            <Countdown
+                              key={otpTimerKey}
+                              date={Date.now() + 60000}
+                              intervalDelay={0}
+                              precision={3}
+                              renderer={({ seconds, completed }: { seconds: number; completed: boolean }) => {
+                                if (completed) {
+                                  setOtpExpired(true);
+                                  return <div className="expired-message">OTP has expired.</div>;
+                                } else {
+                                  return <div className="timer-display">OTP expires in: {seconds}s</div>;
+                                }
+                              }}
+                            />
+                          )}
+                          {otpExpired && (
+                            <div className="expired-message">OTP has expired.</div>
+                          )}
+                        </div>
                       </div>
                       <div className="form-actions">
                         <button 

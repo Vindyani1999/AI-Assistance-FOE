@@ -1,0 +1,84 @@
+/* Add vertical grid lines to FullCalendar time grid */
+.fc .fc-timegrid-col {
+  border-right: 1px solid #e0e0e0;
+}
+.dark-theme .fc .fc-timegrid-col {
+  border-right: 1px solid #444;
+}
+.fc .fc-timegrid-col:last-child {
+  border-right: none;
+}
+/* Smaller font for FullCalendar table headers */
+.fc .fc-col-header-cell, .fc .fc-timegrid-axis {
+  font-size: 0.78rem !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.01em;
+}
+
+/* Only weekday names (Sun, Mon, etc.) bold */
+.fc .fc-col-header-cell .fc-col-header-cell-cushion {
+  font-weight: 800 !important;
+}
+/* Compact FullCalendar header: smaller buttons and title */
+.fc .fc-toolbar-title {
+  font-size: 1.05rem !important;
+  font-weight: 500;
+}
+.fc .fc-button {
+  font-size: 0.85rem !important;
+  padding: 2px 10px !important;
+  min-width: 0;
+  border-radius: 5px;
+}
+.fc .fc-toolbar {
+  min-height: 36px;
+}
+/* FullCalendar custom theme for Booking Agent */
+
+/* Light Theme */
+.light-theme .fc {
+  background: #fff;
+  color: #333;
+}
+.light-theme .fc-toolbar {
+  background: #DDDDDD;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5rem 1rem;
+}
+.light-theme .fc-col-header-cell, .light-theme .fc-timegrid-axis {
+  background: #f5f5f5;
+  color: #333;
+}
+.light-theme .fc-timegrid-slot {
+  background: #fafafa;
+}
+.light-theme .fc-event {
+  background: #5A3232;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+}
+
+/* Dark Theme */
+.dark-theme .fc {
+  background: #232323;
+  color: #fff;
+}
+.dark-theme .fc-toolbar {
+  background: #2a2a2a;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5rem 1rem;
+}
+.dark-theme .fc-col-header-cell, .dark-theme .fc-timegrid-axis {
+  background: #333;
+  color: #fff;
+}
+.dark-theme .fc-timegrid-slot {
+  background: #232323;
+}
+.dark-theme .fc-event {
+  background: #5A3232;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+}

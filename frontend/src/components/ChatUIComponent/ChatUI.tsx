@@ -2,8 +2,8 @@ import React, { useRef, useEffect } from "react";
 
 export interface Message {
   role: "user" | "assistant";
-  content: string | JSX.Element; // Updated to support JSX content
-  recommendations?: any[]; // Added for recommendation support
+  content: string | JSX.Element; 
+  recommendations?: any[]; 
   showRecommendations?: boolean; 
 }
 

@@ -1,19 +1,13 @@
-import warnings
-
-# Suppress specific warnings
-warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
-warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
-
-
 import os
 import yaml
 from pyprojroot import here
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
+#Preparing the offline vector database
 class PrepareVectorDB:
     """
     A class to prepare and manage a Vector Database (VectorDB) using documents from a specified directory.
@@ -106,8 +100,7 @@ class PrepareVectorDB:
             vectordb = Chroma.from_documents(
                 documents=doc_splits,
                 collection_name=self.collection_name,
-                #embedding=OpenAIEmbeddings(model=self.embedding_model),
-                embedding=HuggingFaceEmbeddings(model_name=self.embedding_model),
+                embedding=OpenAIEmbeddings(model=self.embedding_model),
                 persist_directory=str(here(self.vectordb_dir))
             )
             print("VectorDB is created and saved.")
@@ -117,37 +110,47 @@ class PrepareVectorDB:
             print(f"Directory '{self.vectordb_dir}' already exists.")
 
 
-
 if __name__ == "__main__":
-    load_dotenv(here(".env"))
-    os.environ['HUGGINGFACEHUB_API_TOKEN'] = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+    load_dotenv(here("../.env"))  # Load from parent directory
+    os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY")
 
+    # Updated path to config file in new structure
     config_path = here("config/tools_config.yml")
     with open(config_path) as cfg:
         app_config = yaml.load(cfg, Loader=yaml.FullLoader)
 
-    # ---- Airline Policy Vector DB ----
-    policy_config = app_config["swiss_airline_policy_rag"]
-    prepare_policy_db = PrepareVectorDB(
-        doc_dir=policy_config["unstructured_docs"],
-        chunk_size=policy_config["chunk_size"],
-        chunk_overlap=policy_config["chunk_overlap"],
-        embedding_model=policy_config["embedding_model"],
-        vectordb_dir=policy_config["vectordb"],
-        collection_name=policy_config["collection_name"]
-    )
-    prepare_policy_db.run()
+    # Uncomment the following configs to run for swiss airline policy document
+    chunk_size = app_config["swiss_airline_policy_rag"]["chunk_size"]
+    chunk_overlap = app_config["swiss_airline_policy_rag"]["chunk_overlap"]
+    embedding_model = app_config["swiss_airline_policy_rag"]["embedding_model"]
+    vectordb_dir = app_config["swiss_airline_policy_rag"]["vectordb"]
+    collection_name = app_config["swiss_airline_policy_rag"]["collection_name"]
+    doc_dir = app_config["swiss_airline_policy_rag"]["unstructured_docs"]
 
-    # # ---- Stories Vector DB ----
-    # stories_config = app_config["stories_rag"]
-    # prepare_stories_db = PrepareVectorDB(
-    #     doc_dir=stories_config["unstructured_docs"],
-    #     chunk_size=stories_config["chunk_size"],
-    #     chunk_overlap=stories_config["chunk_overlap"],
-    #     embedding_model=stories_config["embedding_model"],
-    #     vectordb_dir=stories_config["vectordb"],
-    #     collection_name=stories_config["collection_name"]
-    # )
-    # prepare_stories_db.run()
+    prepare_db_instance = PrepareVectorDB(
+        doc_dir=doc_dir,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        embedding_model=embedding_model,
+        vectordb_dir=vectordb_dir,
+        collection_name=collection_name)
 
+    prepare_db_instance.run()
 
+    # Uncomment the following configs to run for stories document
+    chunk_size = app_config["stories_rag"]["chunk_size"]
+    chunk_overlap = app_config["stories_rag"]["chunk_overlap"]
+    embedding_model = app_config["stories_rag"]["embedding_model"]
+    vectordb_dir = app_config["stories_rag"]["vectordb"]
+    collection_name = app_config["stories_rag"]["collection_name"]
+    doc_dir = app_config["stories_rag"]["unstructured_docs"]
+
+    prepare_db_instance = PrepareVectorDB(
+        doc_dir=doc_dir,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        embedding_model=embedding_model,
+        vectordb_dir=vectordb_dir,
+        collection_name=collection_name)
+
+    prepare_db_instance.run()

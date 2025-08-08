@@ -3,14 +3,24 @@ const authRoutes = require('./routes/auth');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+
 const app = express();
 const cors = require('cors');
+const logger = require('./middleware/logger');
+const rateLimiter = require('./middleware/rateLimiter');
+const errorHandler = require('./middleware/errorHandler');
+
+app.use(logger);
+app.use(rateLimiter);
 app.use(cors({
     origin: 'http://localhost:3000',
     credentials: true
 }));
 app.use(express.json());
 app.use('/auth', authRoutes);
+
+// Error handler (should be last)
+app.use(errorHandler);
 
 // Connect to MongoDB then start server
 mongoose.connect(process.env.MONGODB_URI, {

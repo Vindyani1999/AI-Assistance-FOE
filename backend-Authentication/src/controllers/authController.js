@@ -2,9 +2,6 @@
 const { generateOtp, storeOtp, validateOtp } = require('../utils/otp');
 const { sendOtpEmail } = require('../services/mailService');
 
-const path = require('path');
-const fs = require('fs');
-
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
@@ -12,10 +9,7 @@ const otpStore = {}; // In-memory store for demo
 
 // Signup controller
 exports.signup = async (req, res) => {
-  const { email, password, name, role, department } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
+  const { email, password, role, department, firstname, lastname } = req.body;
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -25,9 +19,9 @@ exports.signup = async (req, res) => {
     const user = new User({
       email,
       password: hashedPassword,
-      name,
       role,
-      department
+      department,
+      name: firstname && lastname ? `${firstname} ${lastname}` : undefined
     });
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
@@ -59,35 +53,6 @@ async function getUserRoleAndName(email) {
     return { role: 'undergraduate', name, department: null };
   }
 
-  // Map domain to department for lecturers
-  const domainToDepartment = {
-    'cee.ruh.ac.lk': 'civil',
-    'mme.ruh.ac.lk': 'mechanical',
-    'eie.ruh.ac.lk': 'electrical',
-    'eng.ruh.ac.lk': 'faculty',
-    'lib.ruh.ac.lk': 'library',
-    'cis.ruh.ac.lk': 'it',
-  };
-  const department = domainToDepartment[domain] || null;
-  if (department) {
-    try {
-      const lecturersPath = path.join(__dirname, '../utils/lecturers.json');
-      const lecturersData = fs.readFileSync(lecturersPath, 'utf8');
-      const lecturers = JSON.parse(lecturersData);
-      const lecturer = lecturers.find(l => l.email.toLowerCase() === email.toLowerCase());
-      if (lecturer) {
-        // Level: 1 = lecturer, 2 = senior_lecturer
-        let levelRole = lecturer.level === 2 ? 'senior_lecturer' : 'lecturer';
-        return { role: levelRole, name: lecturer.name, department };
-      } else {
-        return { role: department + '_lecturer', name: null, department };
-      }
-    } catch (err) {
-      console.error('JSON read error:', err);
-      return { role: department + '_lecturer', name: null, department };
-    }
-  }
-  return { role: 'unknown', name: null, department: null };
 }
 
 

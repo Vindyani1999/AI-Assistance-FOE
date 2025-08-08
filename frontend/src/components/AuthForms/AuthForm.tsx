@@ -1,4 +1,7 @@
 import React from 'react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { Formik, Form, FormikHelpers } from 'formik';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -11,7 +14,6 @@ import FormControl from '@mui/material/FormControl';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import LoginIcon from '@mui/icons-material/Login';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import './AuthForm.mui.css';
 import OTPPopup from './OTPPopup';
 
@@ -72,6 +74,32 @@ const ROLE_OPTIONS = [
 
 const AuthForm = (props: AuthFormProps) => {
   const { mode, onSubmit, buttonText, theme, onSwitchToLogin } = props;
+
+  // Password requirements
+  const passwordRequirements = [
+    {
+      label: 'Lowercase letter',
+      test: (pw: string) => /[a-z]/.test(pw),
+    },
+    {
+      label: 'One number',
+      test: (pw: string) => /[0-9]/.test(pw),
+    },
+    {
+      label: 'Uppercase letter',
+      test: (pw: string) => /[A-Z]/.test(pw),
+    },
+    {
+      label: 'Special character',
+      test: (pw: string) => /[^A-Za-z0-9]/.test(pw),
+    },
+    {
+      label: '8 characters minimum',
+      test: (pw: string) => pw.length >= 8,
+    },
+  ];
+
+  const [passwordFocused, setPasswordFocused] = React.useState(false);
   const [localMode, setLocalMode] = React.useState<'login' | 'signup'>(mode);
   const effectiveMode = localMode;
 
@@ -436,7 +464,11 @@ const AuthForm = (props: AuthFormProps) => {
                         variant="outlined"
                         value={values.password}
                         onChange={handleChange}
-                        onBlur={handleBlur}
+                        onBlur={e => {
+                          handleBlur(e);
+                          setPasswordFocused(false);
+                        }}
+                        onFocus={() => setPasswordFocused(true)}
                         required
                         margin="normal"
                         size="small"
@@ -444,6 +476,71 @@ const AuthForm = (props: AuthFormProps) => {
                         error={touched.password && Boolean(errors.password)}
                         helperText={touched.password && errors.password}
                       />
+                      {/* Password requirements checklist */}
+                      <Box sx={{ mt: 1, mb: 1, ml: 0.5 }}>
+                        <Grid container spacing={0.5}>
+                          {/* First line: first two requirements */}
+                          <Grid size={12} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {[0, 1].map(idx => {
+                              const req = passwordRequirements[idx];
+                              let icon = <RadioButtonUncheckedIcon sx={{ color: '#bdbdbd', fontSize: 18, verticalAlign: 'middle' }} />;
+                              if (passwordFocused || values.password) {
+                                icon = req.test(values.password)
+                                  ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 12, verticalAlign: 'middle' }} />
+                                  : <CancelIcon sx={{ color: 'error.main', fontSize: 12, verticalAlign: 'middle' }} />;
+                              }
+                              return (
+                                <span key={req.label} style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                  {icon}
+                                  <Typography component="span" sx={{ ml: 1, fontSize: '0.75em', color: (passwordFocused || values.password) && req.test(values.password) ? 'success.main' : '#555' }}>
+                                    {req.label}
+                                  </Typography>
+                                </span>
+                              );
+                            })}
+                          </Grid>
+                          {/* Second line: next two requirements */}
+                          <Grid size={12} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {[2, 3].map(idx => {
+                              const req = passwordRequirements[idx];
+                              let icon = <RadioButtonUncheckedIcon sx={{ color: '#bdbdbd', fontSize: 18, verticalAlign: 'middle' }} />;
+                              if (passwordFocused || values.password) {
+                                icon = req.test(values.password)
+                                  ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 12, verticalAlign: 'middle' }} />
+                                  : <CancelIcon sx={{ color: 'error.main', fontSize: 12, verticalAlign: 'middle' }} />;
+                              }
+                              return (
+                                <span key={req.label} style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                  {icon}
+                                  <Typography component="span" sx={{ ml: 1, fontSize: '0.75em', color: (passwordFocused || values.password) && req.test(values.password) ? 'success.main' : '#555' }}>
+                                    {req.label}
+                                  </Typography>
+                                </span>
+                              );
+                            })}
+                          </Grid>
+                          {/* Third line: last requirement */}
+                          <Grid size={12} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {(() => {
+                              const req = passwordRequirements[4];
+                              let icon = <RadioButtonUncheckedIcon sx={{ color: '#bdbdbd', fontSize: 18, verticalAlign: 'middle' }} />;
+                              if (passwordFocused || values.password) {
+                                icon = req.test(values.password)
+                                  ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 12, verticalAlign: 'middle' }} />
+                                  : <CancelIcon sx={{ color: 'error.main', fontSize: 12, verticalAlign: 'middle' }} />;
+                              }
+                              return (
+                                <span key={req.label} style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                  {icon}
+                                  <Typography component="span" sx={{ ml: 1, fontSize: '0.75em', color: (passwordFocused || values.password) && req.test(values.password) ? 'success.main' : '#555' }}>
+                                    {req.label}
+                                  </Typography>
+                                </span>
+                              );
+                            })()}
+                          </Grid>
+                        </Grid>
+                      </Box>
                     </Grid>
                     <Grid size={6}>
                       <TextField

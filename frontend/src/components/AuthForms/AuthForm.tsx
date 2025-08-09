@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -15,7 +16,23 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import LoginIcon from '@mui/icons-material/Login';
 import './AuthForm.mui.css';
+
+import { signup } from '../../services/authAPI';
 import OTPPopup from './OTPPopup';
+
+// Add OTP request API
+async function requestOtp(email: string) {
+  const res = await fetch('/api/request-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || 'Failed to send OTP');
+  }
+  return true;
+}
 
 interface AuthFormValues {
   emailFront: string;
@@ -108,6 +125,7 @@ const AuthForm = (props: AuthFormProps) => {
   const [otpError, setOtpError] = React.useState('');
   const [timer, setTimer] = React.useState(300); // 5 minutes in seconds
   const [emailForOtp, setEmailForOtp] = React.useState('');
+  const [signupPayload, setSignupPayload] = React.useState<any>(null); // Store signup data until OTP is verified
 
   // Helper to extract domain from email
   const getDomain = (emailFront: string, emailDomain: string) => {
@@ -180,14 +198,10 @@ const AuthForm = (props: AuthFormProps) => {
     if (!values.emailFront) errors.emailFront = 'Required';
     if (!values.password) errors.password = 'Required';
     if (effectiveMode === 'signup') {
-      // Confirm password always required
       if (!values.confirmPassword) errors.confirmPassword = 'Required';
       if (values.password !== values.confirmPassword) errors.confirmPassword = 'Passwords do not match';
-      // Role required
       if (!values.role) errors.role = 'Required';
-      // Department required if visible
       if (showDepartment && !values.department) errors.department = 'Required';
-      // Name fields required if visible
       if (showNameFields) {
         if (!values.firstName) errors.firstName = 'Required';
         if (!values.lastName) errors.lastName = 'Required';
@@ -221,6 +235,16 @@ const AuthForm = (props: AuthFormProps) => {
         setOtp('');
         setTimer(300);
         alert('OTP verified!');
+        // After OTP is verified, send signup payload
+        if (signupPayload) {
+          try {
+            await signup(signupPayload);
+            alert('Signup successful!');
+            setSignupPayload(null);
+          } catch (err: any) {
+            alert(err.message || 'Signup failed');
+          }
+        }
       } else {
         setOtpError(data.message || 'Invalid OTP');
       }
@@ -229,7 +253,7 @@ const AuthForm = (props: AuthFormProps) => {
     }
   };
 
-  // Handler for opening OTP popup after signup
+  // Handler for opening OTP popup after requesting OTP
   const handleOpenOtpPopup = (email: string) => {
     setEmailForOtp(email);
     setOtpPopupOpen(true);
@@ -243,13 +267,29 @@ const AuthForm = (props: AuthFormProps) => {
       <Formik
         initialValues={initialValues}
         validate={validate}
-        onSubmit={(
+        onSubmit={async (
           values: AuthFormValues,
           { setSubmitting }: FormikHelpers<AuthFormValues>
         ) => {
           const email = values.emailFront + values.emailDomain;
-          handleOpenOtpPopup(email);
-          onSubmit({ email, password: values.password });
+          // Prepare payload for signup
+          const payload = {
+            email,
+            password: values.password,
+            firstname: values.firstName,
+            lastname: values.lastName,
+            role: values.role,
+            department: values.department
+          };
+          try {
+            // 1. Request OTP first
+            await requestOtp(email);
+            // 2. Store signup payload for after OTP verification
+            setSignupPayload(payload);
+            handleOpenOtpPopup(email);
+          } catch (err: any) {
+            alert(err.message || 'Failed to send OTP');
+          }
           setSubmitting(false);
         }}
       >

@@ -37,8 +37,8 @@ primary_agent:
 #   k: 2
 
 swiss_airline_policy_rag:
-  unstructured_docs: "../data/unstructured_docs/swiss_airline_policy"
-  vectordb: "../data/vectordb/airline_policy_vectordb"
+  unstructured_docs: "data/unstructured_docs/swiss_airline_policy"
+  vectordb: "data/vectordb/airline_policy_vectordb"
   collection_name: rag-chroma
   llm: gpt-4o-mini
   llm_temperature: 0.0
@@ -48,8 +48,8 @@ swiss_airline_policy_rag:
   k: 2
 
 stories_rag:
-  unstructured_docs: "../data/unstructured_docs/stories"
-  vectordb: "../data/vectordb/stories_vectordb"
+  unstructured_docs: "data/unstructured_docs/stories"
+  vectordb: "data/vectordb/stories_vectordb"
   collection_name: stories-rag-chroma
   llm: gpt-4o-mini
   llm_temperature: 0.0

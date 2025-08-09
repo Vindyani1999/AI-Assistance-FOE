@@ -6,10 +6,14 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
 const otpStore = {}; // In-memory store for demo
+const otpVerified = {}; // Tracks OTP verification status per email
 
 // Signup controller
 exports.signup = async (req, res) => {
   const { email, password, role, department, firstname, lastname } = req.body;
+  if (!otpVerified[email]) {
+    return res.status(400).json({ message: 'OTP not verified for this email. Please verify OTP before signing up.' });
+  }
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -24,6 +28,8 @@ exports.signup = async (req, res) => {
       name: firstname && lastname ? `${firstname} ${lastname}` : undefined
     });
     await user.save();
+    // Remove OTP verified flag after successful signup
+    delete otpVerified[email];
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     console.error('Signup error:', err);
@@ -59,6 +65,7 @@ async function getUserRoleAndName(email) {
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   if (validateOtp(otpStore, email, otp)) {
+    otpVerified[email] = true;
     const { role, name , department} = await getUserRoleAndName(email);
     res.json({ message: 'OTP verified', role, name, department });
   } else {

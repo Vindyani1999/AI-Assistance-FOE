@@ -1,6 +1,21 @@
+import { SignupPayload, VerifyOtpResponse } from '../utils/authInterfaces';
 let Base_Url_Auth = 'http://localhost:5000';
 
 if (Base_Url_Auth.endsWith('/')) Base_Url_Auth = Base_Url_Auth.slice(0, -1);
+
+export async function signup(payload: SignupPayload): Promise<{ message: string }> {
+  const response = await fetch(`${Base_Url_Auth}/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `Failed to signup: ${response.status}`);
+  }
+  return response.json();
+}
+
 
 // Request OTP to be sent to email
 export async function requestOtp(email: string): Promise<{ message: string }> {
@@ -16,12 +31,7 @@ export async function requestOtp(email: string): Promise<{ message: string }> {
 }
 
 // Verify OTP
-export interface VerifyOtpResponse {
-  message: string;
-  role?: string;
-  name?: string;
-  department?: string;
-}
+
 
 export async function verifyOtp(email: string, otp: string): Promise<VerifyOtpResponse> {
   const response = await fetch(`${Base_Url_Auth}/auth/verify-otp`, {

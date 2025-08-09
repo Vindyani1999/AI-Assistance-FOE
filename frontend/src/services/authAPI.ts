@@ -1,4 +1,18 @@
-import { SignupPayload, VerifyOtpResponse } from '../utils/authInterfaces';
+
+import { SignupPayload, VerifyOtpResponse } from '../utils/authInterfaces';// Login API
+export async function login(email: string, password: string): Promise<{ message: string; user?: any }> {
+  const response = await fetch(`${Base_Url_Auth}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `Failed to login: ${response.status}`);
+  }
+  return response.json();
+}
+
 let Base_Url_Auth = 'http://localhost:5000';
 
 if (Base_Url_Auth.endsWith('/')) Base_Url_Auth = Base_Url_Auth.slice(0, -1);

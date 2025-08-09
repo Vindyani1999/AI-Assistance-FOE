@@ -1,4 +1,3 @@
-
 const { generateOtp, storeOtp, validateOtp } = require('../utils/otp');
 const { sendOtpEmail } = require('../services/mailService');
 
@@ -10,7 +9,7 @@ const otpVerified = {}; // Tracks OTP verification status per email
 
 // Signup controller
 exports.signup = async (req, res) => {
-  const { email, password, role, department, firstname, lastname } = req.body;
+  const { email, password, title, department, firstname, lastname } = req.body;
   if (!otpVerified[email]) {
     return res.status(400).json({ message: 'OTP not verified for this email. Please verify OTP before signing up.' });
   }
@@ -23,9 +22,10 @@ exports.signup = async (req, res) => {
     const user = new User({
       email,
       password: hashedPassword,
-      role,
-      department,
-      name: firstname && lastname ? `${firstname} ${lastname}` : undefined
+      title: title || undefined,
+      department: department || undefined,
+      firstname: firstname || undefined,
+      lastname: lastname || undefined
     });
     await user.save();
     // Remove OTP verified flag after successful signup
@@ -70,6 +70,33 @@ exports.verifyOtp = async (req, res) => {
     res.json({ message: 'OTP verified', role, name, department });
   } else {
     res.status(400).json({ message: 'Invalid or expired OTP' });
+  }
+};
+
+// Login controller
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    // You can add JWT or session logic here if needed
+    res.json({ message: 'Login successful', user: {
+      email: user.email,
+      title: user.title,
+      department: user.department,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      role: user.role
+    }});
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

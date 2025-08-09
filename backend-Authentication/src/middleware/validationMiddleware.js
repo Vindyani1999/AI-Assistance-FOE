@@ -1,12 +1,9 @@
-// Validation middleware for signup
+// Validation middleware for signup (updated for title/department logic)
 module.exports = function validateSignup(req, res, next) {
-  const { email, password, role, department, firstname, lastname } = req.body;
-  if (!email || !password || !role) {
-    return res.status(400).json({ message: 'Email, password, and role are required.' });
+  const { email, password, title, department, firstname, lastname } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required.' });
   }
-
-  // Helper to capitalize first letter
-  const capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
 
   // Email validation
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -27,51 +24,29 @@ module.exports = function validateSignup(req, res, next) {
     return res.status(400).json({ message: 'Email domain not allowed for registration.' });
   }
 
-  // Password length
-  if (password.length < 6) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+  // Password requirements (stronger)
+  if (password.length < 8 ||
+    !/[a-z]/.test(password) ||
+    !/[A-Z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)) {
+    return res.status(400).json({ message: 'Password does not meet requirements.' });
   }
 
-  if (role === 'user' || role === 'student') {
-    // Extract names from email
-    if (!prefix.includes('_')) {
-      return res.status(400).json({ message: 'Student email must be in format firstname_lastname@...' });
-    }
-    const [first, last] = prefix.split('_');
-    req.body.firstname = capitalize(first);
-    req.body.lastname = last ? last.toUpperCase() : '';
-    // Department check
-    const allowed = ['electrical', 'mechanical', 'civil'];
-    if (!department || !allowed.includes(department.toLowerCase())) {
-      return res.status(400).json({ message: 'Invalid or missing department for student.' });
-    }
-  } else if (role === 'staff member') {
-    // Require firstname and lastname
-    if (!firstname || !lastname) {
-      return res.status(400).json({ message: 'Staff must provide firstname and lastname.' });
-    }
-    // Department must match domain
-    const domainToDept = {
-      'cee.ruh.ac.lk': 'civil',
-      'mme.ruh.ac.lk': 'mechanical',
-      'eie.ruh.ac.lk': 'electrical',
-    };
-    if (!domainToDept[domain] || domainToDept[domain] !== department.toLowerCase()) {
-      return res.status(400).json({ message: 'Staff department does not match email domain.' });
-    }
-  } else if (role === 'ar') {
-    // AR must have ar.ruh.ac.lk domain, admin department, and names
-    if (domain !== 'ar.ruh.ac.lk') {
-      return res.status(400).json({ message: 'AR email must be in ar.ruh.ac.lk domain.' });
-    }
-    if (department !== 'admin') {
-      return res.status(400).json({ message: 'AR department must be admin.' });
-    }
-    if (!firstname || !lastname) {
-      return res.status(400).json({ message: 'AR must provide firstname and lastname.' });
+  // engug.ruh.ac.lk: only department required
+  if (domain === 'engug.ruh.ac.lk') {
+    if (!department) {
+      return res.status(400).json({ message: 'Department is required for this domain.' });
     }
   } else {
-    return res.status(400).json({ message: 'Invalid role.' });
+    // All other domains: require title, firstname, lastname
+    if (!title || !firstname || !lastname) {
+      return res.status(400).json({ message: 'Title, first name, and last name are required.' });
+    }
+    const validTitles = ['mr', 'mrs', 'miss', 'prof', 'dr'];
+    if (!validTitles.includes(title.toLowerCase())) {
+      return res.status(400).json({ message: 'Invalid title.' });
+    }
   }
   next();
 }

@@ -16,30 +16,15 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import LoginIcon from '@mui/icons-material/Login';
 import './AuthForm.mui.css';
-
-import { signup } from '../../services/authAPI';
+import { signup, verifyOtp, requestOtp, login } from '../../services/authAPI';
 import OTPPopup from './OTPPopup';
-
-// Add OTP request API
-async function requestOtp(email: string) {
-  const res = await fetch('/api/request-otp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
-  });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.message || 'Failed to send OTP');
-  }
-  return true;
-}
 
 interface AuthFormValues {
   emailFront: string;
   emailDomain: string;
   password: string;
   confirmPassword: string;
-  role: string;
+  title: string;
   department: string;
   firstName: string;
   lastName: string;
@@ -54,39 +39,42 @@ interface AuthFormProps {
 
 
 const EMAIL_DOMAINS = [
+  '', // Placeholder for select
   '@engug.ruh.ac.lk',
   '@ar.univ.edu',
   '@cee.ruh.ac.lk',
   '@mme.ruh.ac.lk',
   '@eie.ruh.ac.lk',
   '@eng.ruh.ac.lk',
-  '@lib.ruh.ac.lk',
-  '@cis.ruh.ac.lk',
+  // '@lib.ruh.ac.lk',
+  // '@cis.ruh.ac.lk',
 ];
 
 const DEPARTMENT_MAP: Record<string, { value: string; label: string }> = {
   'cee.ruh.ac.lk': { value: 'civil', label: 'Civil' },
   'mme.ruh.ac.lk': { value: 'mechanical', label: 'Mechanical' },
   'eie.ruh.ac.lk': { value: 'electrical', label: 'Electrical' },
-  'eng.ruh.ac.lk': { value: 'faculty', label: 'Faculty' },
-  'lib.ruh.ac.lk': { value: 'library', label: 'Library' },
-  'cis.ruh.ac.lk': { value: 'it', label: 'IT' },
+  // 'eng.ruh.ac.lk': { value: 'faculty', label: 'Faculty' },
+  // 'lib.ruh.ac.lk': { value: 'library', label: 'Library' },
+  // 'cis.ruh.ac.lk': { value: 'it', label: 'IT' },
 };
 
 const ALL_DEPARTMENTS = [
   { value: 'civil', label: 'Civil' },
   { value: 'mechanical', label: 'Mechanical' },
   { value: 'electrical', label: 'Electrical' },
-  { value: 'faculty', label: 'Faculty' },
-  { value: 'library', label: 'Library' },
-  { value: 'it', label: 'IT' },
-  { value: 'admin', label: 'Admin' },
+  // { value: 'faculty', label: 'Faculty' },
+  // { value: 'library', label: 'Library' },
+  // { value: 'it', label: 'IT' },
+  // { value: 'admin', label: 'Admin' },
 ];
 
-const ROLE_OPTIONS = [
-  { value: 'student', label: 'Student' },
-  { value: 'staff', label: 'Staff Member' },
-  { value: 'ar', label: 'AR' },
+const TITLE_OPTIONS = [
+  { value: 'mr', label: 'Mr' },
+  { value: 'mrs', label: 'Mrs' },
+  { value: 'miss', label: 'Miss' },
+  { value: 'prof', label: 'Prof' },
+  { value: 'dr', label: 'Dr' },
 ];
 
 const AuthForm = (props: AuthFormProps) => {
@@ -137,10 +125,11 @@ const AuthForm = (props: AuthFormProps) => {
     return domain;
   };
 
-  const [dynamicRoleOptions, setDynamicRoleOptions] = React.useState(ROLE_OPTIONS);
-  const [dynamicDepartmentOptions, setDynamicDepartmentOptions] = React.useState(ALL_DEPARTMENTS);
-  const [showNameFields, setShowNameFields] = React.useState(true);
-  const [showDepartment, setShowDepartment] = React.useState(true);
+  const [showTitle, setShowTitle] = React.useState(false);
+  const [dynamicTitleOptions] = React.useState(TITLE_OPTIONS);
+  const [dynamicDepartmentOptions] = React.useState(ALL_DEPARTMENTS);
+  const [showNameFields, setShowNameFields] = React.useState(false);
+  const [showDepartment, setShowDepartment] = React.useState(false);
 
   // Update dynamic options on email change
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | React.ChangeEvent<{ value: unknown; name?: string }>) => {
@@ -152,42 +141,32 @@ const AuthForm = (props: AuthFormProps) => {
     if (!emailDomain) emailDomain = (document.getElementsByName('emailDomain')[0] as HTMLInputElement)?.value || '';
     const domain = getDomain(emailFront, emailDomain);
 
-    // engug.ruh.ac.lk: only student, any department, no name fields
-    if (domain === 'engug.ruh.ac.lk') {
-      setDynamicRoleOptions([{ value: 'student', label: 'Student' }]);
-      setDynamicDepartmentOptions(ALL_DEPARTMENTS);
+    // Hide all fields if no domain selected
+    if (!domain) {
+      setShowTitle(false);
+      setShowDepartment(false);
       setShowNameFields(false);
-      setShowDepartment(true);
+      return;
     }
-    // AR: only AR, admin department, show name fields
-    else if (domain.includes('ar')) {
-      setDynamicRoleOptions([{ value: 'ar', label: 'AR' }]);
-      setDynamicDepartmentOptions([{ value: 'admin', label: 'Admin' }]);
-      setShowNameFields(true);
+
+    // engug.ruh.ac.lk: only department, no title, no name fields
+    if (domain === 'engug.ruh.ac.lk') {
+      setShowTitle(false);
       setShowDepartment(true);
-    }
-    // Staff: any other valid domain, only staff, department auto
-    else if (Object.keys(DEPARTMENT_MAP).includes(domain)) {
-      setDynamicRoleOptions([{ value: 'staff', label: 'Staff Member' }]);
-      setDynamicDepartmentOptions([DEPARTMENT_MAP[domain]]);
+      setShowNameFields(false);
+    } else {
+      setShowTitle(true);
+      setShowDepartment(false);
       setShowNameFields(true);
-      setShowDepartment(true);
-    }
-    // Default: allow all
-    else {
-      setDynamicRoleOptions(ROLE_OPTIONS);
-      setDynamicDepartmentOptions(ALL_DEPARTMENTS);
-      setShowNameFields(true);
-      setShowDepartment(true);
     }
   };
 
   const initialValues: AuthFormValues = {
     emailFront: '',
-    emailDomain: EMAIL_DOMAINS[0],
+    emailDomain: '',
     password: '',
     confirmPassword: '',
-    role: '',
+    title: '',
     department: '',
     firstName: '',
     lastName: ''
@@ -200,7 +179,7 @@ const AuthForm = (props: AuthFormProps) => {
     if (effectiveMode === 'signup') {
       if (!values.confirmPassword) errors.confirmPassword = 'Required';
       if (values.password !== values.confirmPassword) errors.confirmPassword = 'Passwords do not match';
-      if (!values.role) errors.role = 'Required';
+      if (showTitle && !values.title) errors.title = 'Required';
       if (showDepartment && !values.department) errors.department = 'Required';
       if (showNameFields) {
         if (!values.firstName) errors.firstName = 'Required';
@@ -224,32 +203,23 @@ const AuthForm = (props: AuthFormProps) => {
     e.preventDefault();
     setOtpError('');
     try {
-      const res = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailForOtp, otp })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setOtpPopupOpen(false);
-        setOtp('');
-        setTimer(300);
-        alert('OTP verified!');
-        // After OTP is verified, send signup payload
-        if (signupPayload) {
-          try {
-            await signup(signupPayload);
-            alert('Signup successful!');
-            setSignupPayload(null);
-          } catch (err: any) {
-            alert(err.message || 'Signup failed');
-          }
+      const data = await verifyOtp(emailForOtp, otp);
+      setOtpPopupOpen(false);
+      setOtp('');
+      setTimer(300);
+      alert('OTP verified!');
+      // After OTP is verified, send signup payload
+      if (signupPayload) {
+        try {
+          await signup(signupPayload);
+          alert('Signup successful!');
+          setSignupPayload(null);
+        } catch (err: any) {
+          alert(err.message || 'Signup failed');
         }
-      } else {
-        setOtpError(data.message || 'Invalid OTP');
       }
-    } catch (err) {
-      setOtpError('Network error');
+    } catch (err: any) {
+      setOtpError(err.message || 'Invalid OTP');
     }
   };
 
@@ -272,23 +242,35 @@ const AuthForm = (props: AuthFormProps) => {
           { setSubmitting }: FormikHelpers<AuthFormValues>
         ) => {
           const email = values.emailFront + values.emailDomain;
-          // Prepare payload for signup
-          const payload = {
-            email,
-            password: values.password,
-            firstname: values.firstName,
-            lastname: values.lastName,
-            role: values.role,
-            department: values.department
-          };
-          try {
-            // 1. Request OTP first
-            await requestOtp(email);
-            // 2. Store signup payload for after OTP verification
-            setSignupPayload(payload);
-            handleOpenOtpPopup(email);
-          } catch (err: any) {
-            alert(err.message || 'Failed to send OTP');
+          if (effectiveMode === 'signup') {
+            // Prepare payload for signup
+            const payload = {
+              email,
+              password: values.password,
+              firstname: values.firstName,
+              lastname: values.lastName,
+              title: values.title,
+              department: values.department
+            };
+            try {
+              // 1. Request OTP first
+              await requestOtp(email);
+              // 2. Store signup payload for after OTP verification
+              setSignupPayload(payload);
+              handleOpenOtpPopup(email);
+            } catch (err: any) {
+              alert(err.message || 'Failed to send OTP');
+            }
+          } else if (effectiveMode === 'login') {
+            try {
+              const result = await login(email, values.password);
+              alert('Login successful!');
+              if (typeof onSubmit === 'function') {
+                onSubmit({ email, password: values.password });
+              }
+            } catch (err: any) {
+              alert(err.message || 'Login failed');
+            }
           }
           setSubmitting(false);
         }}
@@ -349,42 +331,62 @@ const AuthForm = (props: AuthFormProps) => {
               >
                 <Grid container spacing={0} alignItems="center">
                   <Grid size={7}>
-                    <TextField
-                      id="emailFront"
-                      name="emailFront"
-                      variant="outlined"
-                      value={values.emailFront}
-                      label="University Email"
-                      onChange={e => {
-                        handleChange(e);
-                        handleEmailChange(e);
-                      }}
-                      onBlur={handleBlur}
-                      required
-                      size="small"
-                      fullWidth
-                      error={touched.emailFront && Boolean(errors.emailFront)}
-                    />
+                      <TextField
+                        id="emailFront"
+                        name="emailFront"
+                        variant="outlined"
+                        value={values.emailFront}
+                        label="University Email"
+                        onChange={e => {
+                          handleChange(e);
+                          handleEmailChange(e);
+                        }}
+                        onBlur={handleBlur}
+                        required
+                        size="small"
+                        fullWidth
+                        error={touched.emailFront && Boolean(errors.emailFront)}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderTopRightRadius: 0,
+                            borderBottomRightRadius: 0,
+                          }
+                        }}
+                      />
                   </Grid>
                   <Grid size={5}>
                     <Box className="mui-email-domain">
-                      <FormControl fullWidth size="small" error={touched.emailDomain && Boolean(errors.emailDomain)}>
-                        <Select
-                          id="emailDomain"
-                          name="emailDomain"
-                          value={values.emailDomain}
-                          onChange={e => {
-                            (handleChange as any)(e);
-                            handleEmailChange(e as any);
-                          }}
-                          onBlur={handleBlur}
-                          required
-                        >
-                          {EMAIL_DOMAINS.map(domain => (
-                            <MenuItem key={domain} value={domain}>{domain}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                        <FormControl fullWidth size="small" error={touched.emailDomain && Boolean(errors.emailDomain)}>
+                          <Select
+                            id="emailDomain"
+                            name="emailDomain"
+                            value={values.emailDomain}
+                            onChange={e => {
+                              (handleChange as any)(e);
+                              handleEmailChange(e as any);
+                            }}
+                            onBlur={handleBlur}
+                            required
+                            displayEmpty
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderTopLeftRadius: 0,
+                                borderBottomLeftRadius: 0,
+                              },
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderTopLeftRadius: 0,
+                                borderBottomLeftRadius: 0,
+                              }
+                            }}
+                          >
+                            <MenuItem value="" disabled>
+                              Select Email Domain
+                            </MenuItem>
+                            {EMAIL_DOMAINS.filter(domain => domain).map(domain => (
+                              <MenuItem key={domain} value={domain}>{domain}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
                     </Box>
                   </Grid>
                 </Grid>
@@ -400,33 +402,35 @@ const AuthForm = (props: AuthFormProps) => {
               {effectiveMode === 'signup' && (
                 <>
                   <Grid container spacing={2}>
-                    <Grid size={6}>
-                      <FormControl fullWidth margin="normal" size="small">
-                        <InputLabel id="role-label">Role</InputLabel>
-                        <Select
-                          labelId="role-label"
-                          id="role"
-                          name="role"
-                          value={values.role}
-                          onChange={handleChange as any}
-                          onBlur={handleBlur}
-                          required
-                          label="Role"
-                          error={touched.role && Boolean(errors.role)}
-                        >
-                          {dynamicRoleOptions.map(opt => (
-                            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                          ))}
-                        </Select>
-                        {touched.role && errors.role && (
-                          <Typography variant="caption" color="error" className="auth-error">
-                            {errors.role}
-                          </Typography>
-                        )}
-                      </FormControl>
-                    </Grid>
-                    <Grid size={6}>
-                      {showDepartment && (
+                    {showTitle && (
+                      <Grid size={6}>
+                        <FormControl fullWidth margin="normal" size="small">
+                          <InputLabel id="title-label">Title</InputLabel>
+                          <Select
+                            labelId="title-label"
+                            id="title"
+                            name="title"
+                            value={values.title}
+                            onChange={handleChange as any}
+                            onBlur={handleBlur}
+                            required
+                            label="Title"
+                            error={touched.title && Boolean(errors.title)}
+                          >
+                            {dynamicTitleOptions.map(opt => (
+                              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                            ))}
+                          </Select>
+                          {touched.title && errors.title && (
+                            <Typography variant="caption" color="error" className="auth-error">
+                              {errors.title}
+                            </Typography>
+                          )}
+                        </FormControl>
+                      </Grid>
+                    )}
+                    {showDepartment && (
+                      <Grid size={6}>
                         <FormControl fullWidth margin="normal" size="small">
                           <InputLabel id="department-label">Department</InputLabel>
                           <Select
@@ -451,8 +455,8 @@ const AuthForm = (props: AuthFormProps) => {
                             </Typography>
                           )}
                         </FormControl>
-                      )}
-                    </Grid>
+                      </Grid>
+                    )}
                   </Grid>
                   {showNameFields && (
                     <Grid container spacing={2}>

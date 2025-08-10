@@ -8,6 +8,7 @@ import PlannerChatInterface from './components/PlannerAgent/PlannerChatInterface
 import GlobalLoader from './components/GlobalLoader/GlobalLoader';
 import './App.css';
 import './components/GlobalLoader/GlobalLoader.css';
+import { NotificationProvider } from './context/NotificationContext';
 
 const LoaderOnRouteChange: React.FC = () => {
   const { loading, showLoader, hideLoader } = require('./context/GlobalLoaderContext').useGlobalLoader();
@@ -25,15 +26,18 @@ const LoaderOnRouteChange: React.FC = () => {
 function App() {
   return (
     <GlobalLoaderProvider>
-      <Router>
-        <LoaderOnRouteChange />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/guidance-chat" element={<ChatInterface />} />
-          <Route path="/booking-chat" element={<BookingChatInterface />} />
-          <Route path="/planner-chat" element={<PlannerChatInterface />} />
-        </Routes>
-      </Router>
+      <NotificationProvider>
+        <Router>
+          <LoaderOnRouteChange />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/guidance-chat" element={<ChatInterface />} />
+            <Route path="/booking-chat" element={<BookingChatInterface />} />
+            <Route path="/planner-chat" element={<PlannerChatInterface />} />
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </GlobalLoaderProvider>
   );
 }

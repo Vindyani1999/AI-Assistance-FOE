@@ -1,56 +1,29 @@
-import warnings
-
-# Suppress specific warnings
-warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
-warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
-
-
+import datetime
 import os
+import time
 import yaml
-from pyprojroot import here
-from langchain_chroma import Chroma
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import numpy as np
 from dotenv import load_dotenv
+from pyprojroot import here
+from tabulate import tabulate
+from sklearn.metrics.pairwise import cosine_similarity
+from langsmith import Client
+
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
 
 class PrepareVectorDB:
-    """
-    A class to prepare and manage a Vector Database (VectorDB) using documents from a specified directory.
-    The class performs the following tasks:
-    - Loads and splits documents (PDFs).
-    - Splits the text into chunks based on the specified chunk size and overlap.
-    - Embeds the document chunks using a specified embedding model.
-    - Stores the embedded vectors in a persistent VectorDB directory.
-
-    Attributes:
-        doc_dir (str): Path to the directory containing documents (PDFs) to be processed.
-        chunk_size (int): The maximum size of each chunk (in characters) into which the document text will be split.
-        chunk_overlap (int): The number of overlapping characters between consecutive chunks.
-        embedding_model (str): The name of the embedding model to be used for generating vector representations of text.
-        vectordb_dir (str): Directory where the resulting vector database will be stored.
-        collection_name (str): The name of the collection to be used within the vector database.
-
-    Methods:
-        path_maker(file_name: str, doc_dir: str) -> str:
-            Creates a full file path by joining the given directory and file name.
-
-        run() -> None:
-            Executes the process of reading documents, splitting text, embedding them into vectors, and 
-            saving the resulting vector database. If the vector database directory already exists, it skips
-            the creation process.
-    """
-
-# Initialize the class with the required parameters
     def __init__(self,
                  doc_dir: str,
                  chunk_size: int,
                  chunk_overlap: int,
                  embedding_model: str,
                  vectordb_dir: str,
-                 collection_name: str
-                 ) -> None:
-
+                 collection_name: str):
         self.doc_dir = doc_dir
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
@@ -58,96 +31,140 @@ class PrepareVectorDB:
         self.vectordb_dir = vectordb_dir
         self.collection_name = collection_name
 
-# Ensure the vector database directory exists
-    def path_maker(self, file_name: str, doc_dir):
-        """
-        Creates a full file path by joining the provided directory and file name.
-
-        Args:
-            file_name (str): Name of the file.
-            doc_dir (str): Path of the directory.
-
-        Returns:
-            str: Full path of the file.
-        """
+    def path_maker(self, file_name: str, doc_dir: str) -> str:
+        """Create a full file path."""
         return os.path.join(here(doc_dir), file_name)
 
-    def run(self):
-        """
-        Executes the main logic to create and store document embeddings in a VectorDB.
+    def run(self, test_query=None, k=3):
+        print("Run method started")
+        client = Client()
 
-        If the vector database directory doesn't exist:
-        - It loads PDF documents from the `doc_dir`, splits them into chunks,
-        - Embeds the document chunks using the specified embedding model,
-        - Stores the embeddings in a persistent VectorDB directory.
-
-        If the directory already exists, it skips the embedding creation process.
-
-        Prints the creation status and the number of vectors in the vector database.
-
-        Returns:
-            None
-        """
         if not os.path.exists(here(self.vectordb_dir)):
-            # If it doesn't exist, create the directory and create the embeddings
             os.makedirs(here(self.vectordb_dir))
             print(f"Directory '{self.vectordb_dir}' was created.")
 
+            # Load PDFs
             file_list = os.listdir(here(self.doc_dir))
-            docs = [PyPDFLoader(self.path_maker(
-                fn, self.doc_dir)).load_and_split() for fn in file_list]
+            docs = [
+                PyPDFLoader(self.path_maker(fn, self.doc_dir)).load_and_split()
+                for fn in file_list
+            ]
             docs_list = [item for sublist in docs for item in sublist]
 
+            # Split into chunks
             text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
                 chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
             )
             doc_splits = text_splitter.split_documents(docs_list)
-            # Add to vectorDB
+
+            # Choose embedder
+            if self.embedding_model.startswith("text-embedding"):
+                embedder = OpenAIEmbeddings(model=self.embedding_model)
+            else:
+                embedder = HuggingFaceEmbeddings(model_name=self.embedding_model)
+
+            # Create VectorDB
+            start_time = time.time()
             vectordb = Chroma.from_documents(
                 documents=doc_splits,
                 collection_name=self.collection_name,
-                #embedding=OpenAIEmbeddings(model=self.embedding_model),
-                embedding=HuggingFaceEmbeddings(model_name=self.embedding_model),
+                embedding=embedder,
                 persist_directory=str(here(self.vectordb_dir))
             )
-            print("VectorDB is created and saved.")
-            print("Number of vectors in vectordb:",
-                  vectordb._collection.count(), "\n\n")
+            end_time = time.time()
+
+            num_vectors = vectordb._collection.count()
+            embed_time = round(end_time - start_time, 2)
+
+            # --- Similarity quality check ---
+            avg_similarity = None
+            if test_query:
+                retriever = vectordb.as_retriever(search_kwargs={"k": k})
+                retrieved_docs = retriever.invoke(test_query)  # Updated API
+
+                query_embedding = embedder.embed_query(test_query)
+                similarities = []
+                for doc in retrieved_docs:
+                    doc_embedding = embedder.embed_query(doc.page_content)
+                    sim = cosine_similarity([query_embedding], [doc_embedding])[0][0]
+                    similarities.append(sim)
+
+                avg_similarity = round(float(np.mean(similarities)), 4)
+
+            # Log to LangSmith
+            # client.create_run(
+                
+            #     name="Embedding Run",
+            #     run_type="embedding",  # Required now
+            #     inputs={
+            #         "model": self.embedding_model,
+            #         "chunk_size": self.chunk_size,
+            #         "chunk_overlap": self.chunk_overlap,
+            #         "num_docs": len(docs_list),
+            #         "test_query": test_query
+            #     },
+            #     outputs={
+            #         "num_vectors": num_vectors,
+            #         "embedding_time_sec": embed_time,
+            #         "avg_cosine_similarity": avg_similarity
+            #     },
+            #     tags=["embedding-eval"]
+
+
+                 
+            # )
+            
+           
+
+            # Terminal table output
+            table_data = [
+                ["Model", self.embedding_model],
+                ["Chunk Size", self.chunk_size],
+                ["Chunk Overlap", self.chunk_overlap],
+                ["Documents Loaded", len(docs_list)],
+                ["Total Chunks", len(doc_splits)],
+                ["Number of Vectors", num_vectors],
+                ["Embedding Time (s)", embed_time]
+            ]
+            if avg_similarity is not None:
+                table_data.append(["Avg Cosine Similarity", avg_similarity])
+
+            print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="pretty"))
+            print("\nVectorDB is created and saved.")
         else:
             print(f"Directory '{self.vectordb_dir}' already exists.")
 
 
-
 if __name__ == "__main__":
-    load_dotenv(here(".env"))
+    # Load environment variables
+    load_dotenv(here("backend/.env"))
     os.environ['HUGGINGFACEHUB_API_TOKEN'] = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 
-    config_path = here("config/tools_config.yml")
+    # Load config from tools_config.yml
+    config_path = here("backend/config/tools_config.yml")
     with open(config_path) as cfg:
         app_config = yaml.load(cfg, Loader=yaml.FullLoader)
 
-    # ---- Airline Policy Vector DB ----
-    policy_config = app_config["swiss_airline_policy_rag"]
-    prepare_policy_db = PrepareVectorDB(
-        doc_dir=policy_config["unstructured_docs"],
-        chunk_size=policy_config["chunk_size"],
-        chunk_overlap=policy_config["chunk_overlap"],
-        embedding_model=policy_config["embedding_model"],
-        vectordb_dir=policy_config["vectordb"],
-        collection_name=policy_config["collection_name"]
+    chunk_size = app_config["swiss_airline_policy_rag"]["chunk_size"]
+    chunk_overlap = app_config["swiss_airline_policy_rag"]["chunk_overlap"]
+    embedding_model = app_config["swiss_airline_policy_rag"]["embedding_model"]
+    vectordb_dir = app_config["swiss_airline_policy_rag"]["vectordb"]
+    collection_name = app_config["swiss_airline_policy_rag"]["collection_name"]
+    doc_dir = app_config["swiss_airline_policy_rag"]["unstructured_docs"]
+
+    # Run embedding and evaluation
+    prepare_db_instance = PrepareVectorDB(
+        doc_dir=doc_dir,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        embedding_model=embedding_model,
+        vectordb_dir=vectordb_dir,
+        collection_name=collection_name
     )
-    prepare_policy_db.run()
 
-    # # ---- Stories Vector DB ----
-    # stories_config = app_config["stories_rag"]
-    # prepare_stories_db = PrepareVectorDB(
-    #     doc_dir=stories_config["unstructured_docs"],
-    #     chunk_size=stories_config["chunk_size"],
-    #     chunk_overlap=stories_config["chunk_overlap"],
-    #     embedding_model=stories_config["embedding_model"],
-    #     vectordb_dir=stories_config["vectordb"],
-    #     collection_name=stories_config["collection_name"]
-    # )
-    # prepare_stories_db.run()
+    prepare_db_instance.run(
+        test_query="What is the Swiss Airlines 24-hour cancellation policy?",
+        k=3
+    )
 
-
+    

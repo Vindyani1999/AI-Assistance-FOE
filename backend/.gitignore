@@ -110,6 +110,7 @@ ENV/
 env.bak/
 venv.bak/
 .venv_*/
+data/vectordb
 
 # Spyder project settings
 .spyderproject

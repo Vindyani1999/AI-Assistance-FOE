@@ -7,8 +7,33 @@ import QuickActions, { getQuickActionsExceptAgent } from "../QuickActions/QuickA
 
 interface Message {
   role: "user" | "assistant";
-  content: string;
+  content: string | JSX.Element;
+  recommendations?: Recommendation[];
+  showRecommendations?: boolean;
 }
+
+interface Recommendation {
+  type?: string;
+  score?: number;
+  reason?: string;
+  suggestion?: {
+    room_id?: string;
+    room_name?: string;
+    capacity?: number;
+    description?: string;
+    start_time?: string;
+    end_time?: string;
+    confidence?: number;
+  };
+  data_source?: string;
+}
+
+const RECOMMENDATION_TYPES = {
+  alternative_room: '🏢 Alternative Room',
+  proactive: '🎯 Proactive Suggestion',
+  smart_scheduling: '🧠 Smart Scheduling',
+  default: '💡 Recommendation'
+} as const;
 
 
 const BookingChatInterface: React.FC = () => {
@@ -34,6 +59,262 @@ const BookingChatInterface: React.FC = () => {
   const handleChatUpdate = () => {
     setRefreshCalendar(prev => prev + 1); // increment to trigger refresh
   };
+
+  const formatDate = (timeString: string) => {
+    if (!timeString) return 'N/A';
+    try {
+      const date = new Date(timeString);
+      return date.toLocaleDateString([], { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch {
+      return timeString;
+    }
+  };
+
+  
+  const getDateTimeRange = (startTime: string, endTime: string) => {
+    if (!startTime || !endTime) return { date: 'N/A', timeRange: 'N/A' };
+    
+    try {
+      const date = formatDate(startTime);
+      const startTimeFormatted = formatTime(startTime);
+      const endTimeFormatted = formatTime(endTime);
+      
+      return {
+        date,
+        timeRange: `${startTimeFormatted} - ${endTimeFormatted}`
+      };
+    } catch {
+      return { date: 'N/A', timeRange: 'N/A' };
+    }
+  };
+
+  const getRecommendationType = (type: string) => {
+    return RECOMMENDATION_TYPES[type as keyof typeof RECOMMENDATION_TYPES] || RECOMMENDATION_TYPES.default;
+  };
+
+
+  const bookRecommendation = async (recommendation: Recommendation) => {
+    if (!recommendation.suggestion) {
+      console.error("No suggestion data available for booking");
+      return;
+    }
+
+    const { room_name, start_time, end_time } = recommendation.suggestion!;
+    
+    if (!room_name || !start_time || !end_time) {
+      console.error("Missing required booking data:", { room_name, start_time, end_time });
+      setError("Incomplete booking information. Please try again.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const startDate = new Date(start_time);
+      const endDate = new Date(end_time);
+      
+      const date = startDate.toISOString().split('T')[0]; 
+      const startTimeStr = startDate.toTimeString().slice(0, 5);
+      const endTimeStr = endDate.toTimeString().slice(0, 5); 
+
+      console.log("Booking details:", { room_name, date, startTimeStr, endTimeStr });
+
+      const bookingMessage: Message = { 
+        role: "user", 
+        content: `Book ${room_name} on ${date} from ${startTimeStr} to ${endTimeStr}` 
+      };
+      setMessages((prev) => [...prev, bookingMessage]);
+
+      const response = await axios.post(
+        "http://127.0.0.1:8000/ask_llm/",
+        { 
+          question: `Book ${room_name} on ${date} from ${startTimeStr} to ${endTimeStr}`,
+          session_id: sessionId 
+        }
+      );
+
+      console.log("Booking API Response:", response.data);
+
+      let responseContent = "";
+      
+      if (response.data.message) {
+        responseContent = response.data.message;
+      }
+
+      if (response.data.status === "available" || response.data.booking_id) {
+        responseContent = `✅ Successfully booked ${room_name}! ${response.data.message}`;
+      } else if (response.data.status === "unavailable") {
+        responseContent = `⚠️ ${response.data.message}`;
+      } else if (response.data.status === "room_not_found") {
+        responseContent = `❌ ${response.data.message}`;
+      } else if (response.data.status === "missing_parameters") {
+        responseContent = `❓ ${response.data.message}`;
+      }
+
+      const responseMessage: Message = {
+        role: "assistant",
+        content: responseContent || response.data.message || "Booking processed successfully!",
+        recommendations: response.data.recommendations || [],
+        showRecommendations: false
+      };
+
+      setMessages((prev) => [...prev, responseMessage]);
+      handleChatUpdate();
+
+    } catch (err) {
+      console.error("Booking Error:", err);
+      
+      let errorMessage = "Failed to book the room. Please try again.";
+      
+      if (axios.isAxiosError(err) && err.response) {
+        console.log("Error response data:", err.response.data);
+        
+        if (err.response.data?.detail) {
+          if (typeof err.response.data.detail === 'string') {
+            errorMessage = `❌ ${err.response.data.detail}`;
+          } else if (err.response.data.detail.message) {
+            errorMessage = `❌ ${err.response.data.detail.message}`;
+          }
+        } else if (err.response.data?.message) {
+          errorMessage = `❌ ${err.response.data.message}`;
+        }
+      }
+
+      const errorResponseMessage: Message = {
+        role: "assistant",
+        content: errorMessage
+      };
+      
+      setMessages((prev) => [...prev, errorResponseMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBookRecommendation = async (roomName: string, recommendation?: Recommendation) => {
+    if (recommendation) {
+      await bookRecommendation(recommendation);
+    } else {
+      setInputValue(`Book ${roomName}`);
+      setTimeout(() => sendMessage(), 100);
+    }
+  };
+
+  
+  const formatMessageWithRecommendations = (text: string, recommendations?: Recommendation[]): JSX.Element => {
+    return (
+      <div>
+        <div className={`recommendation-message-text ${recommendations && recommendations.length > 0 ? 'has-recommendations' : ''}`}>
+          {text}
+        </div>
+        
+        {recommendations && recommendations.length > 0 && (
+          <div className="inline-recommendations">
+            <div className={`recommendations-header ${isDarkTheme ? 'dark' : 'light'}`}>
+              📋 Available Options:
+            </div>
+            <div className="recommendations-grid">
+              {recommendations.map((rec, index) => (
+                <div
+                  key={index}
+                  className={`inline-recommendation-card ${isDarkTheme ? 'dark' : 'light'}`}
+                  onClick={() => handleBookRecommendation(rec.suggestion?.room_name || 'Unknown Room')}
+                >
+                  <div className="recommendation-header">
+                    <span className={`recommendation-type-badge ${isDarkTheme ? 'dark' : 'light'}`}>
+                      {getRecommendationType(rec.type || 'recommendation')}
+                    </span>
+                    {rec.score && (
+                      <span className={`score-badge ${rec.score >= 0.8 ? 'high' : rec.score >= 0.6 ? 'medium' : 'low'}`}>
+                        {Math.round(rec.score * 100)}%
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="room-header">
+                    <h4 className={`room-name ${isDarkTheme ? 'dark' : 'light'}`}>
+                      {rec.suggestion?.room_name || 'Unknown Room'}
+                    </h4>
+                    
+                    {rec.suggestion?.description && (
+                      <p className={`room-description ${isDarkTheme ? 'dark' : 'light'}`}>
+                        {rec.suggestion.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="room-details">
+                    {rec.suggestion?.capacity && (
+                      <div className={`detail-item ${isDarkTheme ? 'dark' : 'light'}`}>
+                        <span className="detail-icon">👥</span>
+                        <strong>Capacity : </strong> {rec.suggestion.capacity} people
+                      </div>
+                    )}
+
+                    {rec.suggestion?.start_time && rec.suggestion?.end_time && (
+                      <>
+                        <div className={`detail-item date ${isDarkTheme ? 'dark' : 'light'}`}>
+                          <span className="detail-icon">📅</span>
+                          <strong>Date :</strong> {getDateTimeRange(rec.suggestion.start_time, rec.suggestion.end_time).date}
+                        </div>
+                        <div className={`detail-item time ${isDarkTheme ? 'dark' : 'light'}`}>
+                          <span className="detail-icon">🕐</span>
+                          <strong>Time :</strong> {getDateTimeRange(rec.suggestion.start_time, rec.suggestion.end_time).timeRange}
+                        </div>
+                      </>
+                    )}
+
+                    {rec.reason && (
+                      <div className={`detail-item reason ${isDarkTheme ? 'dark' : 'light'}`}>
+                        <span className="detail-icon">💡</span>
+                        <span><strong>Why : </strong> {rec.reason}</span>
+                      </div>
+                    )}
+
+                    {rec.data_source && (
+                      <div className={`detail-item source ${isDarkTheme ? 'dark' : 'light'}`}>
+                        <span className="detail-icon">🔍</span>
+                        Source: {rec.data_source.replace('mysql_', '').replace('_', ' ')}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    className={`book-button ${isDarkTheme ? 'dark' : 'light'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('Book button clicked for:', rec.suggestion?.room_name);
+                      handleBookRecommendation(rec.suggestion?.room_name || 'Unknown Room', rec);
+                    }}
+                    disabled={isLoading}
+                  >
+                    <span className="book-button-icon">📅</span>
+                    {isLoading ? 'Booking...' : 'Book This Room'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const formatTime = (timeString: string) => {
+    if (!timeString) return 'N/A';
+    try {
+      const time = new Date(timeString);
+      return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return timeString;
+    }
+  };
+
   const sendMessage = async () => {
     
     if (!inputValue.trim()) return;
@@ -50,19 +331,93 @@ const BookingChatInterface: React.FC = () => {
        { question: inputValue, session_id: sessionId }
     );
 
+      console.log("Full API Response:", response.data); 
+
+      let responseContent = "";
+      let recommendations: Recommendation[] = [];
+      let showRecommendations = false;
+      
+      if (response.data.message) {
+        responseContent = response.data.message;
+      }
+
+      if (response.data.recommendations && response.data.recommendations.length > 0) {
+        recommendations = response.data.recommendations;
+        showRecommendations = true;
+      }
+
+      if (response.data.status === "unavailable" || response.data.status === "no_slots_available") {
+        if (response.data.message && response.data.message.includes("already booked for that time")) {
+          showRecommendations = true;
+        }
+      }
+
+      if (response.data.status === "room_not_found") {
+        responseContent = `❌ ${response.data.message}`;
+        showRecommendations = false;
+      } else if (response.data.status === "unavailable") {
+        responseContent = `⚠️ ${response.data.message}`;
+        showRecommendations = response.data.message && 
+                             response.data.message.includes("already booked for that time") && 
+                             recommendations.length > 0;
+      } else if (response.data.status === "available") {
+        responseContent = `✅ ${response.data.message}`;
+      } else if (response.data.status === "missing_parameters") {
+        responseContent = `❓ Please provide more information: ${response.data.message}`;
+      } else if (response.data.status === "no_slots_available") {
+        responseContent = `⚠️ ${response.data.message}`;
+        showRecommendations = response.data.message && 
+                             response.data.message.includes("already booked for that time") && 
+                             recommendations.length > 0;
+      }
+
 
       // Fake API call
       setTimeout(() => {
         const responseMessage: Message = {
           role: "assistant",
-          content: `${response.data.message}`,
+          content: showRecommendations ? 
+            formatMessageWithRecommendations(responseContent || "I couldn't process your request. Please try again.", recommendations) :
+            (responseContent || `${response.data.message}`),
+          recommendations: recommendations,
+          showRecommendations: showRecommendations
         };
         setMessages((prev) => [...prev, responseMessage]);
         setIsLoading(false);
       }, 1000);
       handleChatUpdate();
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      console.error("API Error:", err);
+      
+      if (axios.isAxiosError(err) && err.response) {
+        console.log("Error response data:", err.response.data);
+        
+        if (err.response.data?.detail && typeof err.response.data.detail === 'object') {
+          let errorContent = `❌ ${err.response.data.detail.message || err.response.data.detail.error}`;
+          let recommendations: Recommendation[] = [];
+          let showRecommendations = false;
+          
+          if (err.response.data.detail.recommendations && err.response.data.detail.recommendations.length > 0) {
+            recommendations = err.response.data.detail.recommendations;
+            showRecommendations = (errorContent.includes("already booked for that time") || 
+                                  errorContent.includes("Here are some available alternatives"));
+          }
+          
+          const errorMessage: Message = {
+            role: "assistant",
+            content: showRecommendations ? 
+              formatMessageWithRecommendations(errorContent, recommendations) :
+              errorContent,
+            recommendations: recommendations,
+            showRecommendations: showRecommendations
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+        } else {
+          setError(`Error ${err.response.status}: ${err.response.statusText}`);
+        }
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
       setIsLoading(false);
     }
   };
@@ -80,7 +435,7 @@ const BookingChatInterface: React.FC = () => {
   };
 
   const formatMessage = (text: string): string => {
-    return text; // Modify if you need to style/format
+    return text; 
   };
 
   useEffect(() => {

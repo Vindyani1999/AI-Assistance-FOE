@@ -2,9 +2,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from src.deepseek_llm import DeepSeekLLM
 from src.database import get_db
-from src.availability_logic import check_availability, add_booking, check_available_slotes
+from src.availability_logic import check_availability, add_booking, check_available_slotes,book_recommendation_directly
 import json
 import re
+from typing import Dict, Any, Optional, List
 from src.entity_extraction import extract_entities
 
 router = APIRouter()
@@ -12,6 +13,12 @@ router = APIRouter()
 class QuestionRequest(BaseModel):
     session_id: str
     question: str
+    
+class RecommendationBookingRequest(BaseModel):
+    session_id: str
+    recommendation: Dict[str, Any]
+    created_by: str
+
 
 def get_missing_params(params: dict, required_fields: list[str]) -> list[str]:
     return [f for f in required_fields if f not in params or not params[f]]
@@ -154,24 +161,32 @@ Respond in **only JSON format**, without explanations.
             db=db,
         )
     elif action == "add_booking":
-    # First check availability
-        availability = check_availability(
-        room_name=params["room_name"],
-        date=params["date"],
-        start_time=params["start_time"],
-        end_time=params["end_time"],
-        db=db,
-    )
-        print("Availability response:", availability)
+    # # First check availability
+    #     availability = check_availability(
+    #     room_name=params["room_name"],
+    #     date=params["date"],
+    #     start_time=params["start_time"],
+    #     end_time=params["end_time"],
+    #     db=db,
+    # )
+    #     print("Availability response:", availability)
 
-        if availability["status"] != "available":
-            return {
-            "status": "unavailable",
-            "message": f"{params['room_name']} is NOT available on {params['date']} from {params['start_time']} to {params['end_time']}."
-        }
+    #     if availability["status"] != "available":
+    #         return {
+    #         "status": "unavailable",
+    #         "message": f"{params['room_name']} is NOT available on {params['date']} from {params['start_time']} to {params['end_time']}."
+    #     }
 
-    # Then add booking if available
-        return add_booking(
+    # # Then add booking if available
+    #     return add_booking(
+    #         room_name=params["room_name"],
+    #         date=params["date"],
+    #         start_time=params["start_time"],
+    #         end_time=params["end_time"],
+    #         created_by=params.get("created_by", "system"),
+    #         db=db,
+    #     )
+        result = add_booking(
             room_name=params["room_name"],
             date=params["date"],
             start_time=params["start_time"],
@@ -179,6 +194,7 @@ Respond in **only JSON format**, without explanations.
             created_by=params.get("created_by", "system"),
             db=db,
         )
+        return result
 
     elif action == "alternatives":
         return check_available_slotes(
@@ -192,3 +208,18 @@ Respond in **only JSON format**, without explanations.
         return {"status": "success", "message": f"Booking {params['booking_id']} cancelled."}
 
     return {"status": "error", "message": "Unhandled action."}
+
+@router.post("/book_recommendation/")
+async def book_recommendation(request: RecommendationBookingRequest, db=Depends(get_db)):
+    try:
+        result = book_recommendation_directly(
+            recommendation=request.recommendation,
+            created_by=request.created_by,
+            db=db
+        )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to book recommendation: {e}")
+

@@ -54,10 +54,11 @@ def build_graph():
     graph_builder = StateGraph(State)
     # Load tools with their proper configs
     search_tool = load_tavily_search_tool(TOOLS_CFG.tavily_search_max_results)
-    tools = [search_tool,
+    tools = [
              lookup_swiss_airline_policy,
-             lookup_stories,
-             query_travel_sqldb,
+            #  lookup_stories,
+            #  query_travel_sqldb,
+            #  search_tool,
              #query_chinook_sqldb,
                 # lookup_exam_manual,
                 # lookup_student_handbook,
@@ -73,10 +74,11 @@ def build_graph():
     graph_builder.add_node("chatbot", chatbot)
     tool_node = BasicToolNode(
         tools=[
-            search_tool,
+            
             lookup_swiss_airline_policy,
-            lookup_stories,
-            query_travel_sqldb,
+            # lookup_stories,
+            # query_travel_sqldb,
+            # search_tool,
             #query_chinook_sqldb,
             # lookup_exam_manual,
             # lookup_student_handbook,

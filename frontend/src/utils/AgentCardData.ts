@@ -1,0 +1,35 @@
+export interface AgentCard {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  image: string;
+  url: string;
+}
+
+export const agentCardData: AgentCard[] = [
+  {
+    id: 'guidance',
+    name: 'Guidance Agent',
+    title: 'Academic Assistant 🎓',
+    description: 'The faculty assistant for guide and support you',
+    image: '/guidance.png',
+    url: '/guidance-chat'
+  },
+  {
+    id: 'booking',
+    name: 'Booking Agent',
+    title: 'Facility Booking 🏢',
+    description: 'Book lecture halls, meeting rooms, and campus facilities with ease',
+    image: '/booking.png',
+    url: '/booking-chat'
+  },
+  {
+    id: 'planner',
+    name: 'Planner Agent',
+    title: 'Schedule Planner 📅',
+    description: 'Plan and organize your academic timetables and schedules efficiently',
+    image: '/planner.png',
+    url: '/planner-chat'
+  }
+];

@@ -44,8 +44,6 @@
 }
 
 /* Button style override */
-
-/* Button style override */
 .mui-auth-form-submit {
   font-weight: 600 !important;
   font-size: 1.1rem !important;
@@ -55,7 +53,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.875rem 1.75rem;
+  padding: 0.4rem 1.75rem;
   border: none;
   border-radius: 8px;
   background: linear-gradient(135deg, #d4c2b8 0%, #b8a195 30%, #9c8072 60%, #8a5c5c 100%);
@@ -73,6 +71,7 @@
   text-decoration: none;
   text-transform: none !important;
 }
+
 
 .mui-auth-form-submit:hover {
   background: linear-gradient(90deg, #8a5c5c 0%, #b8a195 100%);

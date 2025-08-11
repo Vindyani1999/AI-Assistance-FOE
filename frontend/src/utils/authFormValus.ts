@@ -8,6 +8,12 @@ export interface AuthFormValues {
   firstName: string;
   lastName: string;
 }
+
+export interface LoginFormValues{
+  emailFront: string;
+  emailDomain: string;
+  password: string;
+}
 export interface AuthFormProps {
     mode: "login" | "signup";
     onSubmit: (data: { email: string; password: string }) => void;

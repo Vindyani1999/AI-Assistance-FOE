@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ProtectedRoute } from './routes';
 import { GlobalLoaderProvider } from './context/GlobalLoaderContext';
 import HomePage from './components/HomePage/HomePage';
 import ChatInterface from './components/GuidanceAgent/ChatInterface';
@@ -31,10 +32,11 @@ function App() {
           <LoaderOnRouteChange />
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/guidance-chat" element={<ChatInterface />} />
-            <Route path="/booking-chat" element={<BookingChatInterface />} />
-            <Route path="/planner-chat" element={<PlannerChatInterface />} />
+            <Route element={<ProtectedRoute redirectPath="/" />}> 
+              <Route path="/guidance-chat" element={<ChatInterface />} />
+              <Route path="/booking-chat" element={<BookingChatInterface />} />
+              <Route path="/planner-chat" element={<PlannerChatInterface />} />
+            </Route>
           </Routes>
         </Router>
       </NotificationProvider>

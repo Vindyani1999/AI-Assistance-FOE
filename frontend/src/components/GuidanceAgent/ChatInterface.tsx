@@ -4,8 +4,6 @@ import { apiService, ChatMessage, ChatSession } from '../../services/api';
 import './ChatInterface.css';
 import QuickActions, { getQuickActionsExceptAgent } from '../QuickActions/QuickActions';
 
-
-
 interface ChatInterfaceProps {
   sessionId?: string;
 }
@@ -33,20 +31,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
 
   // Get current user from localStorage
   useEffect(() => {
-    const userSession = localStorage.getItem('user_session');
-    const authToken = localStorage.getItem('auth_token');
-    
-    if (!userSession || !authToken) {
-      // Redirect to home page if not authenticated
-      navigate('/');
-      return;
-    }
-    
-    const user = JSON.parse(userSession);
-    setCurrentUser(user);
-    // Generate user-specific session ID
-    const userSessionId = generateUserSessionId(sessionId, user.email);
-    setUserSpecificSessionId(userSessionId);
+  const userSession = localStorage.getItem('user_session');
+  // No redirect needed here; route protection is handled globally
+  const user = JSON.parse(userSession || '{}');
+  setCurrentUser(user);
+  // Generate user-specific session ID
+  const userSessionId = generateUserSessionId(sessionId, user.email);
+  setUserSpecificSessionId(userSessionId);
   }, [sessionId, navigate]);
 
   const loadChatHistory = useCallback(async () => {

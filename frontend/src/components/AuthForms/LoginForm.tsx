@@ -1,5 +1,6 @@
 import './AuthForm.mui.css';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Formik, Form, FormikHelpers } from 'formik';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -7,7 +8,7 @@ import Button from '@mui/material/Button';
 import LoginIcon from '@mui/icons-material/Login';
 import { login } from '../../services/authAPI';
 import { useNotification } from '../../context/NotificationContext';
-import { AuthFormValues, LoginFormValues } from '../../utils/authFormValus';
+import { LoginFormValues } from '../../utils/authFormValus';
 import { Typography, FormControl, Grid, Select, MenuItem } from '@mui/material';
 import { EMAIL_DOMAINS} from '../../utils/signupData';
 
@@ -19,6 +20,7 @@ const initialValues: LoginFormValues= {
 
 const LoginForm: React.FC<{ onSwitchToSignup?: () => void }> = ({ onSwitchToSignup }) => {
   const { notify } = useNotification();
+  const navigate = useNavigate();
 
   const validate = (values: LoginFormValues) => {
     const errors: Partial<Record<keyof LoginFormValues, string>> = {};
@@ -36,8 +38,14 @@ const LoginForm: React.FC<{ onSwitchToSignup?: () => void }> = ({ onSwitchToSign
         onSubmit={async (values, { setSubmitting }: FormikHelpers<LoginFormValues>) => {
           const email = values.emailFront + values.emailDomain;
           try {
-            await login(email, values.password);
+            const data = await login(email, values.password);
+            // Store user details in localStorage for profile section
+            // No user info stored in localStorage for security. Only auth_token is stored by authAPI.
             notify('success', 'Login successful!');
+            // Redirect to home page after successful login
+            setTimeout(() => {
+              navigate('/');
+            }, 500); // slight delay for notification
           } catch (err: any) {
             notify('error', 'Login failed', err.message);
           }

@@ -32,7 +32,7 @@ function App() {
           <LoaderOnRouteChange />
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route element={<ProtectedRoute redirectPath="/" />}> 
+            <Route element={<ProtectedRoute/>}> 
               <Route path="/guidance-chat" element={<ChatInterface />} />
               <Route path="/booking-chat" element={<BookingChatInterface />} />
               <Route path="/planner-chat" element={<PlannerChatInterface />} />

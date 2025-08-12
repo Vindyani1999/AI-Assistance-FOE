@@ -1,20 +1,15 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import LoginForm from '../components/AuthForms/LoginForm';
 
-// You can adjust these keys as per your auth logic
 const isAuthenticated = () => {
-  const userSession = localStorage.getItem('user_session');
   const authToken = localStorage.getItem('auth_token');
-  return !!userSession && !!authToken;
+  return !!authToken;
 };
 
-interface ProtectedRouteProps {
-  redirectPath?: string;
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ redirectPath = '/' }) => {
+const ProtectedRoute: React.FC = () => {
   if (!isAuthenticated()) {
-    return <Navigate to={redirectPath} replace />;
+    return <LoginForm />;
   }
   return <Outlet />;
 };

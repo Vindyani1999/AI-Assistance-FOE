@@ -55,6 +55,19 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
     const [timer, setTimer] = React.useState(300); // 5 minutes in seconds
     const [emailForOtp, setEmailForOtp] = React.useState('');
     const [signupPayload, setSignupPayload] = React.useState<any>(null); // Store signup data until OTP is verified
+
+    // Timer countdown effect
+    React.useEffect(() => {
+      let interval: NodeJS.Timeout | null = null;
+      if (otpPopupOpen && timer > 0) {
+        interval = setInterval(() => {
+          setTimer(prev => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+      }
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [otpPopupOpen, timer]);
   
     // Helper to extract domain from email
     const getDomain = (emailFront: string, emailDomain: string) => {
@@ -137,21 +150,25 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
       setOtpPopupOpen(false);
       setOtp('');
       setTimer(300);
-
-  notify('success', 'OTP verified successfully!');
       // After OTP is verified, send signup payload
       if (signupPayload) {
         try {
+          console.log('Signup payload being sent to backend:', signupPayload);
           await signup(signupPayload);
           notify('success', 'Signup successful!');
           setSignupPayload(null);
+          if (onSwitchToLogin) {
+            onSwitchToLogin();
+          }
         } catch (err: any) {
           notify('error', 'Signup failed', err.message);
         }
+      } else {
+        notify('success', 'OTP verified successfully!');
       }
     } catch (err: any) {
       setOtpError(err.message || 'Invalid OTP');
-  notify('error', 'Invalid OTP', err.message);
+      notify('error', 'Invalid OTP', err.message);
     }
   };
  const handleOpenOtpPopup = (email: string) => {
@@ -167,7 +184,7 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
       <Formik
         initialValues={initialValues}
         validate={validate}
-        onSubmit={async (values, { setSubmitting }: FormikHelpers<AuthFormValues>) => {
+        onSubmit={async (values, { setSubmitting, resetForm }: FormikHelpers<AuthFormValues>) => {
           const email = values.emailFront + values.emailDomain;
           const payload = {
             email,
@@ -181,6 +198,7 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
             await requestOtp(email);
             setSignupPayload(payload);
             handleOpenOtpPopup(email);
+            resetForm(); // Clear the form after requesting OTP
           } catch (err: any) {
             notify('error', 'Failed to send OTP', err.message);
           }

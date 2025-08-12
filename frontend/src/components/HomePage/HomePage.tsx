@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchUserProfile } from '../../services/userAPI';
 import AuthPage from '../AuthForms/AuthPage';
 import { useNavigate } from 'react-router-dom';
 import { agentCardData } from '../../utils/AgentCardData';
@@ -18,28 +19,23 @@ const HomePage: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [showUserProfile, setShowUserProfile] = useState<boolean>(false);
-  const [userSession, setUserSession] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const agents = agentCardData;
 
   useEffect(() => {
     const authToken = localStorage.getItem('auth_token');
-    const userSessionData = localStorage.getItem('user_session');
-    if (authToken && userSessionData) {
-      const parsedSession = JSON.parse(userSessionData);
-      setIsAuthenticated(true);
-      setUserSession(parsedSession);
+    setIsAuthenticated(!!authToken);
+    if (authToken) {
+      fetchUserProfile().then(profile => setUserProfile(profile)).catch(() => setUserProfile(null));
     } else {
-      setIsAuthenticated(false);
-      setUserSession(null);
+      setUserProfile(null);
     }
-    // eslint-disable-next-line
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_session');
     setIsAuthenticated(false);
-    setUserSession(null);
+    setUserProfile(null);
     setShowUserProfile(false);
   };
 
@@ -99,7 +95,7 @@ const HomePage: React.FC = () => {
           </div>
         </header>
         {/* User Profile Sidebar */}
-        {showUserProfile && userSession && (
+        {showUserProfile && (
           <div className="user-profile-sidebar">
             <div className="user-profile-overlay" onClick={() => setShowUserProfile(false)}></div>
             <div className="user-profile-content">
@@ -113,15 +109,24 @@ const HomePage: React.FC = () => {
                 </button>
               </div>
               <div className="user-profile-info">
-                <div className="user-avatar-large">
-                  <img src="/ai_rt.png" alt="User" />
-                </div>
                 <div className="user-details">
-                  <h4>{userSession.user.name}</h4>
-                  <p className="user-email">{userSession.user.email}</p>
-                  <p className="login-time">
-                    Logged in: {new Date(userSession.loginTime).toLocaleString()}
-                  </p>
+                  {userProfile ? (
+                    userProfile.email.endsWith('@engug.ruh.ac.lk') ? (
+                      <>
+                        <h4>{userProfile.firstname} {userProfile.lastname}</h4>
+                        <p className="user-email">{userProfile.email}</p>
+                        {userProfile.department && <p className="user-department">Department: {userProfile.department}</p>}
+                      </>
+                    ) : (
+                      <>
+                        <h4>{userProfile.title} {userProfile.firstname} {userProfile.lastname}</h4>
+                        <p className="user-email">{userProfile.email}</p>
+                        {userProfile.department && <p className="user-department">Department: {userProfile.department}</p>}
+                      </>
+                    )
+                  ) : (
+                    <p>Loading profile...</p>
+                  )}
                 </div>
               </div>
               <div className="user-profile-actions">
@@ -139,9 +144,14 @@ const HomePage: React.FC = () => {
           {!isAuthenticated ? (
             <div className="auth-section">
               <AuthPage
-                onAuthSuccess={(session) => {
-                  setUserSession(session);
+                onAuthSuccess={async (session) => {
                   setIsAuthenticated(true);
+                  try {
+                    const profile = await fetchUserProfile();
+                    setUserProfile(profile);
+                  } catch {
+                    setUserProfile(null);
+                  }
                 }}
               />
               <div className="preview-agents">

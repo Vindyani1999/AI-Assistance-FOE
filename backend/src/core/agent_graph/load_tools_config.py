@@ -12,7 +12,7 @@ class LoadToolsConfig:
         # Config file is in the backend/config directory relative to the backend root
         # Use a path relative to this file's location
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(current_dir, "../../../config/tools_config.yml")
+        config_path = os.path.join(current_dir, "../../config/tools_config.yml")
         with open(config_path) as cfg:
             app_config = yaml.load(cfg, Loader=yaml.FullLoader)
 

@@ -68,10 +68,6 @@ tavily_search_api:
 graph_configs:
   thread_id: 1 # This can be adjusted to assign a unique value for each user session, so it's easier to access data later on.
 
-
-
-
-
 # # Added RAG configuration for by_law
 # by_law_rag:
 #   unstructured_docs: "data/unstructured_docs/by_law"
@@ -84,8 +80,6 @@ graph_configs:
 #   chunk_overlap: 100
 #   k: 2
 
-
-
 # student_handbook_rag:
 #   unstructured_docs: "data/unstructured_docs/student_handbook"
 #   vectordb: "data/student_handbook_vectordb"
@@ -97,10 +91,6 @@ graph_configs:
 #   chunk_overlap: 100
 #   k: 2
 
-
-
-
-
 # 4. Evaluating with LangSmith
 # In LangSmith’s dashboard:
 
@@ -111,4 +101,3 @@ graph_configs:
 
 # Export results to CSV for offline analysis
 # (LangSmith → Export → CSV)
-

@@ -1,45 +1,47 @@
 primary_agent:
-  llm: gpt-3.5-turbo
+  llm: z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
   llm_temperature: 0.0
+
+
 
 exam_manual_rag:
   unstructured_docs: "data/documents/exam_manual"
   vectordb: "data/vectordb/exam_manual_vectordb"
   collection_name: exam_manual-rag-chroma
-  llm: gpt-3.5-turbo
+  llm: microsoft/phi-2
   llm_temperature: 0.0
   embedding_model: intfloat/e5-large-v2             #intfloat/e5-base-v2
-  chunk_size: 500
-  chunk_overlap: 70
+  chunk_size: 200
+  chunk_overlap: 20
   k: 2
 
-student_handbook_rag:
-  unstructured_docs: "data/documents/student_handbook"
-  vectordb: "data/vectordb/student_handbook_vectordb"
-  collection_name: student_handbook-rag-chroma
-  llm: gpt-3.5-turbo
-  llm_temperature: 0.0
-  embedding_model: intfloat/e5-large-v2
-  chunk_size: 500
-  chunk_overlap: 70
-  k: 2
+# student_handbook_rag:
+#   unstructured_docs: "data/documents/student_handbook"
+#   vectordb: "data/vectordb/student_handbook_vectordb"
+#   collection_name: student_handbook-rag-chroma
+#   llm: microsoft/phi-2
+#   llm_temperature: 0.0
+#   embedding_model: intfloat/e5-large-v2
+#   chunk_size: 200
+#   chunk_overlap: 20
+#   k: 2
 
 swiss_airline_policy_rag:
   unstructured_docs: "data/documents/swiss_airline_policy"
   vectordb: "data/vectordb/airline_policy_vectordb"
   collection_name: rag-chroma
-  llm: gpt-3.5-turbo
+  llm: gpt-3.5-turbo #gpt-3.5-turbo #microsoft/phi-2
   llm_temperature: 0.0
-  embedding_model: intfloat/e5-large-v2 #BAAI/bge-base-en-v1.5
-  chunk_size: 500
-  chunk_overlap: 70
+  embedding_model: intfloat/e5-large-v2 #text-embedding-3-small # #microsoft/phi-2 #intfloat/e5-large-v2 #BAAI/bge-base-en-v1.5
+  chunk_size: 200
+  chunk_overlap: 20
   k: 2
 
 stories_rag:
   unstructured_docs: "data/documents/stories"
   vectordb: "data/vectordb/stories_vectordb"
   collection_name: stories-rag-chroma
-  llm: gpt-3.5-turbo
+  llm: deepseek-ai/deepseek-coder-1.3b-instruct
   llm_temperature: 0.0
   embedding_model: text-embedding-3-small
   chunk_size: 50

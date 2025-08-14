@@ -1,8 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional
 from src.database import get_db
-from src.availability_logic import check_availability, add_booking, check_available_slotes
 from src.deepseek_llm import DeepSeekLLM
 from src.entity_extraction import extract_entities
 from src.recurrence.recurrence_service import handle_recurring_booking
@@ -12,6 +10,9 @@ from src.recurrence.recurrence_utils import build_rrule_from_extracted
 import json
 import re
 from datetime import datetime
+from src.availability_logic import check_availability, add_booking, check_available_slotes,book_recommendation_directly
+from typing import Dict, Any, Optional, List
+
 
 app = FastAPI()
 router = APIRouter()
@@ -19,6 +20,12 @@ router = APIRouter()
 class QuestionRequest(BaseModel):
     session_id: str
     question: str
+    
+class RecommendationBookingRequest(BaseModel):
+    session_id: str
+    recommendation: Dict[str, Any]
+    created_by: str
+
 
 # Required parameters per action
 REQUIRED_FIELDS = {
@@ -210,19 +217,45 @@ Respond in **only JSON format**, without explanations.
             db=db,
         )
     elif action == "add_booking":
-        availability = check_availability(
-            room_name=params["room_name"],
-            date=params["date"],
-            start_time=params["start_time"],
-            end_time=params["end_time"],
-            db=db,
-        )
-        if availability["status"] != "available":
-            return {
-                "status": "unavailable",
-                "message": f"{params['room_name']} is NOT available on {params['date']} from {params['start_time']} to {params['end_time']}."
-            }
-        return add_booking(
+        # availability = check_availability(
+        #     room_name=params["room_name"],
+        #     date=params["date"],
+        #     start_time=params["start_time"],
+        #     end_time=params["end_time"],
+        #     db=db,
+        # )
+        # if availability["status"] != "available":
+        #     return {
+        #         "status": "unavailable",
+        #         "message": f"{params['room_name']} is NOT available on {params['date']} from {params['start_time']} to {params['end_time']}."
+        #     }
+        # return add_booking(
+    # # First check availability
+    #     availability = check_availability(
+    #     room_name=params["room_name"],
+    #     date=params["date"],
+    #     start_time=params["start_time"],
+    #     end_time=params["end_time"],
+    #     db=db,
+    # )
+    #     print("Availability response:", availability)
+
+    #     if availability["status"] != "available":
+    #         return {
+    #         "status": "unavailable",
+    #         "message": f"{params['room_name']} is NOT available on {params['date']} from {params['start_time']} to {params['end_time']}."
+    #     }
+
+    # # Then add booking if available
+    #     return add_booking(
+    #         room_name=params["room_name"],
+    #         date=params["date"],
+    #         start_time=params["start_time"],
+    #         end_time=params["end_time"],
+    #         created_by=params.get("created_by", "system"),
+    #         db=db,
+    #     )
+        result = add_booking(
             room_name=params["room_name"],
             date=params["date"],
             start_time=params["start_time"],
@@ -230,15 +263,7 @@ Respond in **only JSON format**, without explanations.
             created_by=params.get("created_by", "system"),
             db=db,
         )
-    elif action == "add_recurring_booking":
-        # Check availability for all occurrences first
-        from dateutil.rrule import rrulestr
-        try:
-            start_date_dt = datetime.strptime(params["start_date"], "%Y-%m-%d")
-            end_date_dt = datetime.strptime(params["end_date"], "%Y-%m-%d")
-            rule = rrulestr(params["recurrence_rule"], dtstart=start_date_dt)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid recurrence info: {str(e)}")
+        return result
 
         unavailable_dates = []
         for occurrence in rule.between(start_date_dt, end_date_dt, inc=True):
@@ -275,5 +300,20 @@ Respond in **only JSON format**, without explanations.
 
     return {"status": "error", "message": "Unhandled action."}
 
+
+
+@router.post("/book_recommendation/")
+async def book_recommendation(request: RecommendationBookingRequest, db=Depends(get_db)):
+    try:
+        result = book_recommendation_directly(
+            recommendation=request.recommendation,
+            created_by=request.created_by,
+            db=db
+        )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to book recommendation: {e}")
 
 app.include_router(router)

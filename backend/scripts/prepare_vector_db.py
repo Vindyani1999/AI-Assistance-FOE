@@ -1,50 +1,34 @@
+
+#--------------3 pdf avg cosine----=================================----------------------------------=======================================----------------
+
+import datetime
 import os
+import time
 import yaml
-from pyprojroot import here
-from langchain_chroma import Chroma
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_openai import OpenAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import numpy as np
 from dotenv import load_dotenv
+from pyprojroot import here
+from tabulate import tabulate
+from sklearn.metrics.pairwise import cosine_similarity
+from langsmith import Client
 
-#Preparing the offline vector database
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+
 class PrepareVectorDB:
-    """
-    A class to prepare and manage a Vector Database (VectorDB) using documents from a specified directory.
-    The class performs the following tasks:
-    - Loads and splits documents (PDFs).
-    - Splits the text into chunks based on the specified chunk size and overlap.
-    - Embeds the document chunks using a specified embedding model.
-    - Stores the embedded vectors in a persistent VectorDB directory.
-
-    Attributes:
-        doc_dir (str): Path to the directory containing documents (PDFs) to be processed.
-        chunk_size (int): The maximum size of each chunk (in characters) into which the document text will be split.
-        chunk_overlap (int): The number of overlapping characters between consecutive chunks.
-        embedding_model (str): The name of the embedding model to be used for generating vector representations of text.
-        vectordb_dir (str): Directory where the resulting vector database will be stored.
-        collection_name (str): The name of the collection to be used within the vector database.
-
-    Methods:
-        path_maker(file_name: str, doc_dir: str) -> str:
-            Creates a full file path by joining the given directory and file name.
-
-        run() -> None:
-            Executes the process of reading documents, splitting text, embedding them into vectors, and 
-            saving the resulting vector database. If the vector database directory already exists, it skips
-            the creation process.
-    """
-
-# Initialize the class with the required parameters
     def __init__(self,
+                 name: str,
                  doc_dir: str,
                  chunk_size: int,
                  chunk_overlap: int,
                  embedding_model: str,
                  vectordb_dir: str,
-                 collection_name: str
-                 ) -> None:
-
+                 collection_name: str):
+        self.name = name
         self.doc_dir = doc_dir
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
@@ -52,105 +36,374 @@ class PrepareVectorDB:
         self.vectordb_dir = vectordb_dir
         self.collection_name = collection_name
 
-# Ensure the vector database directory exists
-    def path_maker(self, file_name: str, doc_dir):
-        """
-        Creates a full file path by joining the provided directory and file name.
-
-        Args:
-            file_name (str): Name of the file.
-            doc_dir (str): Path of the directory.
-
-        Returns:
-            str: Full path of the file.
-        """
+    def path_maker(self, file_name: str, doc_dir: str) -> str:
         return os.path.join(here(doc_dir), file_name)
 
-    def run(self):
-        """
-        Executes the main logic to create and store document embeddings in a VectorDB.
-
-        If the vector database directory doesn't exist:
-        - It loads PDF documents from the `doc_dir`, splits them into chunks,
-        - Embeds the document chunks using the specified embedding model,
-        - Stores the embeddings in a persistent VectorDB directory.
-
-        If the directory already exists, it skips the embedding creation process.
-
-        Prints the creation status and the number of vectors in the vector database.
-
-        Returns:
-            None
-        """
+    def run(self, test_queries, k=3):
+        print(f"\n=== Running for {self.name} [{self.embedding_model}] ===")
         if not os.path.exists(here(self.vectordb_dir)):
-            # If it doesn't exist, create the directory and create the embeddings
             os.makedirs(here(self.vectordb_dir))
             print(f"Directory '{self.vectordb_dir}' was created.")
 
-            file_list = os.listdir(here(self.doc_dir))
-            docs = [PyPDFLoader(self.path_maker(
-                fn, self.doc_dir)).load_and_split() for fn in file_list]
-            docs_list = [item for sublist in docs for item in sublist]
+        # Load PDFs
+        file_list = os.listdir(here(self.doc_dir))
+        docs = [
+            PyPDFLoader(self.path_maker(fn, self.doc_dir)).load_and_split()
+            for fn in file_list
+        ]
+        docs_list = [item for sublist in docs for item in sublist]
 
-            text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
-            )
-            doc_splits = text_splitter.split_documents(docs_list)
-            # Add to vectorDB
-            vectordb = Chroma.from_documents(
-                documents=doc_splits,
-                collection_name=self.collection_name,
-                embedding=OpenAIEmbeddings(model=self.embedding_model),
-                persist_directory=str(here(self.vectordb_dir))
-            )
-            print("VectorDB is created and saved.")
-            print("Number of vectors in vectordb:",
-                  vectordb._collection.count(), "\n\n")
+        # Split
+        text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
+        )
+        doc_splits = text_splitter.split_documents(docs_list)
+
+        # Embedder
+        if self.embedding_model.startswith("text-embedding"):
+            embedder = OpenAIEmbeddings(model=self.embedding_model)
         else:
-            print(f"Directory '{self.vectordb_dir}' already exists.")
+            embedder = HuggingFaceEmbeddings(model_name=self.embedding_model)
+
+        # Create VectorDB
+        start_time = time.time()
+        vectordb = Chroma.from_documents(
+            documents=doc_splits,
+            collection_name=self.collection_name,
+            embedding=embedder,
+            persist_directory=str(here(self.vectordb_dir))
+        )
+        end_time = time.time()
+
+        num_vectors = vectordb._collection.count()
+        embed_time = round(end_time - start_time, 2)
+
+        # Avg cosine similarity calculation
+        retriever = vectordb.as_retriever(search_kwargs={"k": k})
+        cosines = []
+
+        for q in test_queries:
+            retrieved_docs = retriever.invoke(q)
+            query_embedding = embedder.embed_query(q)
+
+            sims = []
+            for doc in retrieved_docs:
+                doc_embedding = embedder.embed_query(doc.page_content)
+                sims.append(cosine_similarity([query_embedding], [doc_embedding])[0][0])
+            cosines.append(np.mean(sims))
+
+        avg_cosine = float(np.mean(cosines))
+
+        # Table output (only Avg Cosine + basic info)
+        table_data = [
+            ["Model", self.embedding_model],
+            ["Chunk Size", self.chunk_size],
+            ["Chunk Overlap", self.chunk_overlap],
+            ["Documents Loaded", len(docs_list)],
+            ["Total Chunks", len(doc_splits)],
+            ["Number of Vectors", num_vectors],
+            ["Embedding Time (s)", embed_time],
+            ["Avg Cosine Similarity", round(avg_cosine, 4)]
+        ]
+        print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="pretty"))
+        print("VectorDB created and evaluated.\n")
+
+        return {
+            "Document": self.name,
+            "Model": self.embedding_model,
+            "Chunk Size": self.chunk_size,
+            "Overlap": self.chunk_overlap,
+            "Documents Loaded": len(docs_list),
+            "Total Chunks": len(doc_splits),
+            "Embedding Time (s)": embed_time,
+            "Avg Cosine": avg_cosine
+        }
 
 
 if __name__ == "__main__":
-    load_dotenv(here("../.env"))  # Load from parent directory
-    os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY")
+    load_dotenv(here(".env"))
+    os.environ['HUGGINGFACEHUB_API_TOKEN'] = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 
-    # Updated path to config file in new structure
     config_path = here("config/tools_config.yml")
     with open(config_path) as cfg:
         app_config = yaml.load(cfg, Loader=yaml.FullLoader)
 
-    # Uncomment the following configs to run for swiss airline policy document
-    chunk_size = app_config["swiss_airline_policy_rag"]["chunk_size"]
-    chunk_overlap = app_config["swiss_airline_policy_rag"]["chunk_overlap"]
-    embedding_model = app_config["swiss_airline_policy_rag"]["embedding_model"]
-    vectordb_dir = app_config["swiss_airline_policy_rag"]["vectordb"]
-    collection_name = app_config["swiss_airline_policy_rag"]["collection_name"]
-    doc_dir = app_config["swiss_airline_policy_rag"]["unstructured_docs"]
+    # Test queries aligned with your docs
+    queries_exam = [
+        "What are the general rules that examiners must follow during an examination?",
+        "How should examiners handle conflicts of interest?"
+    ]
+    queries_handbook = [
+        "What is the minimum attendance requirement for theory classes?",
+        "When should medical certificates be submitted for absences?"
+    ]
+    queries_airline = [
+        "How can I cancel a Swiss Air flight?",
+        "What is the Swiss Airlines cancellation policy for different fare types?"
+    ]
 
-    prepare_db_instance = PrepareVectorDB(
-        doc_dir=doc_dir,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        embedding_model=embedding_model,
-        vectordb_dir=vectordb_dir,
-        collection_name=collection_name)
+    datasets = [
+        ("Exam Manual", "exam_manual_rag", queries_exam),
+        ("Student Handbook", "student_handbook_rag", queries_handbook),
+        ("Swiss Airline Policy", "swiss_airline_policy_rag", queries_airline)
+    ]
 
-    prepare_db_instance.run()
+    summary_results = []
 
-    # Uncomment the following configs to run for stories document
-    chunk_size = app_config["stories_rag"]["chunk_size"]
-    chunk_overlap = app_config["stories_rag"]["chunk_overlap"]
-    embedding_model = app_config["stories_rag"]["embedding_model"]
-    vectordb_dir = app_config["stories_rag"]["vectordb"]
-    collection_name = app_config["stories_rag"]["collection_name"]
-    doc_dir = app_config["stories_rag"]["unstructured_docs"]
+    for name, key, queries in datasets:
+        cfg = app_config[key]
+        prepare = PrepareVectorDB(
+            name=name,
+            doc_dir=cfg["unstructured_docs"],
+            chunk_size=cfg["chunk_size"],
+            chunk_overlap=cfg["chunk_overlap"],
+            embedding_model=cfg["embedding_model"],
+            vectordb_dir=cfg["vectordb"],
+            collection_name=cfg["collection_name"]
+        )
+        metrics = prepare.run(test_queries=queries, k=cfg["k"])
+        summary_results.append(metrics)
 
-    prepare_db_instance = PrepareVectorDB(
-        doc_dir=doc_dir,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        embedding_model=embedding_model,
-        vectordb_dir=vectordb_dir,
-        collection_name=collection_name)
+    # Final summary table (only Avg Cosine + basic info)
+    print("\n=== Final Summary Comparison ===")
+    table = []
+    for r in summary_results:
+        table.append([
+            r["Document"], r["Model"], r["Chunk Size"], r["Overlap"],
+            r["Documents Loaded"], r["Total Chunks"], r["Embedding Time (s)"],
+            round(r["Avg Cosine"], 4)
+        ])
+    print(tabulate(table, headers=[
+        "Document", "Model", "Chunk", "Overlap", "Doc Loaded", "Total Chunks", "Time(s)", "Avg Cosine"
+    ], tablefmt="pretty"))
 
-    prepare_db_instance.run()
+######################## we want to next enhancement --- three results with correct matrics -----------------------------
+
+# import datetime
+# import os
+# import time
+# import yaml
+# import numpy as np
+# from dotenv import load_dotenv
+# from pyprojroot import here
+# from tabulate import tabulate
+# from sklearn.metrics.pairwise import cosine_similarity
+# from langsmith import Client
+
+# from langchain_community.document_loaders import PyPDFLoader
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
+# from langchain_community.vectorstores import Chroma
+# from langchain_openai import OpenAIEmbeddings
+# from langchain_community.embeddings import HuggingFaceEmbeddings
+
+# # ------------------ Metrics ------------------
+# def recall_at_k(relevant_ids, retrieved_ids, k):
+#     if not relevant_ids:
+#         return 0.0
+#     return 1.0 if any(r in retrieved_ids[:k] for r in relevant_ids) else 0.0
+
+# def reciprocal_rank(relevant_ids, retrieved_ids):
+#     if not relevant_ids:
+#         return 0.0
+#     for i, rid in enumerate(retrieved_ids, start=1):
+#         if rid in relevant_ids:
+#             return 1.0 / i
+#     return 0.0
+
+# def precision_at_k(relevant_ids, retrieved_ids, k):
+#     if not relevant_ids:
+#         return 0.0
+#     return sum(1 for r in retrieved_ids[:k] if r in relevant_ids) / k
+
+
+# class PrepareVectorDB:
+#     def __init__(self,
+#                  name: str,
+#                  doc_dir: str,
+#                  chunk_size: int,
+#                  chunk_overlap: int,
+#                  embedding_model: str,
+#                  vectordb_dir: str,
+#                  collection_name: str,
+#                  ground_truth: dict):
+#         self.name = name
+#         self.doc_dir = doc_dir
+#         self.chunk_size = chunk_size
+#         self.chunk_overlap = chunk_overlap
+#         self.embedding_model = embedding_model
+#         self.vectordb_dir = vectordb_dir
+#         self.collection_name = collection_name
+#         self.ground_truth = ground_truth
+
+#     def path_maker(self, file_name: str, doc_dir: str) -> str:
+#         return os.path.join(here(doc_dir), file_name)
+
+#     def run(self, test_queries, k=3):
+#         print(f"\n=== Running for {self.name} [{self.embedding_model}] ===")
+#         if not os.path.exists(here(self.vectordb_dir)):
+#             os.makedirs(here(self.vectordb_dir))
+#             print(f"Directory '{self.vectordb_dir}' was created.")
+
+#         # Load PDFs
+#         file_list = os.listdir(here(self.doc_dir))
+#         docs = [
+#             PyPDFLoader(self.path_maker(fn, self.doc_dir)).load_and_split()
+#             for fn in file_list
+#         ]
+#         docs_list = [item for sublist in docs for item in sublist]
+
+#         # Split
+#         text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+#             chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
+#         )
+#         doc_splits = text_splitter.split_documents(docs_list)
+
+#         # Embedder
+#         if self.embedding_model.startswith("text-embedding"):
+#             embedder = OpenAIEmbeddings(model=self.embedding_model)
+#         else:
+#             embedder = HuggingFaceEmbeddings(model_name=self.embedding_model)
+
+#         # Create VectorDB
+#         start_time = time.time()
+#         vectordb = Chroma.from_documents(
+#             documents=doc_splits,
+#             collection_name=self.collection_name,
+#             embedding=embedder,
+#             persist_directory=str(here(self.vectordb_dir))
+#         )
+#         end_time = time.time()
+
+#         num_vectors = vectordb._collection.count()
+#         embed_time = round(end_time - start_time, 2)
+
+#         # Evaluation metrics
+#         retriever = vectordb.as_retriever(search_kwargs={"k": k})
+#         recalls, mrrs, precisions, cosines = [], [], [], []
+
+#         for q in test_queries:
+#             retrieved_docs = retriever.invoke(q)
+#             query_embedding = embedder.embed_query(q)
+#             retrieved_ids = [doc.metadata.get("source", str(i)) for i, doc in enumerate(retrieved_docs)]
+
+#             # Get real ground truth IDs
+#             relevant_ids = self.ground_truth.get(q, [])
+
+#             recalls.append(recall_at_k(relevant_ids, retrieved_ids, k))
+#             mrrs.append(reciprocal_rank(relevant_ids, retrieved_ids))
+#             precisions.append(precision_at_k(relevant_ids, retrieved_ids, k))
+
+#             sims = []
+#             for doc in retrieved_docs:
+#                 doc_embedding = embedder.embed_query(doc.page_content)
+#                 sims.append(cosine_similarity([query_embedding], [doc_embedding])[0][0])
+#             cosines.append(np.mean(sims))
+
+#         results = {
+#             "recall": float(np.mean(recalls)),
+#             "mrr": float(np.mean(mrrs)),
+#             "precision": float(np.mean(precisions)),
+#             "avg_cosine": float(np.mean(cosines))
+#         }
+
+#         # Table output
+#         table_data = [
+#             ["Model", self.embedding_model],
+#             ["Chunk Size", self.chunk_size],
+#             ["Chunk Overlap", self.chunk_overlap],
+#             ["Documents Loaded", len(docs_list)],
+#             ["Total Chunks", len(doc_splits)],
+#             ["Number of Vectors", num_vectors],
+#             ["Embedding Time (s)", embed_time],
+#             [f"Recall@{k}", round(results["recall"], 4)],
+#             ["MRR", round(results["mrr"], 4)],
+#             [f"Precision@{k}", round(results["precision"], 4)],
+#             ["Avg Cosine Similarity", round(results["avg_cosine"], 4)]
+#         ]
+#         print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="pretty"))
+#         print("VectorDB created and evaluated.\n")
+
+#         return results
+
+
+# if __name__ == "__main__":
+#     load_dotenv(here(".env"))
+#     os.environ['HUGGINGFACEHUB_API_TOKEN'] = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+
+#     config_path = here("config/tools_config.yml")
+#     with open(config_path) as cfg:
+#         app_config = yaml.load(cfg, Loader=yaml.FullLoader)
+
+#     # === Ground truth labels from PDF content ===
+#     ground_truth = {
+#         "What are the general rules that examiners must follow during an examination?": ["manual_chunk_8_rules"],
+#         "How should examiners handle conflicts of interest?": ["manual_chunk_3_conflict"],
+
+#         "What is the minimum attendance requirement for theory classes?": ["handbook_chunk_3_attendance"],
+#         "When should medical certificates be submitted for absences?": ["handbook_chunk_3_medical"],
+
+#         "How can I cancel a Swiss Air flight?": ["airline_chunk_cancel"],
+#         "What is the Swiss Airlines cancellation policy for different fare types?": ["airline_chunk_policy"]
+#     }
+
+#     # Test queries aligned with your docs
+#     queries_exam = [
+#         "What are the general rules that examiners must follow during an examination?",
+#         "How should examiners handle conflicts of interest?"
+#     ]
+#     queries_handbook = [
+#         "What is the minimum attendance requirement for theory classes?",
+#         "When should medical certificates be submitted for absences?"
+#     ]
+#     queries_airline = [
+#         "How can I cancel a Swiss Air flight?",
+#         "What is the Swiss Airlines cancellation policy for different fare types?"
+#     ]
+
+#     datasets = [
+#         ("Exam Manual", "exam_manual_rag", queries_exam),
+#         ("Student Handbook", "student_handbook_rag", queries_handbook),
+#         ("Swiss Airline Policy", "swiss_airline_policy_rag", queries_airline)
+#     ]
+
+#     summary_results = []
+
+#     for name, key, queries in datasets:
+#         cfg = app_config[key]
+#         prepare = PrepareVectorDB(
+#             name=name,
+#             doc_dir=cfg["unstructured_docs"],
+#             chunk_size=cfg["chunk_size"],
+#             chunk_overlap=cfg["chunk_overlap"],
+#             embedding_model=cfg["embedding_model"],
+#             vectordb_dir=cfg["vectordb"],
+#             collection_name=cfg["collection_name"],
+#             ground_truth=ground_truth
+#         )
+#         metrics = prepare.run(test_queries=queries, k=cfg["k"])
+
+#         summary_results.append({
+#             "Document": name,
+#             "Model": cfg["embedding_model"],
+#             "Chunk Size": cfg["chunk_size"],
+#             "Overlap": cfg["chunk_overlap"],
+#             f"Recall@{cfg['k']}": metrics["recall"],
+#             "Precision": metrics["precision"],
+#             "MRR": metrics["mrr"],
+#             "Avg Cosine": metrics["avg_cosine"]
+#         })
+
+#     # Final summary table
+#     print("\n=== Final Summary Comparison ===")
+#     table = []
+#     for r in summary_results:
+#         table.append([
+#             r["Document"], r["Model"], r["Chunk Size"], r["Overlap"],
+#             round(r[f"Recall@{cfg['k']}"], 4),
+#             round(r["Precision"], 4),
+#             round(r["MRR"], 4),
+#             round(r["Avg Cosine"], 4)
+#         ])
+#     print(tabulate(table, headers=[
+#         "Document", "Model", "Chunk", "Overlap", "Recall", "Precision", "MRR", "Avg Cosine"
+#     ], tablefmt="pretty"))

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, SmallInteger, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, SmallInteger, Boolean, func
 from sqlalchemy.orm import relationship
 from src.database import Base
 
@@ -55,7 +55,7 @@ class MRBSEntry(Base):
     entry_type = Column(Integer, nullable=False, default=0)
     repeat_id = Column(Integer, ForeignKey("mrbs_repeat.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=True)
     room_id = Column(Integer, ForeignKey("mrbs_room.id", onupdate="CASCADE"), nullable=False, default=1)
-    timestamp = Column(TIMESTAMP, nullable=False)
+    timestamp = Column(TIMESTAMP, nullable=False, server_default=func.now())
     create_by = Column(String(80), nullable=False, default="")
     modified_by = Column(String(80), nullable=False, default="")
     name = Column(String(80), nullable=False, default="")

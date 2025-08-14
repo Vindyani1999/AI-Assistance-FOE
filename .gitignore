@@ -302,3 +302,5 @@ ENV*/
 .here
 local_config.py
 local_settings.py
+
+backend-HBA/.env

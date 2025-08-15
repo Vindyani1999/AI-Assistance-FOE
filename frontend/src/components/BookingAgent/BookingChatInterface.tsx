@@ -2,8 +2,8 @@ import axios from "axios";
 import "./BookingChatInterface.css";
 import FullCalendarComponent from "./FullCalendarComponent";
 import React, { useEffect, useRef, useState } from "react";
+import { useTheme } from '../../context/ThemeContext';
 import ChatUI from "../ChatUIComponent/ChatUI";
-import QuickActions, { getQuickActionsExceptAgent } from "../QuickActions/QuickActions";
 
 interface Message {
   role: "user" | "assistant";
@@ -44,11 +44,9 @@ const BookingChatInterface: React.FC = () => {
   const [error, setError] = useState("");
 
   //remove
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId] = useState("");
 
-  // Theme state
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
-  const toggleTheme = () => setIsDarkTheme((prev) => !prev);
+  const { theme } = useTheme();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -215,18 +213,18 @@ const BookingChatInterface: React.FC = () => {
         
         {recommendations && recommendations.length > 0 && (
           <div className="inline-recommendations">
-            <div className={`recommendations-header ${isDarkTheme ? 'dark' : 'light'}`}>
+            <div className={`recommendations-header ${theme ? 'dark' : 'light'}`}>
               📋 Available Options:
             </div>
             <div className="recommendations-grid">
               {recommendations.map((rec, index) => (
                 <div
                   key={index}
-                  className={`inline-recommendation-card ${isDarkTheme ? 'dark' : 'light'}`}
+                  className={`inline-recommendation-card ${theme ? 'dark' : 'light'}`}
                   onClick={() => handleBookRecommendation(rec.suggestion?.room_name || 'Unknown Room')}
                 >
                   <div className="recommendation-header">
-                    <span className={`recommendation-type-badge ${isDarkTheme ? 'dark' : 'light'}`}>
+                    <span className={`recommendation-type-badge ${theme ? 'dark' : 'light'}`}>
                       {getRecommendationType(rec.type || 'recommendation')}
                     </span>
                     {rec.score && (
@@ -237,12 +235,12 @@ const BookingChatInterface: React.FC = () => {
                   </div>
 
                   <div className="room-header">
-                    <h4 className={`room-name ${isDarkTheme ? 'dark' : 'light'}`}>
+                    <h4 className={`room-name ${theme ? 'dark' : 'light'}`}>
                       {rec.suggestion?.room_name || 'Unknown Room'}
                     </h4>
                     
                     {rec.suggestion?.description && (
-                      <p className={`room-description ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <p className={`room-description ${theme ? 'dark' : 'light'}`}>
                         {rec.suggestion.description}
                       </p>
                     )}
@@ -250,7 +248,7 @@ const BookingChatInterface: React.FC = () => {
 
                   <div className="room-details">
                     {rec.suggestion?.capacity && (
-                      <div className={`detail-item ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <div className={`detail-item ${theme ? 'dark' : 'light'}`}>
                         <span className="detail-icon">👥</span>
                         <strong>Capacity : </strong> {rec.suggestion.capacity} people
                       </div>
@@ -258,11 +256,11 @@ const BookingChatInterface: React.FC = () => {
 
                     {rec.suggestion?.start_time && rec.suggestion?.end_time && (
                       <>
-                        <div className={`detail-item date ${isDarkTheme ? 'dark' : 'light'}`}>
+                        <div className={`detail-item date ${theme ? 'dark' : 'light'}`}>
                           <span className="detail-icon">📅</span>
                           <strong>Date :</strong> {getDateTimeRange(rec.suggestion.start_time, rec.suggestion.end_time).date}
                         </div>
-                        <div className={`detail-item time ${isDarkTheme ? 'dark' : 'light'}`}>
+                        <div className={`detail-item time ${theme ? 'dark' : 'light'}`}>
                           <span className="detail-icon">🕐</span>
                           <strong>Time :</strong> {getDateTimeRange(rec.suggestion.start_time, rec.suggestion.end_time).timeRange}
                         </div>
@@ -270,14 +268,14 @@ const BookingChatInterface: React.FC = () => {
                     )}
 
                     {rec.reason && (
-                      <div className={`detail-item reason ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <div className={`detail-item reason ${theme ? 'dark' : 'light'}`}>
                         <span className="detail-icon">💡</span>
                         <span><strong>Why : </strong> {rec.reason}</span>
                       </div>
                     )}
 
                     {rec.data_source && (
-                      <div className={`detail-item source ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <div className={`detail-item source ${theme ? 'dark' : 'light'}`}>
                         <span className="detail-icon">🔍</span>
                         Source: {rec.data_source.replace('mysql_', '').replace('_', ' ')}
                       </div>
@@ -285,7 +283,7 @@ const BookingChatInterface: React.FC = () => {
                   </div>
 
                   <button
-                    className={`book-button ${isDarkTheme ? 'dark' : 'light'}`}
+                    className={`book-button ${theme ? 'dark' : 'light'}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       console.log('Book button clicked for:', rec.suggestion?.room_name);
@@ -443,60 +441,8 @@ const BookingChatInterface: React.FC = () => {
   }, [messages]);
 
   return (
-    <>
-      <div
-        className={`chat-interface ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}
-        style={isDarkTheme ? { background: '#383838' } : {}}
-      >
-        <div
-          className="left-sidebar-header"
-          style={isDarkTheme ? { background: '#383838' } : {}}
-        >
-          <button
-            className="back-btn"
-            title="Back to home"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M19 12H5" />
-              <path d="M12 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <img
-            src="/guidance.png"
-            alt="Guidance Agent"
-            className="guidance-agent-image"
-            onError={(e) => {
-              console.error("Failed to load Guidance Agent image");
-              e.currentTarget.style.display = "none";
-            }}
-          />
-          <h1>Booking Agent</h1>
-          <button
-            onClick={toggleTheme}
-            className="theme-toggle-btn"
-            title={`Switch to ${isDarkTheme ? 'light' : 'dark'} theme`}
-          >
-            {isDarkTheme ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </button>
-          <QuickActions actions={getQuickActionsExceptAgent("booking")} />
-        </div>
-
+    <div style={{ display: 'flex', gap: '2rem', width: '100%', height: '100vh' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <ChatUI
           messages={messages}
           inputValue={inputValue}
@@ -509,59 +455,61 @@ const BookingChatInterface: React.FC = () => {
           formatMessage={formatMessage}
           agentName="Booking Agent" 
         />
-        <div
-          className="left-sidebar-booking"
-          style={isDarkTheme ? { background: '#383838' } : {}}
-        >
-          <h4>Booking Calendar</h4>
-          <div className="calendar-scroll-container" style={isDarkTheme ? { background: '#383838' } : {}}>
-            {/* Style the select room label for dark theme */}
-            <style>{`
-              .left-sidebar-booking .MuiInputLabel-root {
-                color: ${isDarkTheme ? '#e0baba' : '#5A3232'} !important;
-              }
-            `}</style>
-            <FullCalendarComponent refreshKey={refreshCalendar} onCellClick={setCalendarCellInfo} />
-          </div>
-          {calendarCellInfo ? (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-              <div
-                className={`calendar-status-card${isDarkTheme ? ' dark' : ' light'}`}
-                style={{
-                  borderRadius: 10,
-                  boxShadow: isDarkTheme
-                    ? '0 2px 12px rgba(30,30,60,0.25)'
-                    : '0 2px 12px rgba(90,50,50,0.10)',
-                  padding: '1.2rem 2rem',
-                  minWidth: 260,
-                  border: isDarkTheme ? '1px solid #333' : '1px solid #e1e1e1',
-                  background: isDarkTheme ? '#23232b' : '#fff',
-                  color: isDarkTheme ? '#f3f3f3' : '#222',
-                  textAlign: 'center',
-                  fontSize: '1rem',
-                  fontWeight: 500
-                }}
-              >
-                <div style={{marginBottom: 8, fontWeight: 700, fontSize: '1.08rem', color: isDarkTheme ? '#e0baba' : '#5A3232'}}>Selected Cell</div>
-                {/* <div>Date: <b>{calendarCellInfo.date}</b></div>
-                <div>All Day: <b>{calendarCellInfo.allDay ? 'Yes' : 'No'}</b></div> */}
-                {calendarCellInfo.resource && <div>Resource: <b>{calendarCellInfo.resource}</b></div>}
-                {calendarCellInfo.booking ? (
-                  <>
-                    <div>Lecturer: <b>{calendarCellInfo.booking.lecturer || 'N/A'}</b></div>
-                    <div>Hall: <b>{calendarCellInfo.booking.hall || 'N/A'}</b></div>
-                    <div>Duration: <b>{calendarCellInfo.booking.duration || 'N/A'}</b></div>
-                    <div>Description: <b>{calendarCellInfo.booking.description || 'N/A'}</b></div>
-                  </>
-                ) : (
-                  <div style={{marginTop: 8, color: isDarkTheme ? '#aaa' : '#888'}}>No booking yet for this slot.</div>
-                )}
-              </div>
-            </div>
-          ) : null}
-        </div>
       </div>
-    </>
+  <div style={{ flex: 1, minWidth: 0, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <h4>Booking Calendar</h4>
+        <div className="calendar-scroll-container" style={theme === 'dark' ? { background: '#383838' } : {}}>
+              <style>{`
+                .calendar-scroll-container .MuiInputLabel-root {
+                  color: ${theme === 'dark' ? '#e0baba' : '#5A3232'} !important;
+                }
+                .calendar-scroll-container .fc,
+                .calendar-scroll-container .fc .fc-col-header-cell,
+                .calendar-scroll-container .fc .fc-timegrid-axis,
+                .calendar-scroll-container .fc .fc-event {
+                  color: ${theme === 'dark' ? '#f3f3f3' : '#5A3232'} !important;
+                }
+              `}</style>
+          <FullCalendarComponent refreshKey={refreshCalendar} onCellClick={setCalendarCellInfo} />
+        </div>
+        {calendarCellInfo ? (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+            <div
+              className={`calendar-status-card${theme === 'dark' ? ' dark' : ' light'}`}
+              style={{
+                borderRadius: 10,
+                boxShadow: theme === 'dark'
+                  ? '0 2px 12px rgba(30,30,60,0.25)'
+                  : '0 2px 12px rgba(90,50,50,0.10)',
+                padding: '1.2rem 2rem',
+                minWidth: 260,
+                border: theme === 'dark' ? '1px solid #333' : '1px solid #e1e1e1',
+                background: theme === 'dark' ? '#23232b' : '#fff',
+                color: theme === 'dark' ? '#f3f3f3' : '#222',
+                textAlign: 'center',
+                fontSize: '1rem',
+                fontWeight: 500
+              }}
+            >
+              <div style={{marginBottom: 8, fontWeight: 700, fontSize: '1.08rem', color: theme === 'dark' ? '#e0baba' : '#5A3232'}}>Selected Cell</div>
+              {/* <div>Date: <b>{calendarCellInfo.date}</b></div>
+              <div>All Day: <b>{calendarCellInfo.allDay ? 'Yes' : 'No'}</b></div> */}
+              {calendarCellInfo.resource && <div>Resource: <b>{calendarCellInfo.resource}</b></div>}
+              {calendarCellInfo.booking ? (
+                <>
+                  <div>Lecturer: <b>{calendarCellInfo.booking.lecturer || 'N/A'}</b></div>
+                  <div>Hall: <b>{calendarCellInfo.booking.hall || 'N/A'}</b></div>
+                  <div>Duration: <b>{calendarCellInfo.booking.duration || 'N/A'}</b></div>
+                  <div>Description: <b>{calendarCellInfo.booking.description || 'N/A'}</b></div>
+                </>
+              ) : (
+                <div style={{marginTop: 8, color: theme === 'dark' ? '#aaa' : '#888'}}>No booking yet for this slot.</div>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 };
 export default BookingChatInterface;

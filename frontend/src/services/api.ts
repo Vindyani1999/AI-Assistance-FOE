@@ -1,3 +1,15 @@
+// Helper to get the latest access token
+function getAccessToken() {
+  return localStorage.getItem('auth_token');
+}
+
+// Helper to update access token from response headers (if present)
+function updateAccessTokenFromResponse(response: Response) {
+  const newToken = response.headers.get('x-access-token');
+  if (newToken) {
+    localStorage.setItem('auth_token', newToken);
+  }
+}
 
 
 
@@ -41,6 +53,27 @@ export interface ChatSessionsResponse {
 
 
 class ApiService {
+  // Create a new chat session for the user
+  async createNewChatSession(userId?: string): Promise<{ session_id: string; topic?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      updateAccessTokenFromResponse(response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating new chat session:', error);
+      throw error;
+    }
+  }
   private baseUrl: string;
 
   constructor() {
@@ -54,6 +87,7 @@ class ApiService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAccessToken()}`,
         },
         body: JSON.stringify({
           message,
@@ -61,11 +95,10 @@ class ApiService {
           user_id: userId,
         }),
       });
-
+      updateAccessTokenFromResponse(response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       return await response.json();
     } catch (error) {
       console.error('Error sending message:', error);
@@ -80,6 +113,7 @@ class ApiService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAccessToken()}`,
         },
         body: JSON.stringify({
           session_id: sessionId,
@@ -88,7 +122,7 @@ class ApiService {
           user_id: userId,
         }),
       });
-
+      updateAccessTokenFromResponse(response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -108,8 +142,11 @@ class ApiService {
       
       const response = await fetch(url.toString(), {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
       });
-
+      updateAccessTokenFromResponse(response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -127,12 +164,15 @@ class ApiService {
         url.searchParams.append('user_id', userId);
       }
       
-      const response = await fetch(url.toString());
-
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      updateAccessTokenFromResponse(response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       return await response.json();
     } catch (error) {
       console.error('Error getting chat history:', error);
@@ -143,12 +183,15 @@ class ApiService {
   // Health check
   async healthCheck(): Promise<{ status: string; message: string; active_sessions: number }> {
     try {
-      const response = await fetch(`${this.baseUrl}/health`);
-
+      const response = await fetch(`${this.baseUrl}/health`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      updateAccessTokenFromResponse(response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       return await response.json();
     } catch (error) {
       console.error('Error checking health:', error);
@@ -164,12 +207,15 @@ class ApiService {
         url.searchParams.append('user_id', userId);
       }
       
-      const response = await fetch(url.toString());
-
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      updateAccessTokenFromResponse(response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       return await response.json();
     } catch (error) {
       console.error('Error getting chat sessions:', error);

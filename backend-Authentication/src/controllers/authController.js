@@ -1,8 +1,30 @@
+// Get current user profile (secure)
+exports.getMe = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({
+      email: user.email,
+      title: user.title,
+      department: user.department,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      role: user.role
+    });
+  } catch (err) {
+    console.error('GetMe error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 const { generateOtp, storeOtp, validateOtp } = require('../utils/otp');
 const { sendOtpEmail } = require('../services/mailService');
-
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+
 
 const otpStore = {}; // In-memory store for demo
 const otpVerified = {}; // Tracks OTP verification status per email
@@ -14,18 +36,33 @@ exports.signup = async (req, res) => {
     return res.status(400).json({ message: 'OTP not verified for this email. Please verify OTP before signing up.' });
   }
   try {
+    console.log('[signup] Received signup data:', { email, password, title, department, firstname, lastname });
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
+    let userFirstname = firstname;
+    let userLastname = lastname;
+    // Auto-extract first and last name for engug.ruh.ac.lk users if not provided
+    if (email.endsWith('@engug.ruh.ac.lk') && (!firstname || !lastname)) {
+      // Remove domain and possible trailing _eXX
+      let prefix = email.split('@')[0].replace(/_e\d+$/, '');
+      const parts = prefix.split('_');
+      if (parts.length >= 2) {
+        userFirstname = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        userLastname = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+      } else if (parts.length === 1) {
+        userFirstname = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+      }
+    }
     const user = new User({
       email,
       password: hashedPassword,
       title: title || undefined,
       department: department || undefined,
-      firstname: firstname || undefined,
-      lastname: lastname || undefined
+      firstname: userFirstname || undefined,
+      lastname: userLastname || undefined
     });
     await user.save();
     // Remove OTP verified flag after successful signup
@@ -39,10 +76,19 @@ exports.signup = async (req, res) => {
 
 exports.requestOtp = async (req, res) => {
   const { email } = req.body;
+  console.log('[requestOtp] Received OTP request for email:', email);
   const otp = generateOtp();
+  console.log('[requestOtp] Generated OTP:', otp);
   storeOtp(otpStore, email, otp);
-  await sendOtpEmail(email, otp);
-  res.json({ message: 'OTP sent' });
+  console.log('[requestOtp] OTP stored for email:', email);
+  try {
+    await sendOtpEmail(email, otp);
+    console.log('[requestOtp] OTP email sent to:', email);
+    res.json({ message: 'OTP sent' });
+  } catch (err) {
+    console.error('[requestOtp] Error sending OTP email:', err);
+    res.status(500).json({ message: 'Failed to send OTP email', error: err.message });
+  }
 };
 
 
@@ -73,7 +119,7 @@ exports.verifyOtp = async (req, res) => {
   }
 };
 
-// Login controller
+// Login controller with JWT rolling token
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -81,19 +127,30 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+    //Uncomment for real password check:
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-    // You can add JWT or session logic here if needed
-    res.json({ message: 'Login successful', user: {
-      email: user.email,
-      title: user.title,
-      department: user.department,
-      firstname: user.firstname,
-      lastname: user.lastname,
-      role: user.role
-    }});
+    // Generate JWT access token (5 min expiry)
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+    res.set('x-access-token', token);
+    res.json({
+      message: 'Login successful',
+      accessToken: token,
+      user: {
+        email: user.email,
+        title: user.title,
+        department: user.department,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        role: user.role
+      }
+    });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });

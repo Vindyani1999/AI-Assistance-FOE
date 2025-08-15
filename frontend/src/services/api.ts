@@ -53,6 +53,27 @@ export interface ChatSessionsResponse {
 
 
 class ApiService {
+  // Create a new chat session for the user
+  async createNewChatSession(userId?: string): Promise<{ session_id: string; topic?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      updateAccessTokenFromResponse(response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating new chat session:', error);
+      throw error;
+    }
+  }
   private baseUrl: string;
 
   constructor() {

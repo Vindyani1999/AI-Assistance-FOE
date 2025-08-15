@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiService, ChatMessage, ChatSession } from '../../services/api';
 import './ChatInterface.css';
 import { useTheme } from '../../context/ThemeContext';
+import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 
 interface ChatInterfaceProps {
   sessionId?: string;
@@ -11,6 +12,26 @@ interface ChatInterfaceProps {
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+    // Create a new chat session for the user
+    const handleNewChat = async () => {
+      if (!currentUser) return;
+      try {
+        const userId = currentUser.email;
+        // Call API to create a new chat session
+        const newSession = await apiService.createNewChatSession(userId);
+        // Switch to the new session
+        const newSessionId = generateUserSessionId(newSession.session_id, userId);
+        setUserSpecificSessionId(newSessionId);
+        navigate(`/chat/${newSession.session_id}`);
+        // Optionally clear messages for new session
+        setMessages([]);
+        // Refresh chat sessions list
+        loadChatSessions();
+      } catch (error) {
+        console.error('Error creating new chat session:', error);
+        setError('Failed to start a new chat.');
+      }
+    };
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,21 +214,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     }
   };
 
-  const clearChat = async () => {
-    if (!currentUser) return;
-    try {
-      const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for clearChat:', userId);
-      await apiService.clearChat(userSpecificSessionId, userId);
-      setMessages([]);
-      setError(null);
-      // Refresh chat sessions to update metadata
-      loadChatSessions();
-    } catch (error) {
-      console.error('Error clearing chat:', error);
-      setError('Failed to clear chat');
-    }
-  };
+  // const clearChat = async () => {
+  //   if (!currentUser) return;
+  //   try {
+  //     const userId = currentUser.email; // Use email as user identifier
+  //     console.log('[FRONTEND] Sending userId for clearChat:', userId);
+  //     await apiService.clearChat(userSpecificSessionId, userId);
+  //     setMessages([]);
+  //     setError(null);
+  //     // Refresh chat sessions to update metadata
+  //     loadChatSessions();
+  //   } catch (error) {
+  //     console.error('Error clearing chat:', error);
+  //     setError('Failed to clear chat');
+  //   }
+  // };
 
   const handleFeedback = async (messageIndex: number, feedbackType: 'like' | 'dislike') => {
     if (!currentUser) return;
@@ -350,17 +371,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                 </svg>
               </button>
               <button
-                onClick={clearChat}
-                className="input-btn clear-btn"
-                title="Clear chat"
+                onClick={handleNewChat}
+                className="input-btn new-chat-btn"
+                title="Start a new chat"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18"/>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"/>
-                  <line x1="10" y1="11" x2="10" y2="17"/>
-                  <line x1="14" y1="11" x2="14" y2="17"/>
-                </svg>
+                <LibraryAddIcon />
               </button>
             </div>
           </div>

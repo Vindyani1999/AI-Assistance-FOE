@@ -213,18 +213,18 @@ const BookingChatInterface: React.FC = () => {
         
         {recommendations && recommendations.length > 0 && (
           <div className="inline-recommendations">
-            <div className={`recommendations-header ${isDarkTheme ? 'dark' : 'light'}`}>
+            <div className={`recommendations-header ${theme ? 'dark' : 'light'}`}>
               📋 Available Options:
             </div>
             <div className="recommendations-grid">
               {recommendations.map((rec, index) => (
                 <div
                   key={index}
-                  className={`inline-recommendation-card ${isDarkTheme ? 'dark' : 'light'}`}
+                  className={`inline-recommendation-card ${theme ? 'dark' : 'light'}`}
                   onClick={() => handleBookRecommendation(rec.suggestion?.room_name || 'Unknown Room')}
                 >
                   <div className="recommendation-header">
-                    <span className={`recommendation-type-badge ${isDarkTheme ? 'dark' : 'light'}`}>
+                    <span className={`recommendation-type-badge ${theme ? 'dark' : 'light'}`}>
                       {getRecommendationType(rec.type || 'recommendation')}
                     </span>
                     {rec.score && (
@@ -235,12 +235,12 @@ const BookingChatInterface: React.FC = () => {
                   </div>
 
                   <div className="room-header">
-                    <h4 className={`room-name ${isDarkTheme ? 'dark' : 'light'}`}>
+                    <h4 className={`room-name ${theme ? 'dark' : 'light'}`}>
                       {rec.suggestion?.room_name || 'Unknown Room'}
                     </h4>
                     
                     {rec.suggestion?.description && (
-                      <p className={`room-description ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <p className={`room-description ${theme ? 'dark' : 'light'}`}>
                         {rec.suggestion.description}
                       </p>
                     )}
@@ -248,7 +248,7 @@ const BookingChatInterface: React.FC = () => {
 
                   <div className="room-details">
                     {rec.suggestion?.capacity && (
-                      <div className={`detail-item ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <div className={`detail-item ${theme ? 'dark' : 'light'}`}>
                         <span className="detail-icon">👥</span>
                         <strong>Capacity : </strong> {rec.suggestion.capacity} people
                       </div>
@@ -256,11 +256,11 @@ const BookingChatInterface: React.FC = () => {
 
                     {rec.suggestion?.start_time && rec.suggestion?.end_time && (
                       <>
-                        <div className={`detail-item date ${isDarkTheme ? 'dark' : 'light'}`}>
+                        <div className={`detail-item date ${theme ? 'dark' : 'light'}`}>
                           <span className="detail-icon">📅</span>
                           <strong>Date :</strong> {getDateTimeRange(rec.suggestion.start_time, rec.suggestion.end_time).date}
                         </div>
-                        <div className={`detail-item time ${isDarkTheme ? 'dark' : 'light'}`}>
+                        <div className={`detail-item time ${theme ? 'dark' : 'light'}`}>
                           <span className="detail-icon">🕐</span>
                           <strong>Time :</strong> {getDateTimeRange(rec.suggestion.start_time, rec.suggestion.end_time).timeRange}
                         </div>
@@ -268,14 +268,14 @@ const BookingChatInterface: React.FC = () => {
                     )}
 
                     {rec.reason && (
-                      <div className={`detail-item reason ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <div className={`detail-item reason ${theme ? 'dark' : 'light'}`}>
                         <span className="detail-icon">💡</span>
                         <span><strong>Why : </strong> {rec.reason}</span>
                       </div>
                     )}
 
                     {rec.data_source && (
-                      <div className={`detail-item source ${isDarkTheme ? 'dark' : 'light'}`}>
+                      <div className={`detail-item source ${theme ? 'dark' : 'light'}`}>
                         <span className="detail-icon">🔍</span>
                         Source: {rec.data_source.replace('mysql_', '').replace('_', ' ')}
                       </div>
@@ -283,7 +283,7 @@ const BookingChatInterface: React.FC = () => {
                   </div>
 
                   <button
-                    className={`book-button ${isDarkTheme ? 'dark' : 'light'}`}
+                    className={`book-button ${theme ? 'dark' : 'light'}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       console.log('Book button clicked for:', rec.suggestion?.room_name);

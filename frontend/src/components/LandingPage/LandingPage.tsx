@@ -15,6 +15,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import './LandingPage.css';
 import QuickAccessCard from './QuickAccessCard';
+import UserProfile from '../UserProfile/UserProfile';
 
 interface LandingPageProps {
   userProfile: any;
@@ -190,26 +191,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ userProfile, agents, onLogout
         {(activeTab === 'guidance' || activeTab === 'booking' || activeTab === 'planner') && renderAgentPage(activeTab)}
         {activeTab === 'documentation' && (
           <div className="documentation-section">
-            {/* ...documentation... */}
+            {/** Renders the full agent documentation */}
+            {require('../Documentation/DocumentationSection').default()}
           </div>
         )}
         {activeTab === 'profile' && (
           <div className="profile-section">
-            
-            <div>
-             
-                <div>
-                  <h2>Details</h2>
-                  <div className="profile-details">
-                    <div><strong>Name:</strong> {userProfile.title ? `${userProfile.title} ` : ''}{userProfile.firstname} {userProfile.lastname}</div>
-                    <div><strong>Email:</strong> {userProfile.email}</div>
-                    <div><strong>Role:</strong> {userProfile.role}</div>
-                    {userProfile.department && <div><strong>Department:</strong> {userProfile.department}</div>}
-                  </div>
-                </div>
-            
-             
-            </div>
+            <UserProfile userProfile={userProfile}/>
           </div>
         )}
       </main>

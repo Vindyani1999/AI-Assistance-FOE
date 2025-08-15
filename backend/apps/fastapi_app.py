@@ -1,3 +1,5 @@
+
+from uuid import uuid4
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -11,9 +13,10 @@ import re
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.chatbot.chatbot_backend import ChatBot
-from src.chatbot.load_config import LoadProjectConfig
-from src.agent_graph.load_tools_config import LoadToolsConfig
+
+from src.core.chatbot.chatbot_backend import ChatBot
+from src.core.chatbot.load_config import LoadProjectConfig
+from src.core.agent_graph.load_tools_config import LoadToolsConfig
 
 # Initialize FastAPI app
 app = FastAPI(title="AI Agent API", version="1.0.0")
@@ -107,6 +110,28 @@ class ChatSession(BaseModel):
 class ChatSessionsResponse(BaseModel):
     sessions: List[ChatSession]
     total_count: int
+
+class CreateSessionRequest(BaseModel):
+    user_id: str = "anonymous"
+
+# Endpoint to create a new chat session for a user
+@app.post("/chat/session")
+async def create_chat_session(request: CreateSessionRequest):
+    """
+    Create a new chat session for a user and return session_id and topic
+    """
+    try:
+        user_id = request.user_id or "anonymous"
+        session_id = str(uuid4())
+        # Initialize chat history and metadata
+        if user_id not in user_chat_sessions:
+            user_chat_sessions[user_id] = {}
+        user_chat_sessions[user_id][session_id] = []
+        update_session_metadata(user_id, session_id, [])
+        topic = user_session_metadata[user_id][session_id]['topic']
+        return {"session_id": session_id, "topic": topic}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating chat session: {str(e)}")
 
 @app.get("/")
 async def root():
@@ -272,3 +297,5 @@ if __name__ == "__main__":
         reload=True,
         log_level="info"
     )
+
+    

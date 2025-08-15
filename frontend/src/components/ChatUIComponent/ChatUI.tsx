@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 export interface Message {
   role: "user" | "assistant";
@@ -36,8 +37,9 @@ const ChatUI: React.FC<ChatUIProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const { theme } = useTheme();
   return (
-    <div className="chat-container">
+    <div className={`chat-container${theme === 'dark' ? ' dark-theme' : ''}`}> 
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="welcome-message">

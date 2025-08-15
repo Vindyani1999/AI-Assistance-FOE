@@ -29,6 +29,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ userProfile, agents, onLogout
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
+  // Provide default agents if none are passed
+  const defaultAgents = [
+    { id: 'planner', name: 'Planner Agent' },
+    { id: 'guidance', name: 'Guidance Agent' },
+    { id: 'booking', name: 'Booking Agent' }
+  ];
+  const agentsList = agents && agents.length > 0 ? agents : defaultAgents;
+
+  // Helper to render agent page
+  const renderAgentPage = (agentId: string) => {
+    if (agentId === 'guidance') {
+      // Load the ChatInterface component for Guidance Agent
+      const ChatInterface = require('../GuidanceAgent/ChatInterface').default;
+      return <div className="dashboard-section"><ChatInterface /></div>;
+    } else if (agentId === 'booking') {
+      // Load the BookingChatInterface component for Booking Agent
+      const BookingChatInterface = require('../BookingAgent/BookingChatInterface').default;
+      return <div className="dashboard-section"><BookingChatInterface /></div>;
+    } else if (agentId === 'planner') {
+      // Load the PlannerChatInterface component for Planner Agent
+      const PlannerChatInterface = require('../PlannerAgent/PlannerChatInterface').default;
+      return <div className="dashboard-section"><PlannerChatInterface /></div>;
+    }
+    return null;
+  };
+
   return (
     <div className="landing-page-container">
       <aside className={`sidebar-landing${collapsed ? ' collapsed' : ''}`}>
@@ -51,11 +77,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ userProfile, agents, onLogout
           </button>
           <div style={{ position: 'relative', width: '100%' }}>
             <button
-              className={
-                agentsDropdownOpen || agents.some(agent => agent.name === activeTab)
-                  ? 'active'
-                  : ''
-              }
+              className={agentsDropdownOpen ? 'active' : ''}
               onClick={() => setAgentsDropdownOpen(open => !open)}
               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
@@ -69,7 +91,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ userProfile, agents, onLogout
             </button>
             {agentsDropdownOpen && (
               <div style={{ width: '100%', background: theme === 'dark' ? '#23272f' : '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.10)', borderRadius: 8, marginTop: '0.25rem', zIndex: 10 }}>
-                {agents.map(agent => {
+                {agentsList.map(agent => {
                   let iconSrc = '';
                   if (agent.id === 'planner') iconSrc = '/pa_new.png';
                   else if (agent.id === 'guidance') iconSrc = '/ga_new.png';
@@ -77,8 +99,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ userProfile, agents, onLogout
                   return (
                     <button
                       key={agent.id}
-                      style={{ width: '100%', padding: '0.5rem 1rem', background: 'none', border: 'none', color: theme === 'dark' ? '#f4f6fa' : '#2c3e50', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: collapsed ? 'center' : 'flex-start' }}
-                      onClick={() => { setActiveTab(agent.name); setAgentsDropdownOpen(false); }}
+                      className={activeTab === agent.id ? 'active' : ''}
+                      style={{ width: '100%', padding: '0.5rem 1rem', background: activeTab === agent.id ? (theme === 'dark' ? '#23272f' : '#e0e0e0') : 'none', border: 'none', color: theme === 'dark' ? '#f4f6fa' : '#2c3e50', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: collapsed ? 'center' : 'flex-start', fontWeight: activeTab === agent.id ? 600 : 400 }}
+                      onClick={() => { setActiveTab(agent.id); setAgentsDropdownOpen(false); }}
                     >
                       <img src={iconSrc} alt={agent.name + ' icon'} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', background: 'transparent', margin: collapsed ? '0 auto' : '0 0.5rem 0 0' }} />
                       {!collapsed && agent.name}
@@ -133,42 +156,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ userProfile, agents, onLogout
         {activeTab === 'dashboard' && (
           <div className="dashboard-section">
             <QuickAccessCard/>
-              <GuidanceAnalysisCard
-                timesCalled={1234}
-                dailyUsage={[12, 15, 9, 20, 18, 14, 10]}
-                monthlyUsage={[120, 98, 110, 130, 125, 140]}
-                dailyLimit={25}
-                todayUsage={18}
-                lastChats={[
-                  { user: 'Alice', message: 'How do I apply for leave?', time: '10:02' },
-                  { user: 'Bob', message: 'What is the exam schedule?', time: '10:05' },
-                  { user: 'Carol', message: 'Can I get syllabus details?', time: '10:10' },
-                  { user: 'Dave', message: 'How to contact my mentor?', time: '10:15' },
-                  { user: 'Eve', message: 'Where is the library?', time: '10:20' },
-                ]}
-              />
-              <BookingAnalysisCard
-                upcomingBookings={[
-                  { title: 'AI Seminar', start: '2025-08-20 10:00', end: '2025-08-20 12:00', room: 'LT1' },
-                  { title: 'Project Review', start: '2025-08-22 14:00', end: '2025-08-22 15:30', room: 'Lab2' }
-                ]}
-                todaysBookings={[
-                  { title: 'Faculty Meeting', start: '2025-08-15 09:00', end: '2025-08-15 10:00', room: 'LT2' },
-                  { title: 'Lab Session', start: '2025-08-15 11:00', end: '2025-08-15 13:00', room: 'Lab1' }
-                ]}
-                bookingHistory={[
-                  { title: 'Math Workshop', start: '2025-08-10 09:00', end: '2025-08-10 11:00', room: 'LT2' },
-                  { title: 'Research Meeting', start: '2025-08-12 13:00', end: '2025-08-12 14:00', room: 'Lab1' }
-                ]}
-                calendarRefreshKey={0}
-              />
+            <GuidanceAnalysisCard
+              timesCalled={1234}
+              dailyUsage={[12, 15, 9, 20, 18, 14, 10]}
+              monthlyUsage={[120, 98, 110, 130, 125, 140]}
+              dailyLimit={25}
+              todayUsage={18}
+              lastChats={[
+                { user: 'Alice', message: 'How do I apply for leave?', time: '10:02' },
+                { user: 'Bob', message: 'What is the exam schedule?', time: '10:05' },
+                { user: 'Carol', message: 'Can I get syllabus details?', time: '10:10' },
+                { user: 'Dave', message: 'How to contact my mentor?', time: '10:15' },
+                { user: 'Eve', message: 'Where is the library?', time: '10:20' },
+              ]}
+            />
+            <BookingAnalysisCard
+              upcomingBookings={[
+                { title: 'AI Seminar', start: '2025-08-20 10:00', end: '2025-08-20 12:00', room: 'LT1' },
+                { title: 'Project Review', start: '2025-08-22 14:00', end: '2025-08-22 15:30', room: 'Lab2' }
+              ]}
+              todaysBookings={[
+                { title: 'Faculty Meeting', start: '2025-08-15 09:00', end: '2025-08-15 10:00', room: 'LT2' },
+                { title: 'Lab Session', start: '2025-08-15 11:00', end: '2025-08-15 13:00', room: 'Lab1' }
+              ]}
+              bookingHistory={[
+                { title: 'Math Workshop', start: '2025-08-10 09:00', end: '2025-08-10 11:00', room: 'LT2' },
+                { title: 'Research Meeting', start: '2025-08-12 13:00', end: '2025-08-12 14:00', room: 'Lab1' }
+              ]}
+              calendarRefreshKey={0}
+            />
           </div>
         )}
-        {activeTab !== 'dashboard' && agents.some(agent => agent.name === activeTab) && (
-          <div className="dashboard-section">
-            {/* ...agent details... */}
-          </div>
-        )}
+        {(activeTab === 'guidance' || activeTab === 'booking' || activeTab === 'planner') && renderAgentPage(activeTab)}
         {activeTab === 'documentation' && (
           <div className="documentation-section">
             {/* ...documentation... */}

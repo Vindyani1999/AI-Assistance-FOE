@@ -58,11 +58,12 @@
   border-radius: 1.2rem;
     box-shadow: 0 10px 24px rgba(30,30,30,0.30);
   padding: 0.5rem 1.5rem 2rem 1.5rem;
-  margin: 2rem auto;
+  margin: 2rem;
   /* max-width: 480px; */
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* ma: '2.5rem'; */
 }
 .guidance-analysis-card h3 {
   font-size: 1.25rem;

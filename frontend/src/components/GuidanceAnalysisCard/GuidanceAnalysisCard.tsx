@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { PieChart, Pie, Cell, ResponsiveContainer as PieResponsiveContainer } from 'recharts';
-// import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-// import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import './GuidanceAnalysisCard.css';
-import { TrendingDown, TrendingUp } from '@mui/icons-material';
+import { TrendingUp } from '@mui/icons-material';
 
 interface GuidanceAnalysisCardProps {
   timesCalled: number;

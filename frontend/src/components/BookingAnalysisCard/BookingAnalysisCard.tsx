@@ -75,7 +75,7 @@ const BookingAnalysisCard: React.FC<BookingAnalysisCardProps> = ({
           </div>
           <div className="booking-column calendar-column">
             <div className="booking-section booking-sub-card calendar-sub-card">
-              <div className="booking-label">Booking Calendar</div>
+              {/* <div className="booking-label">Booking Calendar</div> */}
               <div className="calendar-container">
                 <FullCalendarComponent refreshKey={calendarRefreshKey} />
               </div>

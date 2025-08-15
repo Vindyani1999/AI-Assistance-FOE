@@ -11,6 +11,7 @@ import GlobalLoader from './components/GlobalLoader/GlobalLoader';
 import './App.css';
 import './components/GlobalLoader/GlobalLoader.css';
 import { NotificationProvider } from './context/NotificationContext';
+import MainLayout from './components/MainLayout';
 
 const LoaderOnRouteChange: React.FC = () => {
   const { loading, showLoader, hideLoader } = require('./context/GlobalLoaderContext').useGlobalLoader();
@@ -34,10 +35,12 @@ function App() {
             <LoaderOnRouteChange />
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route element={<ProtectedRoute/>}> 
-                <Route path="/guidance-chat" element={<ChatInterface />} />
-                <Route path="/booking-chat" element={<BookingChatInterface />} />
-                <Route path="/planner-chat" element={<PlannerChatInterface />} />
+              <Route element={<ProtectedRoute/>}>
+                <Route element={<MainLayout />}>
+                  <Route path="/guidance-chat" element={<ChatInterface />} />
+                  <Route path="/booking-chat" element={<BookingChatInterface />} />
+                  <Route path="/planner-chat" element={<PlannerChatInterface />} />
+                </Route>
               </Route>
             </Routes>
           </Router>

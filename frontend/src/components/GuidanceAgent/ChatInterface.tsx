@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService, ChatMessage, ChatSession } from '../../services/api';
 import './ChatInterface.css';
-import QuickActions, { getQuickActionsExceptAgent } from '../QuickActions/QuickActions';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ChatInterfaceProps {
   sessionId?: string;
@@ -14,7 +14,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const { theme } = useTheme();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
@@ -222,61 +222,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     }
   };
 
-
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-  };
-
   return (
-    <div className={`chat-interface ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
-      <div className="left-sidebar">
-        <div className="left-sidebar-header">
-          <button
-            onClick={() => navigate('/')}
-            className="back-btn"
-            title="Back to home"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5"/>
-              <path d="M12 19l-7-7 7-7"/>
-            </svg>
-          </button>
-          <img 
-            src="/guidance.png" 
-            alt="Guidance Agent" 
-            className="guidance-agent-image"
-            onError={(e) => {
-              console.error('Failed to load Guidance Agent image');
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-          <h1>Guidance Agent</h1>
-          <button
-            onClick={toggleTheme}
-            className="theme-toggle-btn"
-            title={`Switch to ${isDarkTheme ? 'light' : 'dark'} theme`}
-          >
-            {isDarkTheme ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5"/>
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </button>
-        </div>
-        {/* Control which quick actions are visible here, e.g. by id or other logic */}
-      {/* Show quick actions for the 'guidance' agent, or change as needed */}
-      <div className="quick-actions-section">
-        <QuickActions actions={getQuickActionsExceptAgent("guidance")} />
-      </div>
-      
-        
-      </div>
-
+  <div className={`chat-interface ${theme === 'dark' ? 'dark-theme' : 'light-theme'}`}> 
       <div className="chat-container">
         <div className="chat-messages">
           {messages.length === 0 && (
@@ -422,7 +369,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
 
 
       <div className="sidebar">
-      <div className="chat-history-section">
+        <div className="chat-history-section">
           <h3>Chat History</h3>
           <div className="chat-history-list">
             {sessionsLoading ? (
@@ -464,24 +411,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
             )}
           </div>
         </div>
-
-        {/* <div className="sidebar-section">
-          <h3>Chat Statistics</h3>
-          <div className="stats">
-            <div className="stat-item">
-              <span className="stat-label">Total Messages:</span>
-              <span className="stat-value">{messages.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Your Messages:</span>
-              <span className="stat-value">{messages.filter(m => m.role === 'user').length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Bot Responses:</span>
-              <span className="stat-value">{messages.filter(m => m.role === 'assistant').length}</span>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );

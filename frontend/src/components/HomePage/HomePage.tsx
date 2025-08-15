@@ -6,20 +6,7 @@ import { agentCardData } from '../../utils/AgentCardData';
 import './HomePage.css'; 
 import './HomePage.profile.css';
 
-interface Agent {
-  id: string;
-  name: string;
-  title: string;
-  description: string;
-  image: string;
-  url: string;
-}
-
-// Removed old HomePage React.FC declaration
-  // Remove top-level hook calls
   const agents = agentCardData;
-
-  // Helper to check if JWT is expired
 
 function isTokenExpired(token: string | null): boolean {
   if (!token) return true;

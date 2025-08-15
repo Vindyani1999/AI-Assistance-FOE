@@ -13,7 +13,7 @@ export const agentCardData: AgentCard[] = [
     name: 'Guidance Agent',
     title: 'Academic Assistant 🎓',
     description: 'The faculty assistant for guide and support you',
-    image: '/ga.png',
+    image: '/ga_new.png',
     url: '/guidance-chat'
   },
   {
@@ -21,7 +21,7 @@ export const agentCardData: AgentCard[] = [
     name: 'Booking Agent',
     title: 'Facility Booking 🏢',
     description: 'Book lecture halls, meeting rooms, and campus facilities with ease',
-    image: '/hba.png',
+    image: '/hba_new.png',
     url: '/booking-chat'
   },
   {
@@ -29,7 +29,7 @@ export const agentCardData: AgentCard[] = [
     name: 'Planner Agent',
     title: 'Schedule Planner 📅',
     description: 'Plan and organize your academic timetables and schedules efficiently',
-    image: '/pa.png',
+    image: '/pa_new.png',
     url: '/planner-chat'
   }
 ];

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './routes';
 import { GlobalLoaderProvider } from './context/GlobalLoaderContext';
@@ -26,21 +27,23 @@ const LoaderOnRouteChange: React.FC = () => {
 
 function App() {
   return (
-    <GlobalLoaderProvider>
-      <NotificationProvider>
-        <Router>
-          <LoaderOnRouteChange />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route element={<ProtectedRoute/>}> 
-              <Route path="/guidance-chat" element={<ChatInterface />} />
-              <Route path="/booking-chat" element={<BookingChatInterface />} />
-              <Route path="/planner-chat" element={<PlannerChatInterface />} />
-            </Route>
-          </Routes>
-        </Router>
-      </NotificationProvider>
-    </GlobalLoaderProvider>
+    <ThemeProvider>
+      <GlobalLoaderProvider>
+        <NotificationProvider>
+          <Router>
+            <LoaderOnRouteChange />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route element={<ProtectedRoute/>}> 
+                <Route path="/guidance-chat" element={<ChatInterface />} />
+                <Route path="/booking-chat" element={<BookingChatInterface />} />
+                <Route path="/planner-chat" element={<PlannerChatInterface />} />
+              </Route>
+            </Routes>
+          </Router>
+        </NotificationProvider>
+      </GlobalLoaderProvider>
+    </ThemeProvider>
   );
 }
 

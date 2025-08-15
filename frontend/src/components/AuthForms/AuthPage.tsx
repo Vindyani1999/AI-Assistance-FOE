@@ -14,7 +14,10 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess, theme }) => {
   return (
     <div>
       {mode === 'login' ? (
-        <LoginForm onSwitchToSignup={() => setMode('signup')} />
+        <LoginForm 
+          onSwitchToSignup={() => setMode('signup')}
+          onAuthSuccess={onAuthSuccess}
+        />
       ) : (
         <SignupForm onSwitchToLogin={() => setMode('login')} />
       )}

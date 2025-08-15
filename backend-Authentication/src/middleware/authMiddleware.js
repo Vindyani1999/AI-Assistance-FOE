@@ -19,7 +19,7 @@ module.exports = function authenticateToken(req, res, next) {
     const newToken = jwt.sign(
       { userId: user.userId, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '5m' }
+      { expiresIn: '15m' }
     );
     res.set('x-access-token', newToken);
     console.log('[authMiddleware] Authenticated user:', user.email, '| New token issued.');

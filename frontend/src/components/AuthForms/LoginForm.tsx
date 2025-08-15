@@ -1,6 +1,5 @@
 import './AuthForm.mui.css';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Formik, Form, FormikHelpers } from 'formik';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -18,9 +17,13 @@ const initialValues: LoginFormValues= {
   password: '',
 };
 
-const LoginForm: React.FC<{ onSwitchToSignup?: () => void }> = ({ onSwitchToSignup }) => {
+interface LoginFormProps {
+  onSwitchToSignup?: () => void;
+  onAuthSuccess?: (userSession: any) => void;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onAuthSuccess }) => {
   const { notify } = useNotification();
-  const navigate = useNavigate();
 
   const validate = (values: LoginFormValues) => {
     const errors: Partial<Record<keyof LoginFormValues, string>> = {};
@@ -39,13 +42,11 @@ const LoginForm: React.FC<{ onSwitchToSignup?: () => void }> = ({ onSwitchToSign
           const email = values.emailFront + values.emailDomain;
           try {
             const data = await login(email, values.password);
-            // Store user details in localStorage for profile section
-            // No user info stored in localStorage for security. Only auth_token is stored by authAPI.
             notify('success', 'Login successful!');
-            // Redirect to home page after successful login
-            setTimeout(() => {
-              navigate('/');
-            }, 500); // slight delay for notification
+            if (onAuthSuccess) {
+              onAuthSuccess(data);
+            }
+            // Optionally redirect or do other actions here
           } catch (err: any) {
             notify('error', 'Login failed', err.message);
           }

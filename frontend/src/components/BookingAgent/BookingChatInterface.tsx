@@ -104,11 +104,17 @@ const BookingChatInterface: React.FC = () => {
   <div style={{ flex: 1, minWidth: 0, height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <h4>Booking Calendar</h4>
         <div className="calendar-scroll-container" style={theme === 'dark' ? { background: '#383838' } : {}}>
-          <style>{`
-            .calendar-scroll-container .MuiInputLabel-root {
-              color: ${theme === 'dark' ? '#e0baba' : '#5A3232'} !important;
-            }
-          `}</style>
+              <style>{`
+                .calendar-scroll-container .MuiInputLabel-root {
+                  color: ${theme === 'dark' ? '#e0baba' : '#5A3232'} !important;
+                }
+                .calendar-scroll-container .fc,
+                .calendar-scroll-container .fc .fc-col-header-cell,
+                .calendar-scroll-container .fc .fc-timegrid-axis,
+                .calendar-scroll-container .fc .fc-event {
+                  color: ${theme === 'dark' ? '#f3f3f3' : '#5A3232'} !important;
+                }
+              `}</style>
           <FullCalendarComponent refreshKey={refreshCalendar} onCellClick={setCalendarCellInfo} />
         </div>
         {calendarCellInfo ? (

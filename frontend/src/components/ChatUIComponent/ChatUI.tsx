@@ -3,7 +3,9 @@ import { useTheme } from "../../context/ThemeContext";
 
 export interface Message {
   role: "user" | "assistant";
-  content: string;
+  content: string | JSX.Element; 
+  recommendations?: any[]; 
+  showRecommendations?: boolean; 
 }
 
 interface ChatUIProps {
@@ -65,7 +67,9 @@ const ChatUI: React.FC<ChatUIProps> = ({
               <div className="message-content">
                 <div className="message-text">
                   {message.role === "assistant"
-                    ? formatMessage(message.content)
+                   ? (typeof message.content === 'string' 
+                        ? formatMessage(message.content) 
+                        : message.content) 
                     : message.content}
                 </div>
               </div>

@@ -124,3 +124,4 @@ def plot_agent_schema(graph):
     except Exception:
         # This requires some extra dependencies and is optional
         return print("Graph could not be displayed.")
+

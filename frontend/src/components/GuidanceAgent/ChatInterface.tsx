@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiService, ChatMessage, ChatSession } from '../../services/api';
+import { apiService, ChatMessage, ChatSession, fetchUserEmailFromProfile } from '../../services/api';
 import './ChatInterface.css';
 import { useTheme } from '../../context/ThemeContext';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
@@ -16,16 +16,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     const handleNewChat = async () => {
       if (!currentUser) return;
       try {
-        const userId = currentUser.email;
-        // Call API to create a new chat session
-        const newSession = await apiService.createNewChatSession(userId);
-        // Switch to the new session
-        const newSessionId = generateUserSessionId(newSession.session_id, userId);
-        setUserSpecificSessionId(newSessionId);
-        navigate(`/chat/${newSession.session_id}`);
-        // Optionally clear messages for new session
+        // Call API to create a new chat session with user email
+        const newSession = await apiService.createNewChatSession(currentUser.email);
+        // Use backend session_id directly
+        setUserSpecificSessionId(newSession.session_id);
         setMessages([]);
-        // Refresh chat sessions list
         loadChatSessions();
       } catch (error) {
         console.error('Error creating new chat session:', error);
@@ -43,22 +38,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
   const [userSpecificSessionId, setUserSpecificSessionId] = useState<string>(sessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Generate user-specific session ID
-  const generateUserSessionId = (baseSessionId: string, userEmail: string) => {
-    // Create a unique session ID that includes user identifier
-    const userHash = btoa(userEmail).replace(/[+/=]/g, '').substring(0, 8);
-    return `${baseSessionId}_user_${userHash}`;
-  };
-
-  // Get current user from localStorage
+  // Get current user email from /auth/me endpoint
   useEffect(() => {
-  const userSession = localStorage.getItem('user_session');
-  // No redirect needed here; route protection is handled globally
-  const user = JSON.parse(userSession || '{}');
-  setCurrentUser(user);
-  // Generate user-specific session ID
-  const userSessionId = generateUserSessionId(sessionId, user.email);
-  setUserSpecificSessionId(userSessionId);
+    async function fetchUser() {
+      const email = await fetchUserEmailFromProfile();
+      if (email) {
+        setCurrentUser({ email });
+      } else {
+        setCurrentUser(null);
+      }
+    }
+    fetchUser();
+    // Use backend sessionId directly
+    setUserSpecificSessionId(sessionId);
   }, [sessionId, navigate]);
 
   const loadChatHistory = useCallback(async () => {
@@ -109,10 +101,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
   }, [userSpecificSessionId, currentUser, loadChatHistory, loadChatSessions]);
 
   const formatTimeAgo = (timestamp: string): string => {
-    const now = new Date();
-    const messageTime = new Date(timestamp);
-    const diffInHours = Math.floor((now.getTime() - messageTime.getTime()) / (1000 * 60 * 60));
-    
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+    const messageTime = new Date(new Date(timestamp).toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+    const diffInMs = now.getTime() - messageTime.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
@@ -187,20 +179,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     const newUserMessage: ChatMessage = { role: 'user', content: userMessage };
     setMessages(prev => [...prev, newUserMessage]);
 
+    // Debugging: log userId and sessionId before sending
+    console.log('[DEBUG] Sending chat message:', {
+      userId: currentUser?.email,
+      sessionId: userSpecificSessionId,
+      message: userMessage
+    });
+
     try {
-      const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for sendMessage:', currentUser);
-      console.log('[FRONTEND] Sending userId for sendMessage:', userId);
-      const response = await apiService.sendMessage(userMessage, userSpecificSessionId, userId);
-      // Add assistant response to UI
+      const response = await apiService.sendMessage(userMessage, userSpecificSessionId);
       const assistantMessage: ChatMessage = { role: 'assistant', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);
-      // Refresh chat sessions to update metadata
       loadChatSessions();
     } catch (error) {
       console.error('Error sending message:', error);
       setError('Failed to send message. Please try again.');
-      // Remove the user message that failed
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
@@ -409,11 +402,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
               chatSessions.map((session) => (
                 <div 
                   key={session.session_id}
-                  className={`chat-history-item ${session.session_id === sessionId ? 'active' : ''}`}
+                  className={`chat-history-item ${session.session_id === userSpecificSessionId ? 'active' : ''}`}
                   onClick={() => {
-                    if (session.session_id !== sessionId) {
-                      // Navigate to this session (you might want to implement session switching)
-                      window.location.href = `/chat/${session.session_id}`;
+                    if (session.session_id !== userSpecificSessionId) {
+                      setUserSpecificSessionId(session.session_id);
+                      setMessages([]);
+                      // Chat history will reload automatically via useEffect
                     }
                   }}
                 >

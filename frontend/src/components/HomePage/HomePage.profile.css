@@ -1,0 +1,165 @@
+.center-avatar {
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.organized-profile-info {
+  padding-top: 0.5rem;
+}
+.profile-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.profile-label {
+  font-weight: 600;
+  color: #888;
+  min-width: 90px;
+  font-size: 1rem;
+}
+.profile-value {
+  font-size: 1.05rem;
+  color: #222;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+/* Sidebar styles for user profile */
+.user-profile-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 340px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -2px 0 16px rgba(0,0,0,0.08);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+.user-profile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: calc(100vw - 340px);
+  height: 100vh;
+  background: rgba(0,0,0,0.12);
+  z-index: 999;
+}
+.user-profile-content {
+  padding: 2rem 1.5rem 1rem 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.user-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.profile-avatar-large {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+}
+.profile-name-large {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #222;
+}
+.profile-email {
+  font-size: 1rem;
+  color: #4a90e2;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+.profile-department {
+  font-size: 1rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+.profile-role {
+  font-size: 1rem;
+  color: #888;
+  margin-top: 0.5rem;
+}
+.user-profile-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+.logout-btn-sidebar {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 1rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.logout-btn-sidebar:hover {
+  background: #c0392b;
+}
+.close-profile-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #888;
+  cursor: pointer;
+  margin-left: auto;
+  margin-top: -1rem;
+}
+/* Professional styles for user profile section in header */
+.professional-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f8f9fa;
+  border-radius: 2rem;
+  padding: 0.25rem 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+}
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.profile-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #222;
+  margin-bottom: 2px;
+}
+.profile-department {
+  font-size: 0.92rem;
+  color: #4a90e2;
+  font-weight: 500;
+}
+.logout-btn-inline {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 1rem;
+  padding: 0.35rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-left: 0.5rem;
+}
+.logout-btn-inline:hover {
+  background: #c0392b;
+}

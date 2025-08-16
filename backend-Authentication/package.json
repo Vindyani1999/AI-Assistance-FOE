@@ -1,0 +1,33 @@
+{
+    "name": "backend-authentication",
+    "version": "1.0.0",
+    "description": "Authentication backend for OTP email using Gmail or university SMTP.",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js"
+    },
+    "keywords": [
+        "authentication",
+        "otp",
+        "email",
+        "nodemailer",
+        "express"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "bcryptjs": "^3.0.2",
+        "cors": "^2.8.5",
+        "dotenv": "^16.6.1",
+        "express": "^4.18.2",
+        "express-rate-limit": "^8.0.1",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.17.1",
+        "mysql2": "^3.14.3",
+        "nodemailer": "^6.9.8"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    }
+}

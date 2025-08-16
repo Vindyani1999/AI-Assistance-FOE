@@ -101,10 +101,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
   }, [userSpecificSessionId, currentUser, loadChatHistory, loadChatSessions]);
 
   const formatTimeAgo = (timestamp: string): string => {
-    const now = new Date();
-    const messageTime = new Date(timestamp);
-    const diffInHours = Math.floor((now.getTime() - messageTime.getTime()) / (1000 * 60 * 60));
-    
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+    const messageTime = new Date(new Date(timestamp).toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+    const diffInMs = now.getTime() - messageTime.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {

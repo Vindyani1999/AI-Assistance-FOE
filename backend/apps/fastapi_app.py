@@ -1,3 +1,9 @@
+from motor.motor_asyncio import AsyncIOMotorClient
+from apps.mongo_models import session_doc, message_doc
+# MongoDB setup
+MONGO_URI = "mongodb://localhost:27017"
+mongo_client = AsyncIOMotorClient(MONGO_URI)
+mongo_db = mongo_client["ai_chat_db"]
 
 from uuid import uuid4
 from fastapi import FastAPI, HTTPException
@@ -114,7 +120,6 @@ class ChatSessionsResponse(BaseModel):
 class CreateSessionRequest(BaseModel):
     user_id: str = "anonymous"
 
-# Endpoint to create a new chat session for a user
 @app.post("/chat/session")
 async def create_chat_session(request: CreateSessionRequest):
     """
@@ -123,12 +128,9 @@ async def create_chat_session(request: CreateSessionRequest):
     try:
         user_id = request.user_id or "anonymous"
         session_id = str(uuid4())
-        # Initialize chat history and metadata
-        if user_id not in user_chat_sessions:
-            user_chat_sessions[user_id] = {}
-        user_chat_sessions[user_id][session_id] = []
-        update_session_metadata(user_id, session_id, [])
-        topic = user_session_metadata[user_id][session_id]['topic']
+        topic = "New Chat"
+        session = session_doc(session_id, user_id, topic)
+        await mongo_db.sessions.insert_one(session)
         return {"session_id": session_id, "topic": topic}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating chat session: {str(e)}")
@@ -149,22 +151,33 @@ async def chat_endpoint(chat_message: ChatMessage):
         user_message = chat_message.message
         print(f"[CHAT] user_id={user_id}, session_id={session_id}, message={user_message}")
 
-        # Initialize user storage if needed
-        if user_id not in user_chat_sessions:
-            user_chat_sessions[user_id] = {}
-
-        # Get or create chat history for this user's session
-        if session_id not in user_chat_sessions[user_id]:
-            user_chat_sessions[user_id][session_id] = []
-
-        current_history = user_chat_sessions[user_id][session_id]
+        # Fetch chat history from MongoDB
+        cursor = mongo_db.messages.find({"session_id": session_id, "user_id": user_id}).sort("timestamp", 1)
+        current_history = []
+        async for doc in cursor:
+            if doc["role"] == "user":
+                user_msg = doc["content"]
+            else:
+                bot_msg = doc["content"]
+            if doc["role"] == "user":
+                current_history.append([doc["content"], ""])
+            elif doc["role"] == "assistant" and current_history:
+                current_history[-1][1] = doc["content"]
 
         # Use the existing ChatBot.respond method
         _, updated_chatbot = ChatBot.respond(current_history, user_message)
 
-        # Update session history and metadata
-        user_chat_sessions[user_id][session_id] = updated_chatbot
-        update_session_metadata(user_id, session_id, updated_chatbot)
+        # Save new user message and bot response to MongoDB
+        await mongo_db.messages.insert_one(message_doc(session_id, user_id, "user", user_message))
+        bot_response = updated_chatbot[-1][1] if updated_chatbot else "Sorry, I couldn't process your message."
+        await mongo_db.messages.insert_one(message_doc(session_id, user_id, "assistant", bot_response))
+
+        # Update session metadata and topic to latest user message
+        update_result = await mongo_db.sessions.update_one(
+            {"_id": session_id},
+            {"$set": {"updated_at": datetime.utcnow(), "topic": user_message}}
+        )
+        print(f"[DEBUG] Session update matched: {update_result.matched_count}, modified: {update_result.modified_count}")
 
         # Format response for React frontend
         conversation_history = []
@@ -174,11 +187,8 @@ async def chat_endpoint(chat_message: ChatMessage):
                 {"role": "assistant", "content": bot_msg}
             ])
 
-        # Get the latest bot response
-        latest_response = updated_chatbot[-1][1] if updated_chatbot else "Sorry, I couldn't process your message."
-
         return ChatResponse(
-            response=latest_response,
+            response=bot_response,
             conversation_history=conversation_history,
             session_id=session_id
         )
@@ -225,20 +235,11 @@ async def get_chat_history(session_id: str, user_id: str = "anonymous"):
     """
     try:
         print(f"[HISTORY] user_id={user_id}, session_id={session_id}")
-        if user_id not in user_chat_sessions or session_id not in user_chat_sessions[user_id]:
-            return {"conversation_history": [], "session_id": session_id}
-
-        current_history = user_chat_sessions[user_id][session_id]
+        cursor = mongo_db.messages.find({"session_id": session_id, "user_id": user_id}).sort("timestamp", 1)
         conversation_history = []
-
-        for user_msg, bot_msg in current_history:
-            conversation_history.extend([
-                {"role": "user", "content": user_msg},
-                {"role": "assistant", "content": bot_msg}
-            ])
-
+        async for doc in cursor:
+            conversation_history.append({"role": doc["role"], "content": doc["content"]})
         return {"conversation_history": conversation_history, "session_id": session_id}
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting chat history: {str(e)}")
 
@@ -249,28 +250,27 @@ async def get_chat_sessions(user_id: str = "anonymous"):
     """
     try:
         print(f"[SESSIONS] user_id={user_id}")
+        cursor = mongo_db.sessions.find({"user_id": user_id}).sort("updated_at", -1)
         sessions = []
-        if user_id in user_session_metadata:
-            for session_id, metadata in user_session_metadata[user_id].items():
-                # Only include sessions that still have chat data
-                if user_id in user_chat_sessions and session_id in user_chat_sessions[user_id]:
-                    sessions.append(ChatSession(
-                        session_id=session_id,
-                        topic=metadata['topic'],
-                        message_count=metadata['message_count'],
-                        created_at=metadata['created_at'],
-                        updated_at=metadata['updated_at']
-                    ))
-
-        # Sort by updated_at (most recent first)
-        sessions.sort(key=lambda x: x.updated_at, reverse=True)
-
+        async for doc in cursor:
+            # Use _id as session_id for message counting
+            session_id = doc["_id"]
+            message_count = await mongo_db.messages.count_documents({"session_id": session_id, "user_id": user_id})
+            sessions.append(ChatSession(
+                session_id=session_id,
+                topic=doc.get("topic", "New Chat"),
+                message_count=message_count,
+                created_at=doc["created_at"].isoformat() if isinstance(doc["created_at"], (str,)) == False else doc["created_at"],
+                updated_at=doc["updated_at"].isoformat() if isinstance(doc["updated_at"], (str,)) == False else doc["updated_at"]
+            ))
         return ChatSessionsResponse(
             sessions=sessions,
             total_count=len(sessions)
         )
-
     except Exception as e:
+        import traceback
+        print("[ERROR] get_chat_sessions exception:", e)
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error getting chat sessions: {str(e)}")
 
 @app.get("/health")

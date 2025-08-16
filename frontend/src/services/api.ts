@@ -74,6 +74,12 @@ class ApiService {
   // Example: include user email in chat requests automatically
   async sendMessage(message: string, sessionId: string = 'default'): Promise<ChatResponse> {
     const userEmail = await fetchUserEmailFromProfile();
+    const postBody = {
+      message,
+      session_id: sessionId,
+      user_id: userEmail,
+    };
+    console.log('[API DEBUG] Sending POST /chat body:', postBody);
     try {
       const response = await fetch(`${this.baseUrl}/chat`, {
         method: 'POST',
@@ -81,11 +87,7 @@ class ApiService {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getAccessToken()}`,
         },
-        body: JSON.stringify({
-          message,
-          session_id: sessionId,
-          user_id: userEmail,
-        }),
+        body: JSON.stringify(postBody),
       });
       updateAccessTokenFromResponse(response);
       if (!response.ok) {

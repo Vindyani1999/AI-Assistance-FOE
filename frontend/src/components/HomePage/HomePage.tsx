@@ -1,57 +1,35 @@
-import React, { useState } from 'react';
-import { fetchUserProfile } from '../../services/userAPI';
+import React from 'react';
 import AuthPage from '../AuthForms/AuthPage';
-import LandingPage from '../LandingPage/LandingPage';
 import { agentCardData } from '../../utils/AgentCardData';
 import './HomePage.css'; 
 import './HomePage.profile.css';
 
   const agents = agentCardData;
 
-function isTokenExpired(token: string | null): boolean {
-  if (!token) return true;
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    if (!payload.exp) return true;
-    return Date.now() >= payload.exp * 1000;
-  } catch {
-    return true;
-  }
+interface HomePageProps {
+  onAuthSuccess: () => void;
 }
 
-function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  // Add handleLogout function
-  function handleLogout() {
-    localStorage.removeItem('auth_token');
-    setIsAuthenticated(false);
-    setUserProfile(null);
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="home-page">
+const HomePage: React.FC<HomePageProps> = ({onAuthSuccess}) => (
+<div className="home-page">
         <div className="home-container">
-          <div className="auth-section">
-            <AuthPage
-              onAuthSuccess={async (session) => {
-                const authToken = localStorage.getItem('auth_token');
-                if (!authToken || isTokenExpired(authToken)) {
-                  localStorage.removeItem('auth_token');
-                  setIsAuthenticated(false);
-                  setUserProfile(null);
-                  return;
-                }
-                setIsAuthenticated(true);
-                try {
-                  const profile = await fetchUserProfile();
-                  setUserProfile(profile);
-                } catch {
-                  setUserProfile(null);
-                }
-              }}
-            />
+          <header className="home-header">
+            <div className="logo">
+              <img src="/logo.png" alt="AI Assistant" className="logo-icon" />
+            </div>
+            <div className="header-content">
+              <h1 className="main-title">
+                Welcome to AI Assistance - FOE
+              </h1>
+              <p className="subtitle">
+                Choose your AI Companion to Simplify Your Task
+              </p>
+            </div>
+          </header>
+          <main className="main-content">
+            <div className="auth-section">
+              <AuthPage onAuthSuccess={onAuthSuccess}/>
+            </div>
             <div className="preview-agents">
               <div className="preview-title">
                 <h4>Available AI Assistants</h4>
@@ -89,20 +67,14 @@ function HomePage() {
                 ))}
               </div>
             </div>
-          </div>
-        </div>
+          </main>
+          <footer className="home-footer">
+            <p>
+            "Sign in to access your AI assistants"
+            </p>
+          </footer>
       </div>
-    );
-  }
-
-  // Authenticated landing page
-  return (
-    <LandingPage
-      userProfile={userProfile}
-      agents={agents}
-      onLogout={handleLogout}
-    />
+    </div>
   );
-}
 
 export default HomePage;

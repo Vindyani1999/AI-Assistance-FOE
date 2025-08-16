@@ -1,12 +1,16 @@
 // Get current user profile (secure)
 exports.getMe = async (req, res) => {
   try {
+    // Disable caching for this endpoint
+    res.set('Cache-Control', 'no-store');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     const userId = req.user.userId;
     const user = await User.findById(userId).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json({
+    res.status(200).json({
       email: user.email,
       title: user.title,
       department: user.department,

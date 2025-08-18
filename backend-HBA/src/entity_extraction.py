@@ -10,6 +10,8 @@ nlp = spacy.load("en_core_web_sm")
 # Define known room names (extend as needed)
 KNOWN_ROOMS = {"LT1", "LT2", "MainHall", "Lab1", "Auditorium"}
 
+DELETE_KEYWORDS = {"delete", "remove", "cancel", "unbook", "clear", "drop", "eliminate"}
+
 def extract_time(text):
     """Extract time using regex and convert to HH:MM format."""
     time_matches = re.findall(r'\b\d{1,2}[:.]?\d{0,2}\s?(?:am|pm|AM|PM)?\b', text)

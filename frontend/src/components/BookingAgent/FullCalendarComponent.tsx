@@ -80,7 +80,7 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
         </FormControl>
       </div>
 
-      <div className="calendar-container" style={{position: 'relative'}}>
+      <div style={{position: 'relative'}}>
         {React.createElement(FullCalendar as any, {
           plugins: [timeGridPlugin, interactionPlugin],
           initialView: "timeGridWeek",

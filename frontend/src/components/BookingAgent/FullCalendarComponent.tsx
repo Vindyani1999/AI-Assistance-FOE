@@ -183,7 +183,17 @@ const fetch_halls_by_moduleCode = async (moduleCode: string) => {
     return [];
   }
 };
-
+const handleOpenDialog = (booking: any) => {
+    setFormData({
+      // booking_id: booking.booking_id,
+      name: booking.name,
+      room_name: booking.room_name,
+      date: booking.date.slice(0, 10), // keep YYYY-MM-DD only
+      start_time: booking.start_time,
+      end_time: booking.end_time,
+    });
+    setIsOpen(true);
+  };
 
   return (
     <Box p={3}>

@@ -81,49 +81,49 @@ class LoadToolsConfig:
 #...................................................................................
 
 
-         # By Law RAG configs
-        self.by_law_rag_llm = app_config["by_law_rag"]["llm"]
-        self.by_law_rag_llm_temperature = float(
-            app_config["by_law_rag"]["llm_temperature"])
-        self.by_law_rag_embedding_model = app_config["by_law_rag"]["embedding_model"]
-        self.by_law_rag_vectordb_directory = str(here(
-            app_config["by_law_rag"]["vectordb"]))  
-        self.by_law_rag_unstructured_docs_directory = str(here(
-            app_config["by_law_rag"]["unstructured_docs"]))
-        self.by_law_rag_k = app_config["by_law_rag"]["k"]
-        self.by_law_rag_chunk_size = app_config["by_law_rag"]["chunk_size"]
-        self.by_law_rag_chunk_overlap = app_config["by_law_rag"]["chunk_overlap"]
-        self.by_law_rag_collection_name = app_config["by_law_rag"]["collection_name"]
+         # # By Law RAG configs
+        # self.by_law_rag_llm = app_config["by_law_rag"]["llm"]
+        # self.by_law_rag_llm_temperature = float(
+        #     app_config["by_law_rag"]["llm_temperature"])
+        # self.by_law_rag_embedding_model = app_config["by_law_rag"]["embedding_model"]
+        # self.by_law_rag_vectordb_directory = str(here(
+        #     app_config["by_law_rag"]["vectordb"]))  
+        # self.by_law_rag_unstructured_docs_directory = str(here(
+        #     app_config["by_law_rag"]["unstructured_docs"]))
+        # self.by_law_rag_k = app_config["by_law_rag"]["k"]
+        # self.by_law_rag_chunk_size = app_config["by_law_rag"]["chunk_size"]
+        # self.by_law_rag_chunk_overlap = app_config["by_law_rag"]["chunk_overlap"]
+        # self.by_law_rag_collection_name = app_config["by_law_rag"]["collection_name"]
 
 
-        # Student Handbook RAG configs
-        self.student_handbook_rag_llm = app_config["student_handbook_rag"]["llm"]
-        self.student_handbook_rag_llm_temperature = float(
-            app_config["student_handbook_rag"]["llm_temperature"])
-        self.student_handbook_rag_embedding_model = app_config["student_handbook_rag"]["embedding_model"]
-        self.student_handbook_rag_vectordb_directory = str(here(
-            app_config["student_handbook_rag"]["vectordb"]))
-        self.student_handbook_rag_unstructured_docs_directory = str(here(
-            app_config["student_handbook_rag"]["unstructured_docs"]))
-        self.student_handbook_rag_k = app_config["student_handbook_rag"]["k"]
-        self.student_handbook_rag_chunk_size = app_config["student_handbook_rag"]["chunk_size"]
-        self.student_handbook_rag_chunk_overlap = app_config["student_handbook_rag"]["chunk_overlap"]
-        self.student_handbook_rag_collection_name = app_config["student_handbook_rag"]["collection_name"]
+        # # Student Handbook RAG configs
+        # self.student_handbook_rag_llm = app_config["student_handbook_rag"]["llm"]
+        # self.student_handbook_rag_llm_temperature = float(
+        #     app_config["student_handbook_rag"]["llm_temperature"])
+        # self.student_handbook_rag_embedding_model = app_config["student_handbook_rag"]["embedding_model"]
+        # self.student_handbook_rag_vectordb_directory = str(here(
+        #     app_config["student_handbook_rag"]["vectordb"]))
+        # self.student_handbook_rag_unstructured_docs_directory = str(here(
+        #     app_config["student_handbook_rag"]["unstructured_docs"]))
+        # self.student_handbook_rag_k = app_config["student_handbook_rag"]["k"]
+        # self.student_handbook_rag_chunk_size = app_config["student_handbook_rag"]["chunk_size"]
+        # self.student_handbook_rag_chunk_overlap = app_config["student_handbook_rag"]["chunk_overlap"]
+        # self.student_handbook_rag_collection_name = app_config["student_handbook_rag"]["collection_name"]
 
 
-        # Exam Manual RAG configs
-        self.exam_manual_rag_llm = app_config["exam_manual_rag"]["llm"]
-        self.exam_manual_rag_llm_temperature = float(
-            app_config["exam_manual_rag"]["llm_temperature"])
-        self.exam_manual_rag_embedding_model = app_config["exam_manual_rag"]["embedding_model"]
-        self.exam_manual_rag_vectordb_directory = str(here(
-            app_config["exam_manual_rag"]["vectordb"]))  
-        self.exam_manual_rag_unstructured_docs_directory = str(here(
-            app_config["exam_manual_rag"]["unstructured_docs"]))
-        self.exam_manual_rag_k = app_config["exam_manual_rag"]["k"]
-        self.exam_manual_rag_chunk_size = app_config["exam_manual_rag"]["chunk_size"]
-        self.exam_manual_rag_chunk_overlap = app_config["exam_manual_rag"]["chunk_overlap"]
-        self.exam_manual_rag_collection_name = app_config["exam_manual_rag"]["collection_name"] 
-        
-        
+        # # Exam Manual RAG configs
+        # self.exam_manual_rag_llm = app_config["exam_manual_rag"]["llm"]
+        # self.exam_manual_rag_llm_temperature = float(
+        #     app_config["exam_manual_rag"]["llm_temperature"])
+        # self.exam_manual_rag_embedding_model = app_config["exam_manual_rag"]["embedding_model"]
+        # self.exam_manual_rag_vectordb_directory = str(here(
+        #     app_config["exam_manual_rag"]["vectordb"]))  
+        # self.exam_manual_rag_unstructured_docs_directory = str(here(
+        #     app_config["exam_manual_rag"]["unstructured_docs"]))
+        # self.exam_manual_rag_k = app_config["exam_manual_rag"]["k"]
+        # self.exam_manual_rag_chunk_size = app_config["exam_manual_rag"]["chunk_size"]
+        # self.exam_manual_rag_chunk_overlap = app_config["exam_manual_rag"]["chunk_overlap"]
+        # self.exam_manual_rag_collection_name = app_config["exam_manual_rag"]["collection_name"] 
+        # 
+        # 
 #===============================================================

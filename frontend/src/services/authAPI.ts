@@ -29,8 +29,11 @@ export async function login(email: string, password: string): Promise<{ message:
   // Store access token from body if present (for backward compatibility)
   if (data.accessToken) {
     localStorage.setItem('auth_token', data.accessToken);
+  //   console.log('Access token stored:', data.accessToken);
+  //   console.log('role :', data.user.role, '\n name :', data.user.name, '\n department :', data.user.department, '\n id :', data.user.id, '\n');
   }
   return data;
+   //data.user.id will give you the user's ID
 }
 
 let Base_Url_Auth = 'http://localhost:5000';
@@ -80,6 +83,6 @@ export async function verifyOtp(email: string, otp: string): Promise<VerifyOtpRe
     throw new Error(`Failed to verify OTP: ${response.status}`);
   }
   const data = await response.json();
-  console.log('role :', data.role, '\n name :', data.name, '\n department :', data.department);
+  console.log('role :', data.role, '\n name :', data.name, '\n department :', data.department, '\n id :', data.id, '\n');
   return data;
 }

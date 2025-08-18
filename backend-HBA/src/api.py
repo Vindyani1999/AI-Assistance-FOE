@@ -10,7 +10,7 @@ from src.recurrence.recurrence_utils import build_rrule_from_extracted
 import json
 import re
 from datetime import datetime
-from src.availability_logic import check_availability, add_booking, check_available_slotes,book_recommendation_directly
+from src.availability_logic import check_availability, add_booking, check_available_slotes,book_recommendation_directly, cancel_booking,update_booking
 from typing import Dict, Any, Optional, List
 
 
@@ -33,7 +33,8 @@ REQUIRED_FIELDS = {
     "add_booking": ["room_name", "date", "start_time", "end_time"],
     "add_recurring_booking": ["room_name", "start_date", "end_date", "start_time", "end_time", "recurrence_rule"],
     "alternatives": ["date", "start_time", "end_time"],
-    "cancel_booking": ["booking_id"],
+    "cancel_booking": ["room_name", "date", "start_time", "end_time"],
+    "update_booking": ["original_room_name", "original_date", "original_start_time", "original_end_time"] 
 }
 
 FALLBACK_QUESTIONS = {
@@ -45,6 +46,10 @@ FALLBACK_QUESTIONS = {
     "end_time": "What end time do you want? Please use HH:MM format.",
     "recurrence_rule": "Please specify the recurrence (e.g. every Monday).",
     "booking_id": "Please provide the booking ID to cancel.",
+    "original_room_name": "Which room's booking do you want to update?",
+    "original_date": "What date was the original booking for?",
+    "original_start_time": "What was the original start time?",
+    "original_end_time": "What was the original end time?",
 }
 
 # In-memory session store
@@ -128,6 +133,7 @@ Supported actions:
 - "add_booking"
 - "cancel_booking"
 - "alternatives"
+- "update_booking" 
 
 If the request is not related to any of these actions, return:
 {{ "action": "unsupported", "parameters": {{}} }}
@@ -141,6 +147,18 @@ Required JSON structure:
     "start_time": "HH:MM",
     "end_time": "HH:MM",
     "booking_id": "..."  # Only needed for cancel_booking
+  }}
+  
+   "action": "update_booking",
+  "parameters": {{
+    "original_room_name": "...",
+    "original_date": "yyyy-mm-dd", 
+    "original_start_time": "HH:MM",
+    "original_end_time": "HH:MM",
+    "new_room_name": "..." (optional),
+    "new_date": "yyyy-mm-dd" (optional),
+    "new_start_time": "HH:MM" (optional), 
+    "new_end_time": "HH:MM" (optional)
   }}
 }}
 
@@ -295,9 +313,27 @@ Respond in **only JSON format**, without explanations.
             db=db,
         )
     elif action == "cancel_booking":
-        # You should implement actual cancellation here
-        return {"status": "success", "message": f"Booking {params['booking_id']} cancelled."}
-
+        return cancel_booking(
+            room_name=params["room_name"],
+            date=params["date"],
+            start_time=params["start_time"],
+            end_time=params["end_time"],
+            db=db,
+        )
+        
+    elif action == "update_booking":
+        return update_booking(
+            original_room_name=params["original_room_name"],
+            original_date=params["original_date"],
+            original_start_time=params["original_start_time"],
+            original_end_time=params["original_end_time"],
+            new_room_name=params.get("new_room_name"),
+            new_date=params.get("new_date"),
+            new_start_time=params.get("new_start_time"),
+            new_end_time=params.get("new_end_time"),
+            modified_by=params.get("modified_by", "system"),
+            db=db,
+        )
     return {"status": "error", "message": "Unhandled action."}
 
 

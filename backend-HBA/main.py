@@ -197,7 +197,7 @@ class UpdateBookingRequest(BaseModel):
 
 @app.put("/booking/update_booking")
 def update_booking(request: UpdateBookingRequest, db: Session = Depends(get_db)):
-    from src.availability_logic import update_booking as update_booking_logic
+    from src.availability_logic import update_booking_general as update_booking_logic
 
     # Convert times -> UNIX timestamps
     try:

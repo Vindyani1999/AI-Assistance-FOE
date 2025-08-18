@@ -1,5 +1,5 @@
 primary_agent:
-  llm: openai/gpt-oss-20b:free #gpt-3.5-turbo #z-ai/glm-4.5-air:free #google/gemini-2.0-flash-exp:free #z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
+  llm: z-ai/glm-4.5-air:free #google/gemini-2.0-flash-exp:free #z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
   llm_temperature: 0.0
 
 exam_manual_rag:
@@ -77,8 +77,6 @@ tavily_search_api:
 graph_configs:
   thread_id: 1 # This can be adjusted to assign a unique value for each user session, so it's easier to access data later on.
 
-#=================================================================
-
 # # Added RAG configuration for by_law
 # by_law_rag:
 #   unstructured_docs: "data/unstructured_docs/by_law"
@@ -113,104 +111,3 @@ graph_configs:
 # Export results to CSV for offline analysis
 # (LangSmith → Export → CSV)
 
-# primary_agent:
-#   llm: z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
-#   llm_temperature: 0.0
-
-# exam_manual_rag:
-#   unstructured_docs: "data/documents/exam_manual"
-#   vectordb: "data/vectordb/exam_manual_vectordb"
-#   collection_name: exam_manual-rag-chroma
-#   llm: microsoft/phi-2
-#   llm_temperature: 0.0
-#   embedding_model: intfloat/e5-large-v2             #intfloat/e5-base-v2
-#   chunk_size: 200
-#   chunk_overlap: 20
-#   k: 2
-
-# # student_handbook_rag:
-# #   unstructured_docs: "data/documents/student_handbook"
-# #   vectordb: "data/vectordb/student_handbook_vectordb"
-# #   collection_name: student_handbook-rag-chroma
-# #   llm: microsoft/phi-2
-# #   llm_temperature: 0.0
-# #   embedding_model: intfloat/e5-large-v2
-# #   chunk_size: 200
-# #   chunk_overlap: 20
-# #   k: 2
-
-# swiss_airline_policy_rag:
-#   unstructured_docs: "data/documents/swiss_airline_policy"
-#   vectordb: "data/vectordb/airline_policy_vectordb"
-#   collection_name: rag-chroma
-#   llm: gpt-3.5-turbo #gpt-3.5-turbo #microsoft/phi-2
-#   llm_temperature: 0.0
-#   embedding_model: intfloat/e5-large-v2 #text-embedding-3-small # #microsoft/phi-2 #intfloat/e5-large-v2 #BAAI/bge-base-en-v1.5
-#   chunk_size: 200
-#   chunk_overlap: 20
-#   k: 2
-
-# stories_rag:
-#   unstructured_docs: "data/documents/stories"
-#   vectordb: "data/vectordb/stories_vectordb"
-#   collection_name: stories-rag-chroma
-#   llm: deepseek-ai/deepseek-coder-1.3b-instruct
-#   llm_temperature: 0.0
-#   embedding_model: text-embedding-3-small
-#   chunk_size: 50
-#   chunk_overlap: 5
-#   k: 2
-
-# travel_sqlagent_configs:
-#   travel_sqldb_dir: "backend/data/databases/travel.sqlite"
-#   llm: "gpt-3.5-turbo"
-#   llm_temperature: 0.0
-
-# chinook_sqlagent_configs:
-#   chinook_sqldb_dir: "backend/data/databases/Chinook.db"
-#   llm: "gpt-3.5-turbo"
-#   llm_temperature: 0.0
-
-# langsmith:
-#   tracing: "true"
-#   project_name: "rag_sqlagent_project"
-
-# tavily_search_api:
-#   tavily_search_max_results: 2
-
-# graph_configs:
-#   thread_id: 1 # This can be adjusted to assign a unique value for each user session, so it's easier to access data later on.
-
-# # # Added RAG configuration for by_law
-# # by_law_rag:
-# #   unstructured_docs: "data/unstructured_docs/by_law"
-# #   vectordb: "data/by_law_vectordb"
-# #   collection_name: by_law-rag-chroma
-# #   llm: gpt-4o-mini
-# #   llm_temperature: 0.0
-# #   embedding_model: text-embedding-3-small
-# #   chunk_size: 500
-# #   chunk_overlap: 100
-# #   k: 2
-
-# # student_handbook_rag:
-# #   unstructured_docs: "data/unstructured_docs/student_handbook"
-# #   vectordb: "data/student_handbook_vectordb"
-# #   collection_name: student_handbook-rag-chroma
-# #   llm: gpt-4o-mini
-# #   llm_temperature: 0.0
-# #   embedding_model: text-embedding-3-small
-# #   chunk_size: 500
-# #   chunk_overlap: 100
-# #   k: 2
-
-# # 4. Evaluating with LangSmith
-# # In LangSmith’s dashboard:
-
-# # Filter by project: "embedding_test_project"
-
-# # Compare retrieval outputs between runs
-# # (e.g., changing chunk_size or embedding_model)
-
-# # Export results to CSV for offline analysis
-# # (LangSmith → Export → CSV)

@@ -1,4 +1,5 @@
 thread_id,timestamp,user_query,response
+<<<<<<< HEAD
 1,15:42:26,hi,"
 
 Hello! How can I help you today? I have access to several tools that can help you with:
@@ -131,3 +132,22 @@ Please note that the selection criteria for scholarships may change without noti
 11. In-class assessments
 
 These components contribute to the continuous assessment marks for each course module."
+=======
+1,14:18:54,Who serves as the Controlling Chief of examinations for a Department?,"
+
+Based on the exam manual, the **Head of the Department (HoD)** serves as the Controlling Chief of examinations for a Department.
+
+The manual specifically states: ""When an examination is conducted for a course unit/module conducted under a Department, the Head of relevant Department (HoD) will serve as the controlling chief of Examination.""
+
+The Controlling Chief has several important responsibilities including:
+- Nominating question paper setters, moderators, and marking examiners
+- Ensuring examinations are marked by approved examiners within stipulated time
+- Maintaining appropriate records related to in-course assessments
+- Ensuring proper transfer of answer scripts and mark sheets among examiners
+- Guiding chief examiners for orderly conduct of assessments
+- Ensuring assessment components and weightages are correct
+- Checking student performance distribution in examinations
+- Reporting any misconduct, errors, or negligence to the Dean of the Faculty
+
+In cases where a course unit/module is not conducted under a Department, the controlling chief would be the HoD of the Department to which the Chief Examiner belongs, or a senior academic appointed by the Senate on the recommendation of the Faculty Board."
+>>>>>>> cf734b45afd7d0ce7433d9342e3979ad67ac4bad

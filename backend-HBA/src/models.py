@@ -2,7 +2,19 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, Sma
 from sqlalchemy.orm import relationship
 from src.database import Base
 
+class MRBSArea(Base):
+    __tablename__ = "mrbs_area"
 
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    area_name = Column(String(30), nullable=False, unique=True)
+    disabled = Column(Boolean, nullable=False, default=False)
+    
+    morningstarts = Column(Integer, nullable=False, default=7)   # Opens at 7 AM
+    eveningends = Column(Integer, nullable=False, default=19)    # Closes at 7 PM
+
+    # Relationship to rooms
+    rooms = relationship("MRBSRoom", back_populates="area")
+  
 class MRBSRoom(Base):
     __tablename__ = "mrbs_room"
 
@@ -17,6 +29,7 @@ class MRBSRoom(Base):
     custom_html = Column(Text, nullable=True)
 
     # Relationship to bookings
+    area = relationship("MRBSArea", back_populates="rooms")
     bookings = relationship("MRBSEntry", back_populates="room")
 
 

@@ -11,9 +11,9 @@ import re
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.chatbot.chatbot_backend import ChatBot
-from src.chatbot.load_config import LoadProjectConfig
-from src.agent_graph.load_tools_config import LoadToolsConfig
+from src.core.chatbot.chatbot_backend import ChatBot
+from src.core.chatbot.load_config import LoadProjectConfig
+from src.core.agent_graph.load_tools_config import LoadToolsConfig
 
 # Initialize FastAPI app
 app = FastAPI(title="AI Agent API", version="1.0.0")

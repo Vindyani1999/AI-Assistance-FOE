@@ -2,7 +2,6 @@ import React from 'react';
 import AuthPage from '../AuthForms/AuthPage';
 import { agentCardData } from '../../utils/AgentCardData';
 import './HomePage.css'; 
-import './HomePage.profile.css';
 
   const agents = agentCardData;
 

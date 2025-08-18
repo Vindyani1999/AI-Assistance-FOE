@@ -100,20 +100,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     }
   }, [userSpecificSessionId, currentUser, loadChatHistory, loadChatSessions]);
 
-  const formatTimeAgo = (timestamp: string): string => {
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
-    const messageTime = new Date(new Date(timestamp).toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
-    const diffInMs = now.getTime() - messageTime.getTime();
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}d ago`;
-    }
-  };
+  // const formatTimeAgo = (timestamp: string): string => {
+  //   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+  //   const messageTime = new Date(new Date(timestamp).toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+  //   const diffInMs = now.getTime() - messageTime.getTime();
+  //   const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  //   if (diffInHours < 1) {
+  //     return 'Just now';
+  //   } else if (diffInHours < 24) {
+  //     return `${diffInHours}h ago`;
+  //   } else {
+  //     const diffInDays = Math.floor(diffInHours / 24);
+  //     return `${diffInDays}d ago`;
+  //   }
+  // };
 
   const formatMessage = (content: string): JSX.Element => {
     // Split content into paragraphs
@@ -399,7 +399,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                 No chat history yet. Start a conversation!
               </div>
             ) : (
-              chatSessions.map((session) => (
+              [...chatSessions].reverse().map((session) => (
                 <div 
                   key={session.session_id}
                   className={`chat-history-item ${session.session_id === userSpecificSessionId ? 'active' : ''}`}
@@ -411,10 +411,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                     }
                   }}
                 >
-                  <div className="chat-title">{session.topic}</div>
-                  <div className="chat-timestamp">
+                  <div className="chat-title">{session.topic.split(' ').slice(0, 4).join(' ')}{session.topic.split(' ').length > 4 ? '...' : ''}</div>
+                  {/* <div className="chat-timestamp">
                     {session.message_count} messages • {formatTimeAgo(session.updated_at)}
-                  </div>
+                  </div> */}
                 </div>
               ))
             )}

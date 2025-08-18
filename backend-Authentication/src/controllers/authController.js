@@ -140,13 +140,14 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '60m' }
     );
     res.set('x-access-token', token);
     res.json({
       message: 'Login successful',
       accessToken: token,
       user: {
+        id: user._id,
         email: user.email,
         title: user.title,
         department: user.department,

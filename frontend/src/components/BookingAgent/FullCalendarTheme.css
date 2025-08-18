@@ -33,6 +33,11 @@
 .fc .fc-toolbar {
   min-height: 36px;
 }
+
+.calendar-container .fc-timegrid-body {
+  overflow-y: auto !important;
+  max-height: calc(70vh - 80px) !important; 
+}
 /* FullCalendar custom theme for Booking Agent */
 
 /* Light Theme */

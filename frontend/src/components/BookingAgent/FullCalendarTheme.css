@@ -82,3 +82,7 @@
   border: none;
   border-radius: 6px;
 }
+.room-select-row{
+  margin-bottom: 1rem;
+  border-radius: 10px;
+}

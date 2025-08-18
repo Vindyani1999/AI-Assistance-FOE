@@ -8,12 +8,12 @@ from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import LLMResult, Generation
 # Load environment variables
 load_dotenv()
-print(f"🔐 Loaded API Key: {os.getenv('OPENAI_API_KEY2')}")
+print(f"🔐 Loaded API Key: {os.getenv('OPENAI_API_KEY1')}")
 
-class DeepSeekLLM(BaseLLM):
-    api_key: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY2"))
+class ZAILLM(BaseLLM):
+    api_key: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY1"))
     base_url: str = "https://openrouter.ai/api/v1/chat/completions"
-    model: str = "deepseek/deepseek-r1-0528:free" # Replace with the correct model name for DeepSeek
+    model: str = "z-ai/glm-4.5-air:free" # Replace with the correct model name for DeepSeek
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         """
@@ -25,7 +25,7 @@ class DeepSeekLLM(BaseLLM):
                 {
                     "role": "system",
                     "content": (
-                        "You extract structured data from questions. "
+                        "You extract structured data from room availability questions. "
                         "Output must be JSON with: room_name, date (yyyy-mm-dd), "
                         "start_time and end_time (HH:MM 24-hour format)."
                     ),
@@ -35,7 +35,7 @@ class DeepSeekLLM(BaseLLM):
             "temperature": 0.2,
         }
         headers = {
-            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY2')}",
+            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY1')}",
             "Content-Type": "application/json",
             "HTTP-Referer": "http://localhost",   # Optional - can update for production
             "X-Title": "HBA"            # Optional - can customize
@@ -69,4 +69,4 @@ class DeepSeekLLM(BaseLLM):
 
     @property
     def _llm_type(self) -> str:
-        return "deepseek_llm"
+        return "zai"

@@ -85,4 +85,29 @@ class MRBSEntry(Base):
 
     # Relationships
     room = relationship("MRBSRoom", back_populates="bookings")
+<<<<<<< HEAD
     repeat = relationship("MRBSRepeat", back_populates="entries")
+
+class MRBSModule(Base):
+    __tablename__ = "mrbs_module"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    module_code = Column(String(50), nullable=False, unique=True)
+    number_of_students = Column(Integer, nullable=False)
+    lecture_id = Column(Integer, ForeignKey("mrbs_users.id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+
+    # Relationship to Lecturer (assuming MRBSUser is your users table)
+    lecturer = relationship("MRBSUser", back_populates="modules")
+    
+class MRBSUser(Base):
+    __tablename__ = "mrbs_users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(100), nullable=False, unique=True)
+    name = Column(String(100), nullable=False)
+
+    # Add this:
+    modules = relationship("MRBSModule", back_populates="lecturer", cascade="all, delete-orphan")
+=======
+    repeat = relationship("MRBSRepeat", back_populates="entries")
+>>>>>>> 4f2a52d871ce77adbcda4f687ab84d3b788a7a49

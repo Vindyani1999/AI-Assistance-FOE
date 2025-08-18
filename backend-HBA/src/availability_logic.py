@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 from datetime import datetime
 import time
@@ -84,7 +85,56 @@ def check_availability(room_name: str, date: str, start_time: str, end_time: str
     print(message)
     return {"status": "available", "message": message}
 
-def add_booking(room_name: str, date: str, start_time: str, end_time: str, created_by: str, db: Session):
+def fetch_booking_by_id(booking_id: int, db: Session):
+    try:
+        booking = db.query(models.MRBSEntry).filter(models.MRBSEntry.id == booking_id).first()
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        return booking
+    except Exception as e:
+        print(f"Error fetching booking by ID: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+from datetime import datetime
+
+def update_booking(booking_id: int, room_id: int,name:str,date:str, start_timestamp: int, end_timestamp: int, db: Session):
+    try:
+        booking = db.query(models.MRBSEntry).filter(models.MRBSEntry.id == booking_id).first()
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        logging.info(f"Updating booking: {booking_id}, {booking.name}, {date}, {start_timestamp}, {end_timestamp}")
+        # ✅ Update with valid fields
+        booking.room_id = room_id
+        booking.start_time = start_timestamp
+        booking.end_time = end_timestamp
+        booking.timestamp = date
+        booking.modified_by = "system"
+        booking.name=name# or pass from request
+
+        db.commit()
+        db.refresh(booking)
+
+        return {"status": "success", "message": "Booking updated successfully"}
+    except Exception as e:
+        print(f"Error updating booking: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+    
+def delete_booking(booking_id: int, db: Session):
+    try:
+        booking = db.query(models.MRBSEntry).filter(models.MRBSEntry.id == booking_id).first()
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+        db.delete(booking)
+        db.commit()
+        return {"status": "success", "message": "Booking deleted successfully"}
+    except Exception as e:
+        print(f"Error deleting booking: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+def add_booking(room_name: str,name: str, date: str, start_time: str, end_time: str, created_by: str, db: Session):
     
     try:
         room = db.query(models.MRBSRoom).filter(models.MRBSRoom.room_name == room_name).first()
@@ -142,7 +192,7 @@ def add_booking(room_name: str, date: str, start_time: str, end_time: str, creat
                 timestamp=current_datetime, 
                 create_by=created_by,
                 modified_by=created_by,
-                name=f"Booking for {room_name}",
+                name=name,
                 type='E',
                 description=f"Booked by {created_by}",
                 status=0,
@@ -319,6 +369,33 @@ def book_recommendation_directly(recommendation: Dict[str, Any], created_by: str
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error booking recommendation: {e}")
+<<<<<<< HEAD
+
+def fetch_moduleCodes_by_user_email(email: str, db: Session):
+    user = db.query(models.MRBSUser).filter(models.MRBSUser.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    modules = db.query(models.MRBSModule).filter(models.MRBSModule.lecture_id == user.id).all()
+    return [module.module_code for module in modules]
+
+def fetch_all_halls(db: Session):
+    halls = db.query(models.MRBSRoom).all()
+    return [hall.room_name for hall in halls]
+
+def fetch_halls_by_module_code(module_code: str, db: Session):
+    # Fetch the module first
+    module = db.query(models.MRBSModule).filter(models.MRBSModule.module_code == module_code).first()
+    if not module:
+        return []  # Module not found
+
+    # Fetch halls that can accommodate the number of students
+    halls = db.query(models.MRBSRoom).filter(models.MRBSRoom.capacity >= module.number_of_students).all()
+    
+    return [hall.room_name for hall in halls]
+
+
+=======
  
 
 
@@ -437,3 +514,4 @@ def cancel_booking(room_name: str, date: str, start_time: str, end_time: str, db
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error cancelling booking: {e}")
+>>>>>>> 4f2a52d871ce77adbcda4f687ab84d3b788a7a49

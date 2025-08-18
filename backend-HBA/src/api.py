@@ -30,7 +30,7 @@ class RecommendationBookingRequest(BaseModel):
 # Required parameters per action
 REQUIRED_FIELDS = {
     "check_availability": ["room_name", "date", "start_time", "end_time"],
-    "add_booking": ["room_name", "date", "start_time", "end_time"],
+    "add_booking": ["room_name", "date", "module_code", "start_time", "end_time"],
     "add_recurring_booking": ["room_name", "start_date", "end_date", "start_time", "end_time", "recurrence_rule"],
     "alternatives": ["date", "start_time", "end_time"],
     "cancel_booking": ["room_name", "date", "start_time", "end_time"],
@@ -39,6 +39,7 @@ REQUIRED_FIELDS = {
 
 FALLBACK_QUESTIONS = {
     "room_name": "Which room would you like to book?",
+    "module_code": "What is the module code?",
     "date": "What date would you like to book it for? Please use YYYY-MM-DD format.",
     "start_date": "What is the start date? Please use YYYY-MM-DD format.",
     "end_date": "What is the end date? Please use YYYY-MM-DD format?",
@@ -98,7 +99,8 @@ async def ask_llm(request: QuestionRequest, db=Depends(get_db)):
             params = {
                 "action": "add_recurring_booking",
                 "parameters": {
-                    "room_name": None,
+                    "room_name": recurrence_data.get("room_name"),
+                    "module_code": recurrence_data.get("module_code"),
                     "start_date": recurrence_data.get("start_date"),
                     "end_date": recurrence_data.get("end_date"),
                     "start_time": recurrence_data.get("start_time"),
@@ -143,6 +145,7 @@ Required JSON structure:
   "action": "check_availability" | "add_booking" | "cancel_booking" | "alternatives",
   "parameters": {{
     "room_name": "...",
+    "module_code": "...",
     "date": "yyyy-mm-dd",
     "start_time": "HH:MM",
     "end_time": "HH:MM",
@@ -276,6 +279,7 @@ Respond in **only JSON format**, without explanations.
         result = add_booking(
             room_name=params["room_name"],
             date=params["date"],
+            name=params["module_code"],
             start_time=params["start_time"],
             end_time=params["end_time"],
             created_by=params.get("created_by", "system"),

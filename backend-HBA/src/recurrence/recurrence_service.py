@@ -12,6 +12,7 @@ async def handle_recurring_booking(params: dict, db):
     """
 
     room_name = params.get("room_name")
+    module_code = params.get("module_code")
     start_date = params.get("start_date")
     end_date = params.get("end_date")
     start_time = params.get("start_time")
@@ -61,6 +62,7 @@ async def handle_recurring_booking(params: dict, db):
         # Add booking
         booking = add_booking(
             room_name=room_name,
+            name=module_code,
             date=date_str,
             start_time=start_time,
             end_time=end_time,

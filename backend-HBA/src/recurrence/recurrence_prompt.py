@@ -11,6 +11,7 @@ If yes, output the rule in strict JSON:
   "frequency": "daily" | "weekly" | "monthly",
   "days_of_week": ["Monday", "Wednesday"],   // only for weekly
   "start_time": "HH:MM",
+  "module_code": "<module_code>",
   "end_time": "HH:MM",
   "start_date": "YYYY-MM-DD",
   "end_date": "YYYY-MM-DD"  // last day of recurrence

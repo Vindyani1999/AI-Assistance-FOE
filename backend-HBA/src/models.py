@@ -85,7 +85,6 @@ class MRBSEntry(Base):
 
     # Relationships
     room = relationship("MRBSRoom", back_populates="bookings")
-<<<<<<< HEAD
     repeat = relationship("MRBSRepeat", back_populates="entries")
 
 class MRBSModule(Base):
@@ -108,6 +107,3 @@ class MRBSUser(Base):
 
     # Add this:
     modules = relationship("MRBSModule", back_populates="lecturer", cascade="all, delete-orphan")
-=======
-    repeat = relationship("MRBSRepeat", back_populates="entries")
->>>>>>> 4f2a52d871ce77adbcda4f687ab84d3b788a7a49

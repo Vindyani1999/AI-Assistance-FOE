@@ -98,7 +98,7 @@ def fetch_booking_by_id(booking_id: int, db: Session):
 
 from datetime import datetime
 
-def update_booking(booking_id: int, room_id: int,name:str,date:str, start_timestamp: int, end_timestamp: int, db: Session):
+def update_booking_general(booking_id: int, room_id: int,name:str,date:str, start_timestamp: int, end_timestamp: int, db: Session):
     try:
         booking = db.query(models.MRBSEntry).filter(models.MRBSEntry.id == booking_id).first()
         if not booking:
@@ -369,7 +369,6 @@ def book_recommendation_directly(recommendation: Dict[str, Any], created_by: str
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error booking recommendation: {e}")
-<<<<<<< HEAD
 
 def fetch_moduleCodes_by_user_email(email: str, db: Session):
     user = db.query(models.MRBSUser).filter(models.MRBSUser.email == email).first()
@@ -395,7 +394,6 @@ def fetch_halls_by_module_code(module_code: str, db: Session):
     return [hall.room_name for hall in halls]
 
 
-=======
  
 
 
@@ -514,4 +512,3 @@ def cancel_booking(room_name: str, date: str, start_time: str, end_time: str, db
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error cancelling booking: {e}")
->>>>>>> 4f2a52d871ce77adbcda4f687ab84d3b788a7a49

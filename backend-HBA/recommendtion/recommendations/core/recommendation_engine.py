@@ -38,19 +38,9 @@ from src.models import MRBSRoom, MRBSEntry, MRBSRepeat
 logger = logging.getLogger(__name__)
 
 class RecommendationEngine:
-    """
-    Central recommendation engine that orchestrates different recommendation strategies
-    Enhanced to properly work with MySQL main database using actual MRBS tables
-    """
     
     def __init__(self, db: Session = None, config: Optional[RecommendationConfig] = None) -> None:
-        """
-        Initialize the recommendation engine
-        
-        Args:
-            db: Database session (if None, will create from config)
-            config: Configuration object (optional)
-        """
+      
         logger.info("Initializing RecommendationEngine with MySQL integration")
         
         self.config = config or RecommendationConfig()
@@ -91,7 +81,6 @@ class RecommendationEngine:
             logger.warning(f"Database verification failed: {e}")
     
     def _initialize_components(self):
-        """Initialize core components with proper error handling"""
         try:
             self.analytics = AnalyticsProcessor(self.db)
         except Exception as e:
@@ -126,8 +115,6 @@ class RecommendationEngine:
             self.preference_learner = None
     
     def _initialize_strategies(self):
-        """Initialize recommendation strategies with proper error handling"""
-        # Initialize AlternativeTimeStrategy
         try:
             self.alternative_time = AlternativeTimeStrategy(self.db)
         except Exception as e:
@@ -204,15 +191,7 @@ class RecommendationEngine:
             self.embeddings = None
    
     def get_recommendations(self, request_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Get recommendations using actual database data
-        
-        Args:
-            request_data: Dictionary containing request information
-        
-        Returns:
-            List of recommendation dictionaries
-        """
+
         try:
             # Extract information from request_data
             user_id = str(request_data.get('user_id', 'unknown'))
@@ -261,8 +240,8 @@ class RecommendationEngine:
             logger.error(f"Error generating recommendations: {e}")
             return self._create_fallback_recommendations(request_data)
     
+
     def _get_alternative_time_recommendations_from_db(self, request_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Get alternative time recommendations using actual database data"""
         if not self.db:
             return []
         
@@ -270,8 +249,7 @@ class RecommendationEngine:
             room_name = request_data.get('room_id', '')
             start_time_str = request_data.get('start_time', '')
             end_time_str = request_data.get('end_time', '')
-            capacity_required = request_data.get('capacity', 1)
-            
+             
             try:
                 if 'T' in start_time_str:
                     start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
@@ -284,79 +262,296 @@ class RecommendationEngine:
                 start_time = start_time_str
                 end_time = end_time_str
             
-            # Convert to Unix timestamps for database query
-            start_timestamp = int(start_time.timestamp())
-            end_timestamp = int(end_time.timestamp())
+            duration = end_time - start_time
             
-            # Find the room
             room = self.db.query(MRBSRoom).filter(
                 MRBSRoom.room_name == room_name,
                 MRBSRoom.disabled == False
             ).first()
             
             if not room:
-                alternative_rooms_query = alternative_rooms_query.order_by(
-                   func.abs(MRBSRoom.capacity - room.capacity)
-                )
-            else:
-                alternative_rooms_query = alternative_rooms_query.order_by(MRBSRoom.capacity)
-        
-            alternative_rooms = alternative_rooms_query.limit(10).all()
-        
+                logger.warning(f"Room {room_name} not found or disabled")
+                return []
             
             recommendations = []
             
-            # Check for alternative times (1 hour earlier and later)
-            time_alternatives = [
-                (start_time - timedelta(hours=1), end_time - timedelta(hours=1), "1 hour earlier"),
-                (start_time + timedelta(hours=1), end_time + timedelta(hours=1), "1 hour later"),
-                (start_time - timedelta(hours=2), end_time - timedelta(hours=2), "2 hours earlier"),
-                (start_time + timedelta(hours=2), end_time + timedelta(hours=2), "2 hours later"),
+            logger.info(f" Checking same-day alternatives for {start_time.strftime('%Y-%m-%d')}")
+            same_day_alternatives = self._get_same_day_alternatives(
+                room, start_time, end_time, duration, room_name
+            )
+            recommendations.extend(same_day_alternatives)
+        
+            if len(same_day_alternatives) < 3:  
+                logger.info("Checking next available days")
+                next_day_alternatives = self._get_next_day_alternatives(
+                    room, start_time, end_time, duration, room_name, 
+                    max_days=5  
+                )
+                recommendations.extend(next_day_alternatives)
+            
+            recommendations.sort(key=lambda x: (
+                x.get('is_same_day', False),  
+                x['score']  
+            ), reverse=True)
+            
+            final_recommendations = recommendations[:8]
+            
+            logger.info(f"✅ Found {len(final_recommendations)} alternative time recommendations")
+            return final_recommendations
+            
+        except Exception as e:
+            logger.error(f"Error in alternative time recommendations: {e}", exc_info=True)
+            return []
+        
+    def _get_same_day_alternatives(self, room, requested_start: datetime, requested_end: datetime, 
+                                  duration: timedelta, room_name: str) -> List[Dict[str, Any]]:
+        same_day_alternatives = []
+        requested_date = requested_start.date()
+        
+        time_slots_to_check = [
+            (requested_start - timedelta(minutes=30), "30 minutes earlier"),
+            (requested_start + timedelta(minutes=30), "30 minutes later"),
+            (requested_start - timedelta(hours=1), "1 hour earlier"),
+            (requested_start + timedelta(hours=1), "1 hour later"),
+            (requested_start - timedelta(hours=2), "2 hours earlier"),
+            (requested_start + timedelta(hours=2), "2 hours later"),
+            
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=9, minute=0)), "9:00 AM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=10, minute=0)), "10:00 AM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=11, minute=0)), "11:00 AM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=14, minute=0)), "2:00 PM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=15, minute=0)), "3:00 PM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=16, minute=0)), "4:00 PM"),
+            
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=9, minute=30)), "9:30 AM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=10, minute=30)), "10:30 AM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=14, minute=30)), "2:30 PM"),
+            (datetime.combine(requested_date, datetime.min.time().replace(hour=15, minute=30)), "3:30 PM"),
+        ]
+        
+        for alt_start, description in time_slots_to_check:
+            if alt_start.date() != requested_date:
+                continue
+                
+            if alt_start == requested_start:
+                continue
+                
+            if alt_start.hour < 8 or alt_start.hour >= 18:
+                continue
+            
+            alt_end = alt_start + duration
+            
+            if alt_end.date() != requested_date or alt_end.hour > 20:
+                continue
+            
+            if self._is_time_slot_available(room.id, alt_start, alt_end):
+                score = self._calculate_same_day_score(alt_start, requested_start, description)
+                
+                same_day_alternatives.append({
+                    'type': 'alternative_time',
+                    'score': score,
+                    'reason': f'Same day - Room {room_name} available {description}',
+                    'suggestion': {
+                        'room_id': room_name,
+                        'room_name': room_name,
+                        'capacity': room.capacity,
+                        'start_time': alt_start.isoformat(),
+                        'end_time': alt_end.isoformat(),
+                        'confidence': score,
+                        'duration_minutes': int(duration.total_seconds() / 60),
+                        'time_shift': description,
+                        'date': alt_start.strftime('%Y-%m-%d'),
+                        'day_type': 'same_day'
+                    },
+                    'data_source': 'mysql_same_day_alternative',
+                    'availability_confirmed': True,
+                    'is_same_day': True
+                })
+        
+        return same_day_alternatives
+
+
+    def _get_next_day_alternatives(self, room, requested_start: datetime, requested_end: datetime,
+                                  duration: timedelta, room_name: str, max_days: int = 5) -> List[Dict[str, Any]]:
+        next_day_alternatives = []
+        
+        base_date = requested_start.date()
+        
+        for day_offset in range(1, max_days + 1):
+            next_date = base_date + timedelta(days=day_offset)
+          
+            same_time_next_day = datetime.combine(next_date, requested_start.time())
+            same_time_end = same_time_next_day + duration
+            
+            if self._is_time_slot_available(room.id, same_time_next_day, same_time_end):
+                day_name = next_date.strftime('%A, %B %d')
+                score = 0.7 - (day_offset * 0.1)  # Decrease score for further days
+                
+                next_day_alternatives.append({
+                    'type': 'alternative_time',
+                    'score': max(score, 0.3),  # Minimum score of 0.3
+                    'reason': f'Next day - Room {room_name} available same time on {day_name}',
+                    'suggestion': {
+                        'room_id': room_name,
+                        'room_name': room_name,
+                        'capacity': room.capacity,
+                        'start_time': same_time_next_day.isoformat(),
+                        'end_time': same_time_end.isoformat(),
+                        'confidence': max(score, 0.3),
+                        'duration_minutes': int(duration.total_seconds() / 60),
+                        'time_shift': f'Same time on {day_name}',
+                        'date': next_date.strftime('%Y-%m-%d'),
+                        'day_type': 'next_day',
+                        'days_ahead': day_offset
+                    },
+                    'data_source': 'mysql_next_day_alternative',
+                    'availability_confirmed': True,
+                    'is_same_day': False
+                })
+            
+            # Also try common meeting times on next days
+            common_times = [
+                (9, 0, "9:00 AM"),
+                (10, 0, "10:00 AM"),
+                (11, 0, "11:00 AM"),
+                (14, 0, "2:00 PM"),
+                (15, 0, "3:00 PM"),
             ]
             
-            for alt_start, alt_end, description in time_alternatives:
-                alt_start_ts = int(alt_start.timestamp())
-                alt_end_ts = int(alt_end.timestamp())
+            for hour, minute, time_desc in common_times:
+                alt_start = datetime.combine(next_date, datetime.min.time().replace(hour=hour, minute=minute))
+                alt_end = alt_start + duration
                 
-                conflicts = self.db.query(MRBSEntry).filter(
-                    MRBSEntry.room_id == room.id,
-                    MRBSEntry.start_time < alt_end_ts,
-                    MRBSEntry.end_time > alt_start_ts,
-                    MRBSEntry.status == 0  
-                ).count()
+                if alt_start == same_time_next_day:
+                    continue
                 
-                if conflicts == 0:
-                    # Calculate score based on time preference
-                    score = 0.8
-                    if "earlier" in description:
-                        score += 0.1  # Slightly prefer earlier times
-                    if "1 hour" in description:
-                        score += 0.1  # Prefer closer times
+                if self._is_time_slot_available(room.id, alt_start, alt_end):
+                    day_name = next_date.strftime('%A, %B %d')
+                    score = 0.6 - (day_offset * 0.1)  # Slightly lower score than same time
                     
-                    recommendations.append({
+                    next_day_alternatives.append({
                         'type': 'alternative_time',
-                        'score': min(score, 1.0),
-                        'reason': f'Room {room_name} available {description}',
+                        'score': max(score, 0.2),
+                        'reason': f'Room {room_name} available {time_desc} on {day_name}',
                         'suggestion': {
                             'room_id': room_name,
                             'room_name': room_name,
+                            'capacity': room.capacity,
                             'start_time': alt_start.isoformat(),
                             'end_time': alt_end.isoformat(),
-                            'confidence': min(score, 1.0)
+                            'confidence': max(score, 0.2),
+                            'duration_minutes': int(duration.total_seconds() / 60),
+                            'time_shift': f'{time_desc} on {day_name}',
+                            'date': next_date.strftime('%Y-%m-%d'),
+                            'day_type': 'next_day',
+                            'days_ahead': day_offset
                         },
-                        'data_source': 'mysql_alternative_time'
+                        'data_source': 'mysql_next_day_common_time',
+                        'availability_confirmed': True,
+                        'is_same_day': False
                     })
                     
-                    # Limit to top 3 alternative times
-                    if len(recommendations) >= 3:
-                        break
+                    # Limit alternatives per day to avoid too many suggestions
+                    break
             
-            return recommendations
+            # If we found enough alternatives, stop checking further days
+            if len(next_day_alternatives) >= 4:
+                break
+        
+        return next_day_alternatives
+
+    def _is_time_slot_available(self, room_id: int, start_time: datetime, end_time: datetime) -> bool:
+        """Check if a specific time slot is available for the room"""
+        try:
+            start_timestamp = int(start_time.timestamp())
+            end_timestamp = int(end_time.timestamp())
+            
+            conflicts = self.db.query(MRBSEntry).filter(
+                MRBSEntry.room_id == room_id,
+                MRBSEntry.start_time < end_timestamp,
+                MRBSEntry.end_time > start_timestamp,
+                MRBSEntry.status == 0  # Assuming 0 is active status
+            ).count()
+            
+            return conflicts == 0
             
         except Exception as e:
-            logger.error(f"Error in alternative time recommendations: {e}")
-            return []
-    
+            logger.error(f"Error checking time slot availability: {e}")
+            return False
+
+
+    def _calculate_same_day_score(self, alt_start: datetime, requested_start: datetime, description: str) -> float:
+        """Calculate score for same-day alternatives"""
+        base_score = 0.85  # High base score for same day
+        
+        # Time proximity bonus (closer to requested time = higher score)
+        time_diff_hours = abs((alt_start - requested_start).total_seconds() / 3600)
+        if time_diff_hours <= 0.5:
+            base_score += 0.1  # Very close time
+        elif time_diff_hours <= 1:
+            base_score += 0.05  # Close time
+        elif time_diff_hours > 4:
+            base_score -= 0.1  # Far from requested time
+        
+        # Business hours bonus
+        hour = alt_start.hour
+        if 9 <= hour <= 17:
+            base_score += 0.05  # Prime business hours
+        elif 8 <= hour <= 18:
+            pass  # Acceptable hours, no penalty
+        else:
+            base_score -= 0.2  # Outside normal hours
+        
+        # Preference for certain descriptions
+        if "30 minutes" in description:
+            base_score += 0.05  # Small adjustment preferred
+        elif "1 hour" in description:
+            base_score += 0.03  # Still good
+        
+        return min(base_score, 1.0)
+
+
+    def get_detailed_alternative_schedule(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+      
+        room_name = request_data.get('room_id', '')
+        alternatives = self._get_alternative_time_recommendations_from_db(request_data)
+        
+        # Group alternatives by day type
+        same_day = [alt for alt in alternatives if alt.get('is_same_day', False)]
+        next_days = [alt for alt in alternatives if not alt.get('is_same_day', False)]
+        
+        # Group next days by actual date
+        next_days_by_date = {}
+        for alt in next_days:
+            date = alt['suggestion'].get('date', 'unknown')
+            if date not in next_days_by_date:
+                next_days_by_date[date] = []
+            next_days_by_date[date].append(alt)
+        
+        return {
+            'room_requested': room_name,
+            'original_request': {
+                'start_time': request_data.get('start_time'),
+                'end_time': request_data.get('end_time'),
+                'date': request_data.get('start_time', '').split('T')[0] if 'T' in request_data.get('start_time', '') else 'unknown'
+            },
+            'same_day_alternatives': {
+                'count': len(same_day),
+                'options': same_day
+            },
+            'next_day_alternatives': {
+                'count': len(next_days),
+                'by_date': next_days_by_date,
+                'options': next_days
+            },
+            'total_alternatives': len(alternatives),
+            'recommendation': {
+                'message': f"Found {len(same_day)} same-day options and {len(next_days)} next-day options",
+                'priority': "Same-day alternatives are prioritized and shown first"
+            }
+        }
+
+
     def _get_alternative_room_recommendations_from_db(self, request_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Get alternative room recommendations using actual database data"""
         if not self.db:
@@ -808,15 +1003,7 @@ class RecommendationEngine:
             logger.warning(f"Database verification failed: {e}")
     
     def get_room_data_from_db(self, room_name: str = None) -> List[Dict[str, Any]]:
-        """
-        Fetch room data from MySQL database using your models
-        
-        Args:
-            room_name: Specific room name to fetch (optional)
-        
-        Returns:
-            List of room data dictionaries
-        """
+      
         if not self.db:
             logger.warning("No database session available, returning empty list")
             return []
@@ -855,17 +1042,6 @@ class RecommendationEngine:
                                      room_name: str, 
                                      start_time: datetime, 
                                      end_time: datetime) -> bool:
-        """
-        Check if a room is available for the given time slot using your models
-        
-        Args:
-            room_name: Name of the room
-            start_time: Start time of the booking
-            end_time: End time of the booking
-        
-        Returns:
-            True if room is available, False otherwise
-        """
         if not self.db:
             logger.warning("No database session available, assuming room is available")
             return True
@@ -903,16 +1079,6 @@ class RecommendationEngine:
             return False
     
     def get_user_booking_history(self, request_data: Dict[str, Any],user_id: str, days: int = 30,) -> List[Dict[str, Any]]:
-        """
-        Get user's booking history from the database
-        
-        Args:
-            user_id: User identifier
-            days: Number of days to look back
-        
-        Returns:
-            List of booking data dictionaries
-        """
         if not self.db:
             return []
         
@@ -963,16 +1129,6 @@ class RecommendationEngine:
             return []
     
     def get_room_utilization_stats(self,request_data: Dict[str, Any], room_name: str = None, days: int = 30) -> Dict[str, Any]:
-        """
-        Get room utilization statistics from the database
-        
-        Args:
-            room_name: Specific room name (optional)
-            days: Number of days to analyze
-        
-        Returns:
-            Dictionary with utilization statistics
-        """
         if not self.db:
             return {}
         
@@ -1102,21 +1258,10 @@ class RecommendationEngine:
 
 
 class RecommendationEngineFactory:
-    """Factory class to easily create RecommendationEngine instances"""
     
     @staticmethod
     def create_engine(config: RecommendationConfig = None, 
                      environment: str = None) -> RecommendationEngine:
-        """
-        Create a RecommendationEngine instance
-        
-        Args:
-            config: Configuration object (optional)
-            environment: Environment name for config (optional)
-        
-        Returns:
-            Configured RecommendationEngine instance
-        """
         if config is None:
             try:
                 from ...config.recommendation_config import ConfigFactory
@@ -1158,17 +1303,6 @@ class RecommendationEngineFactory:
 def create_recommendation_engine_with_fallback(db: Session = None, 
                                              config: RecommendationConfig = None,
                                              fallback_to_mock: bool = True) -> RecommendationEngine:
-    """
-    Create recommendation engine with comprehensive error handling and fallback options
-    
-    Args:
-        db: Database session
-        config: Configuration object
-        fallback_to_mock: Whether to fallback to mock mode on errors
-    
-    Returns:
-        RecommendationEngine instance
-    """
     try:
         return RecommendationEngine(db=db, config=config)
     except Exception as e:
@@ -1189,15 +1323,7 @@ def create_recommendation_engine_with_fallback(db: Session = None,
 
 
 def validate_recommendation_request(request_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Validate recommendation request data structure
-    
-    Args:
-        request_data: Request data to validate
-    
-    Returns:
-        Dictionary with validation results
-    """
+
     validation_result = {
         "valid": True,
         "errors": [],

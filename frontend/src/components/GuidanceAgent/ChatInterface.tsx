@@ -399,7 +399,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                 No chat history yet. Start a conversation!
               </div>
             ) : (
-              [...chatSessions].reverse().map((session) => (
+              [...chatSessions].map((session) => (
                 <div 
                   key={session.session_id}
                   className={`chat-history-item ${session.session_id === userSpecificSessionId ? 'active' : ''}`}

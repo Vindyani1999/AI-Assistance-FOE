@@ -85,6 +85,7 @@ const [formData, setFormData] = useState({
         start: new Date(booking.start_time * 1000),
         end: new Date(booking.end_time * 1000),
         roomName: booking.room_name || "No Room",
+        moduleCode: booking.module_code || "No Module",
       }));
 
       setEventData(events);

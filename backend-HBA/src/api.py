@@ -31,7 +31,7 @@ class RecommendationBookingRequest(BaseModel):
 REQUIRED_FIELDS = {
     "check_availability": ["room_name", "date", "start_time", "end_time"],
     "add_booking": ["room_name", "date", "module_code", "start_time", "end_time"],
-    "add_recurring_booking": ["room_name", "start_date", "end_date", "start_time", "end_time", "recurrence_rule"],
+    "add_recurring_booking": ["room_name", "start_date", "end_date", "start_time", "end_time", "module_code", "recurrence_rule"],
     "alternatives": ["date", "start_time", "end_time"],
     "cancel_booking": ["room_name", "date", "start_time", "end_time"],
     "update_booking": ["original_room_name", "original_date", "original_start_time", "original_end_time"] 
@@ -109,7 +109,7 @@ async def ask_llm(request: QuestionRequest, db=Depends(get_db)):
                     "created_by": "system",
                 }
             }
-
+            print(f"[Recurrence Parser] params final:\n{params}")
             # Try to extract room_name using entity extraction fallback
             extracted = extract_entities(question)
             if "room_name" in extracted:
@@ -286,25 +286,26 @@ Respond in **only JSON format**, without explanations.
             db=db,
         )
         return result
+    
+    elif action == "add_recurring_booking":
+        # unavailable_dates = []
+        # for occurrence in rule.between(start_date_dt, end_date_dt, inc=True):
+        #     date_str = occurrence.strftime("%Y-%m-%d")
+        #     availability = check_availability(
+        #         room_name=params["room_name"],
+        #         date=date_str,
+        #         start_time=params["start_time"],
+        #         end_time=params["end_time"],
+        #         db=db,
+        #     )
+        #     if availability["status"] != "available":
+        #         unavailable_dates.append(date_str)
 
-        unavailable_dates = []
-        for occurrence in rule.between(start_date_dt, end_date_dt, inc=True):
-            date_str = occurrence.strftime("%Y-%m-%d")
-            availability = check_availability(
-                room_name=params["room_name"],
-                date=date_str,
-                start_time=params["start_time"],
-                end_time=params["end_time"],
-                db=db,
-            )
-            if availability["status"] != "available":
-                unavailable_dates.append(date_str)
-
-        if unavailable_dates:
-            return {
-                "status": "unavailable",
-                "message": f"{params['room_name']} is NOT available on the following dates: {', '.join(unavailable_dates)}."
-            }
+        # if unavailable_dates:
+        #     return {
+        #         "status": "unavailable",
+        #         "message": f"{params['room_name']} is NOT available on the following dates: {', '.join(unavailable_dates)}."
+        #     }
 
         # All available - create bookings
         result = await handle_recurring_booking(params, db)

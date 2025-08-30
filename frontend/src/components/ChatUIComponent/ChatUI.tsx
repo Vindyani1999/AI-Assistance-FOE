@@ -1,8 +1,11 @@
 import React, { useRef, useEffect } from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 export interface Message {
   role: "user" | "assistant";
-  content: string;
+  content: string | JSX.Element; 
+  recommendations?: any[]; 
+  showRecommendations?: boolean; 
 }
 
 interface ChatUIProps {
@@ -36,8 +39,9 @@ const ChatUI: React.FC<ChatUIProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const { theme } = useTheme();
   return (
-    <div className="chat-container">
+    <div className={`chat-container${theme === 'dark' ? ' dark-theme' : ''}`}> 
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="welcome-message">
@@ -63,7 +67,9 @@ const ChatUI: React.FC<ChatUIProps> = ({
               <div className="message-content">
                 <div className="message-text">
                   {message.role === "assistant"
-                    ? formatMessage(message.content)
+                   ? (typeof message.content === 'string' 
+                        ? formatMessage(message.content) 
+                        : message.content) 
                     : message.content}
                 </div>
               </div>
@@ -84,7 +90,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
             {message.role === "assistant" && (
               <div className="message-actions">
                 <button
-                  onClick={() => console.log("Liked")}
+                  // onClick={() => console.log("Liked")}
                   className="feedback-btn like-btn"
                   title="Like this response"
                 >
@@ -100,7 +106,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
                   </svg>
                 </button>
                 <button
-                  onClick={() => console.log("Disliked")}
+                  // onClick={() => console.log("Disliked")}
                   className="feedback-btn dislike-btn"
                   title="Dislike this response"
                 >

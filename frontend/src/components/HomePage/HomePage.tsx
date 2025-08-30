@@ -1,250 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import AuthPage from '../AuthForms/AuthPage';
-import { useNavigate } from 'react-router-dom';
 import { agentCardData } from '../../utils/AgentCardData';
 import './HomePage.css'; 
 
-interface Agent {
-  id: string;
-  name: string;
-  title: string;
-  description: string;
-  image: string;
-  url: string;
-}
-
-const HomePage: React.FC = () => {
-  const navigate = useNavigate();
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [showUserProfile, setShowUserProfile] = useState<boolean>(false);
-  const [userSession, setUserSession] = useState<any>(null);
   const agents = agentCardData;
 
-  useEffect(() => {
-    const authToken = localStorage.getItem('auth_token');
-    const userSessionData = localStorage.getItem('user_session');
-    if (authToken && userSessionData) {
-      const parsedSession = JSON.parse(userSessionData);
-      setIsAuthenticated(true);
-      setUserSession(parsedSession);
-    } else {
-      setIsAuthenticated(false);
-      setUserSession(null);
-    }
-    // eslint-disable-next-line
-  }, []);
+interface HomePageProps {
+  onAuthSuccess: () => void;
+}
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_session');
-    setIsAuthenticated(false);
-    setUserSession(null);
-    setShowUserProfile(false);
-  };
-
-  const toggleUserProfile = () => {
-    setShowUserProfile(!showUserProfile);
-  };
-
-  const handleAgentSelect = (agent: Agent) => {
-    if (!isAuthenticated) return;
-    setSelectedAgent(agent.id);
-  };
-
-  const handleContinue = () => {
-    if (selectedAgent && isAuthenticated) {
-      const agent = agents.find(a => a.id === selectedAgent);
-      if (agent) {
-        // Always show loader animation before navigating to any agent
-        //showLoader();
-        setTimeout(() => {
-          //hideLoader();
-          if (agent.url.startsWith('/')) {
-            navigate(agent.url);
-          } else if (agent.url.startsWith('http')) {
-            window.open(agent.url, '_blank');
-          } else {
-            navigate(agent.url);
-          }
-        }, 2000); // 2000ms delay for animation
-      }
-    }
-  };
-
-  return (
-    <div className="home-page">
-      <div className="home-container">
-        <header className="home-header">
-          <div className="logo">
-            <img src="/logo.png" alt="AI Assistant" className="logo-icon" />
-          </div>
-          <div className="header-content">
-            <h1 className="main-title">
-              Welcome to AI Assistance - FOE
-            </h1>
-            <p className="subtitle">
-              {isAuthenticated 
-                ? "Choose your AI Companion to Simplify Your Task"
-                : "Please sign in to access AI Assistants"
-              }
-            </p>
-          </div>
-          <div className="header-actions">
-            {isAuthenticated && (
-              <div className="user-avatar" onClick={toggleUserProfile}>
-                <img src="/ai_rt.png" alt="User" />
-              </div>
-            )}
-          </div>
-        </header>
-        {/* User Profile Sidebar */}
-        {showUserProfile && userSession && (
-          <div className="user-profile-sidebar">
-            <div className="user-profile-overlay" onClick={() => setShowUserProfile(false)}></div>
-            <div className="user-profile-content">
-              <div className="user-profile-header">
-                <h3>User Profile</h3>
-                <button 
-                  className="close-profile-btn"
-                  onClick={() => setShowUserProfile(false)}
-                >
-                  ×
-                </button>
-              </div>
-              <div className="user-profile-info">
-                <div className="user-avatar-large">
-                  <img src="/ai_rt.png" alt="User" />
-                </div>
-                <div className="user-details">
-                  <h4>{userSession.user.name}</h4>
-                  <p className="user-email">{userSession.user.email}</p>
-                  <p className="login-time">
-                    Logged in: {new Date(userSession.loginTime).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-              <div className="user-profile-actions">
-                <button 
-                  className="logout-btn"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </div>
+const HomePage: React.FC<HomePageProps> = ({onAuthSuccess}) => (
+<div className="home-page">
+        <div className="home-container">
+          <header className="home-header">
+            <div className="logo">
+              <img src="/logo.png" alt="AI Assistant" className="logo-icon" />
             </div>
-          </div>
-        )}
-        <main className="main-content">
-          {!isAuthenticated ? (
+            <div className="header-content">
+              <h1 className="main-title">
+                Welcome to AI Assistance - FOE
+              </h1>
+              <p className="subtitle">
+                Choose your AI Companion to Simplify Your Task
+              </p>
+            </div>
+          </header>
+          <main className="main-content">
             <div className="auth-section">
-              <AuthPage
-                onAuthSuccess={(session) => {
-                  setUserSession(session);
-                  setIsAuthenticated(true);
-                }}
-              />
-              <div className="preview-agents">
-                <div className="preview-title">
-                  <h4>Available AI Assistants</h4>
-                </div>
-                <div className="agents-grid disabled-grid">
-                  {agents.map((agent, index) => (
-                    <div
-                      key={agent.id}
-                      className="agent-card disabled"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="agent-image-container">
-                        <img 
-                          src={agent.image} 
-                          alt={agent.name}
-                          className="agent-image"
-                          onError={(e) => {
-                            console.error(`Failed to load ${agent.name} image`);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                        <div className="agent-badge">
-                          {index + 1}
-                        </div>
-                      </div>
-                      <div className="agent-info">
-                        <h3 className="agent-name">{agent.name}</h3>
-                        <p className="agent-title">{agent.title}</p>
-                        <p className="agent-description">{agent.description}</p>
-                      </div>
-                      <div className="disabled-overlay">
-                        <div className="lock-icon">🔒</div>
+              <AuthPage onAuthSuccess={onAuthSuccess}/>
+            </div>
+            <div className="preview-agents">
+              <div className="preview-title">
+                <h4>Available AI Assistants</h4>
+              </div>
+              <div className="agents-grid disabled-grid">
+                {agents.map((agent, index) => (
+                  <div
+                    key={agent.id}
+                    className="agent-card disabled"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="agent-image-container">
+                      <img 
+                        src={agent.image} 
+                        alt={agent.name}
+                        className="agent-image"
+                        onError={(e) => {
+                          console.error(`Failed to load ${agent.name} image`);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <div className="agent-badge">
+                        {index + 1}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="agent-info">
+                      <h3 className="agent-name">{agent.name}</h3>
+                      <p className="agent-title">{agent.title}</p>
+                      <p className="agent-description">{agent.description}</p>
+                    </div>
+                    <div className="disabled-overlay">
+                      <div className="lock-icon">🔒</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ) : (
-            <>
-              {/* Continue Button Section */}
-              <div className="continue-button-section">
-                <button 
-                  className={`continue-btn ${selectedAgent ? 'active' : ''}`}
-                  onClick={handleContinue}
-                  disabled={!selectedAgent}
-                >
-                  Continue
-                </button>
-              </div>
-              <div className="agents-grid">
-              {agents.map((agent, index) => (
-                <div
-                  key={agent.id}
-                  className={`agent-card ${selectedAgent === agent.id ? 'selected' : ''}`}
-                  onClick={() => handleAgentSelect(agent)}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="agent-image-container">
-                    <img 
-                      src={agent.image} 
-                      alt={agent.name}
-                      className="agent-image"
-                      onError={(e) => {
-                        console.error(`Failed to load ${agent.name} image`);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                    <div className="agent-badge">
-                      {index + 1}
-                    </div>
-                  </div>
-                  <div className="agent-info">
-                    <h3 className="agent-name">{agent.name}</h3>
-                    <p className="agent-title">{agent.title}</p>
-                    <p className="agent-description">{agent.description}</p>
-                  </div>
-                  <div className="card-overlay">
-                    <div className="select-indicator">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <path d="M20 6L9 17l-5-5"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              </div>
-            </>
-          )}
-        </main>
-        <footer className="home-footer">
-          <p>
-            {isAuthenticated 
-              ? "Select an AI assistant to get started with your tasks"
-              : "Sign in to access your AI assistants"
-            }
-          </p>
-        </footer>
+          </main>
+          <footer className="home-footer">
+            <p>
+            "Sign in to access your AI assistants"
+            </p>
+          </footer>
       </div>
     </div>
   );
-}
 
 export default HomePage;

@@ -1,0 +1,96 @@
+/* UserProfile.css - Styles for the UserProfile component */
+
+.user-profile-container {
+  position: relative;
+}
+
+.user-profile-card {
+  /* max-width: 420px; */
+  margin: 3rem 2rem;
+  background: var(--profile-bg, #fff);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--profile-border, #e0e0e0);
+  transition: box-shadow 0.3s;
+  position: relative;
+}
+
+.user-profile-header {
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, #8d6748 0%, #c2a178 100%);
+  position: relative;
+  border-bottom-left-radius: 80px;
+  border-bottom-right-radius: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-profile-avatar {
+  width: 80px !important;
+  height: 80px !important;
+  background: #a67c52 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  position: absolute;
+  bottom: -50px;
+  left: 2%;
+  transform: translateX(-50%);
+  border: 4px solid #fff;
+}
+
+.user-profile-details {
+  padding: 56px 24px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.user-profile-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  color: #6d4c2d;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.user-profile-info {
+  background: #f7f3ef;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  padding: 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-profile-label {
+  color: #a67c52;
+  min-width: 70px;
+  font-weight: 500;
+}
+
+.user-profile-password {
+  letter-spacing: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .user-profile-card {
+    background: var(--profile-bg, #232323);
+    border: 1px solid var(--profile-border, #444);
+  }
+  .user-profile-header {
+    background: linear-gradient(135deg, #5a3c1a 0%, #a67c52 100%);
+  }
+  .user-profile-info {
+    background: #3e2c1a;
+  }
+  .user-profile-title {
+    color: #a67c52;
+  }
+}

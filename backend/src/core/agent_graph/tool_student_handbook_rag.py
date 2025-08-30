@@ -1,59 +1,46 @@
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.tools import tool
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from .load_tools_config import LoadToolsConfig
 
 TOOLS_CFG = LoadToolsConfig()
 
+# Load embedding model ONCE when module loads
+if TOOLS_CFG.student_handbook_rag_embedding_model.startswith("text-embedding"):
+    EMBEDDER = OpenAIEmbeddings(
+        model=TOOLS_CFG.student_handbook_rag_embedding_model
+    )
+    print("[INFO] Loaded OpenAI embedding model:", TOOLS_CFG.student_handbook_rag_embedding_model)
+else:
+    EMBEDDER = HuggingFaceEmbeddings(
+        model_name=TOOLS_CFG.student_handbook_rag_embedding_model,
+        # Optional: run on GPU if available
+        # model_kwargs={"device": "cuda"}
+    )
+    print("[INFO] Loaded Hugging Face embedding model:", TOOLS_CFG.student_handbook_rag_embedding_model)
+
+# Load Chroma vectordb ONCE when module loads
+VECTORDB = Chroma(
+    collection_name=TOOLS_CFG.student_handbook_rag_collection_name,
+    persist_directory=TOOLS_CFG.student_handbook_rag_vectordb_directory,
+    embedding_function=EMBEDDER
+)
+
+print("[INFO] Number of vectors in vectordb:", VECTORDB._collection.count(), "\n\n")
+
 
 class StudentHandbookRAGTool:
-    """
-    A tool for retrieving relevant stories using a Retrieval-Augmented Generation (RAG) approach with vector embeddings.
+    """Retrieves Student Handbook information using RAG."""
 
-    This tool leverages a pre-trained OpenAI embedding model to transform user queries into vector embeddings.
-    It then uses these embeddings to query a Chroma-based vector database to retrieve the top-k most relevant
-    stories from a specific collection stored in the database.
-
-    Attributes:
-        embedding_model (str): The name of the OpenAI embedding model used for generating vector representations of queries.
-        vectordb_dir (str): The directory where the Chroma vector database is persisted on disk.
-        k (int): The number of top-k nearest neighbor stories to retrieve from the vector database.
-        vectordb (Chroma): The Chroma vector database instance connected to the specified collection and embedding model.
-
-    Methods:
-        __init__: Initializes the tool with the specified embedding model, vector database, and retrieval parameters.
-    """
-
-    def __init__(self, embedding_model: str, vectordb_dir: str, k: int, collection_name: str) -> None:
-        """
-        Initializes the StoriesRAGTool with the necessary configurations.
-
-        Args:
-            embedding_model (str): The name of the embedding model (e.g., "text-embedding-ada-002")
-                used to convert queries into vector representations.
-            vectordb_dir (str): The directory path where the Chroma vector database is stored and persisted on disk.
-            k (int): The number of nearest neighbor stories to retrieve based on query similarity.
-            collection_name (str): The name of the collection inside the vector database that holds the relevant stories.
-        """
-        self.embedding_model = embedding_model
-        self.vectordb_dir = vectordb_dir
+    def __init__(self, k: int) -> None:
         self.k = k
-        self.vectordb = Chroma(
-            collection_name=collection_name,
-            persist_directory=self.vectordb_dir,
-            embedding_function=OpenAIEmbeddings(model=self.embedding_model)
-        )
-        print("Number of vectors in vectordb:",
-              self.vectordb._collection.count(), "\n\n")
+        self.vectordb = VECTORDB  # reuse already-loaded vectordb
 
 
 @tool
 def lookup_student_handbook(query: str) -> str:
-    """Search among the fictional student handbook and find the answer to the query. Input should be the query."""
-    rag_tool = StudentHandbookRAGTool(
-        embedding_model=TOOLS_CFG.student_handbook_rag_embedding_model,
-        vectordb_dir=TOOLS_CFG.student_handbook_rag_vectordb_directory,
-        k=TOOLS_CFG.student_handbook_rag_k,
-        collection_name=TOOLS_CFG.student_handbook_rag_collection_name)
+    """Search the student handbook for answers to queries."""
+    rag_tool = StudentHandbookRAGTool(k=TOOLS_CFG.student_handbook_rag_k)
     docs = rag_tool.vectordb.similarity_search(query, k=rag_tool.k)
     return "\n\n".join([doc.page_content for doc in docs])

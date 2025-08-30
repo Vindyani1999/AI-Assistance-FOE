@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiService, ChatMessage, ChatSession } from '../../services/api';
+import { apiService, ChatMessage, ChatSession, fetchUserEmailFromProfile } from '../../services/api';
 import './ChatInterface.css';
-import QuickActions, { getQuickActionsExceptAgent } from '../QuickActions/QuickActions';
-
-
+import { useTheme } from '../../context/ThemeContext';
+import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 
 interface ChatInterfaceProps {
   sessionId?: string;
@@ -13,10 +12,25 @@ interface ChatInterfaceProps {
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+    // Create a new chat session for the user
+    const handleNewChat = async () => {
+      if (!currentUser) return;
+      try {
+        // Call API to create a new chat session with user email
+        const newSession = await apiService.createNewChatSession(currentUser.email);
+        // Use backend session_id directly
+        setUserSpecificSessionId(newSession.session_id);
+        setMessages([]);
+        loadChatSessions();
+      } catch (error) {
+        console.error('Error creating new chat session:', error);
+        setError('Failed to start a new chat.');
+      }
+    };
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const { theme } = useTheme();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
@@ -24,40 +38,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
   const [userSpecificSessionId, setUserSpecificSessionId] = useState<string>(sessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Generate user-specific session ID
-  const generateUserSessionId = (baseSessionId: string, userEmail: string) => {
-    // Create a unique session ID that includes user identifier
-    const userHash = btoa(userEmail).replace(/[+/=]/g, '').substring(0, 8);
-    return `${baseSessionId}_user_${userHash}`;
-  };
-
-  // Get current user from localStorage
+  // Get current user email from /auth/me endpoint
   useEffect(() => {
-    const userSession = localStorage.getItem('user_session');
-    const authToken = localStorage.getItem('auth_token');
-    
-    if (!userSession || !authToken) {
-      // Redirect to home page if not authenticated
-      navigate('/');
-      return;
+    async function fetchUser() {
+      const email = await fetchUserEmailFromProfile();
+      if (email) {
+        setCurrentUser({ email });
+      } else {
+        setCurrentUser(null);
+      }
     }
-    
-    const user = JSON.parse(userSession);
-    setCurrentUser(user);
-    // Generate user-specific session ID
-    const userSessionId = generateUserSessionId(sessionId, user.email);
-    setUserSpecificSessionId(userSessionId);
+    fetchUser();
+    // Use backend sessionId directly
+    setUserSpecificSessionId(sessionId);
   }, [sessionId, navigate]);
 
   const loadChatHistory = useCallback(async () => {
     if (!currentUser) return;
     try {
       const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for getChatHistory:', userId);
       const history = await apiService.getChatHistory(userSpecificSessionId, userId);
       setMessages(history.conversation_history);
     } catch (error) {
-      console.error('Error loading chat history:', error);
       setError('Failed to load chat history');
     }
   }, [currentUser, userSpecificSessionId]);
@@ -68,11 +70,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
       setSessionsLoading(true);
       setSessionsError(null);
       const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for getChatSessions:', userId);
       const sessionsData = await apiService.getChatSessions(userId);
       setChatSessions(sessionsData.sessions);
     } catch (error) {
-      console.error('Error loading chat sessions:', error);
       setSessionsError('Failed to load chat sessions');
     } finally {
       setSessionsLoading(false);
@@ -96,20 +96,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     }
   }, [userSpecificSessionId, currentUser, loadChatHistory, loadChatSessions]);
 
-  const formatTimeAgo = (timestamp: string): string => {
-    const now = new Date();
-    const messageTime = new Date(timestamp);
-    const diffInHours = Math.floor((now.getTime() - messageTime.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}d ago`;
-    }
-  };
+  // const formatTimeAgo = (timestamp: string): string => {
+  //   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+  //   const messageTime = new Date(new Date(timestamp).toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+  //   const diffInMs = now.getTime() - messageTime.getTime();
+  //   const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  //   if (diffInHours < 1) {
+  //     return 'Just now';
+  //   } else if (diffInHours < 24) {
+  //     return `${diffInHours}h ago`;
+  //   } else {
+  //     const diffInDays = Math.floor(diffInHours / 24);
+  //     return `${diffInDays}d ago`;
+  //   }
+  // };
 
   const formatMessage = (content: string): JSX.Element => {
     // Split content into paragraphs
@@ -175,20 +175,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     const newUserMessage: ChatMessage = { role: 'user', content: userMessage };
     setMessages(prev => [...prev, newUserMessage]);
 
+    // Debugging: log userId and sessionId before sending
+
     try {
-      const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for sendMessage:', currentUser);
-      console.log('[FRONTEND] Sending userId for sendMessage:', userId);
-      const response = await apiService.sendMessage(userMessage, userSpecificSessionId, userId);
-      // Add assistant response to UI
+      const response = await apiService.sendMessage(userMessage, userSpecificSessionId);
       const assistantMessage: ChatMessage = { role: 'assistant', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);
-      // Refresh chat sessions to update metadata
       loadChatSessions();
     } catch (error) {
-      console.error('Error sending message:', error);
       setError('Failed to send message. Please try again.');
-      // Remove the user message that failed
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
@@ -202,90 +197,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     }
   };
 
-  const clearChat = async () => {
-    if (!currentUser) return;
-    try {
-      const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for clearChat:', userId);
-      await apiService.clearChat(userSpecificSessionId, userId);
-      setMessages([]);
-      setError(null);
-      // Refresh chat sessions to update metadata
-      loadChatSessions();
-    } catch (error) {
-      console.error('Error clearing chat:', error);
-      setError('Failed to clear chat');
-    }
-  };
+  // const clearChat = async () => {
+  //   if (!currentUser) return;
+  //   try {
+  //     const userId = currentUser.email; // Use email as user identifier
+  //     console.log('[FRONTEND] Sending userId for clearChat:', userId);
+  //     await apiService.clearChat(userSpecificSessionId, userId);
+  //     setMessages([]);
+  //     setError(null);
+  //     // Refresh chat sessions to update metadata
+  //     loadChatSessions();
+  //   } catch (error) {
+  //     console.error('Error clearing chat:', error);
+  //     setError('Failed to clear chat');
+  //   }
+  // };
 
   const handleFeedback = async (messageIndex: number, feedbackType: 'like' | 'dislike') => {
     if (!currentUser) return;
     try {
       const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for sendFeedback:', userId);
       await apiService.sendFeedback(userSpecificSessionId, messageIndex, feedbackType, userId);
       // You could add UI feedback here, like showing a success message
-      console.log(`Feedback sent: ${feedbackType} for message ${messageIndex}`);
+      // console.log(`Feedback sent: ${feedbackType} for message ${messageIndex}`);
     } catch (error) {
-      console.error('Error sending feedback:', error);
+      // console.error('Error sending feedback:', error);
     }
   };
 
-
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-  };
-
   return (
-    <div className={`chat-interface ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
-      <div className="left-sidebar">
-        <div className="left-sidebar-header">
-          <button
-            onClick={() => navigate('/')}
-            className="back-btn"
-            title="Back to home"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5"/>
-              <path d="M12 19l-7-7 7-7"/>
-            </svg>
-          </button>
-          <img 
-            src="/guidance.png" 
-            alt="Guidance Agent" 
-            className="guidance-agent-image"
-            onError={(e) => {
-              console.error('Failed to load Guidance Agent image');
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-          <h1>Guidance Agent</h1>
-          <button
-            onClick={toggleTheme}
-            className="theme-toggle-btn"
-            title={`Switch to ${isDarkTheme ? 'light' : 'dark'} theme`}
-          >
-            {isDarkTheme ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5"/>
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </button>
-        </div>
-        {/* Control which quick actions are visible here, e.g. by id or other logic */}
-      {/* Show quick actions for the 'guidance' agent, or change as needed */}
-      <div className="quick-actions-section">
-        <QuickActions actions={getQuickActionsExceptAgent("guidance")} />
-      </div>
-      
-        
-      </div>
-
+  <div className={`chat-interface ${theme === 'dark' ? 'dark-theme' : 'light-theme'}`}> 
       <div className="chat-container">
         <div className="chat-messages">
           {messages.length === 0 && (
@@ -412,17 +353,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                 </svg>
               </button>
               <button
-                onClick={clearChat}
-                className="input-btn clear-btn"
-                title="Clear chat"
+                onClick={handleNewChat}
+                className="input-btn new-chat-btn"
+                title="Start a new chat"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18"/>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c-1 0 2 1 2 2v2"/>
-                  <line x1="10" y1="11" x2="10" y2="17"/>
-                  <line x1="14" y1="11" x2="14" y2="17"/>
-                </svg>
+                <LibraryAddIcon />
               </button>
             </div>
           </div>
@@ -431,7 +366,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
 
 
       <div className="sidebar">
-      <div className="chat-history-section">
+        <div className="chat-history-section">
           <h3>Chat History</h3>
           <div className="chat-history-list">
             {sessionsLoading ? (
@@ -453,44 +388,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                 No chat history yet. Start a conversation!
               </div>
             ) : (
-              chatSessions.map((session) => (
+              [...chatSessions].map((session) => (
                 <div 
                   key={session.session_id}
-                  className={`chat-history-item ${session.session_id === sessionId ? 'active' : ''}`}
+                  className={`chat-history-item ${session.session_id === userSpecificSessionId ? 'active' : ''}`}
                   onClick={() => {
-                    if (session.session_id !== sessionId) {
-                      // Navigate to this session (you might want to implement session switching)
-                      window.location.href = `/chat/${session.session_id}`;
+                    if (session.session_id !== userSpecificSessionId) {
+                      setUserSpecificSessionId(session.session_id);
+                      setMessages([]);
+                      // Chat history will reload automatically via useEffect
                     }
                   }}
                 >
-                  <div className="chat-title">{session.topic}</div>
-                  <div className="chat-timestamp">
+                  <div className="chat-title">{session.topic.split(' ').slice(0, 4).join(' ')}{session.topic.split(' ').length > 4 ? '...' : ''}</div>
+                  {/* <div className="chat-timestamp">
                     {session.message_count} messages • {formatTimeAgo(session.updated_at)}
-                  </div>
+                  </div> */}
                 </div>
               ))
             )}
           </div>
         </div>
-
-        {/* <div className="sidebar-section">
-          <h3>Chat Statistics</h3>
-          <div className="stats">
-            <div className="stat-item">
-              <span className="stat-label">Total Messages:</span>
-              <span className="stat-value">{messages.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Your Messages:</span>
-              <span className="stat-value">{messages.filter(m => m.role === 'user').length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Bot Responses:</span>
-              <span className="stat-value">{messages.filter(m => m.role === 'assistant').length}</span>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );

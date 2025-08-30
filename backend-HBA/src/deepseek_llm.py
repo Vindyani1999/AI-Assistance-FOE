@@ -25,7 +25,7 @@ class DeepSeekLLM(BaseLLM):
                 {
                     "role": "system",
                     "content": (
-                        "You extract structured data from room availability questions. "
+                        "You extract structured data from questions. "
                         "Output must be JSON with: room_name, date (yyyy-mm-dd), "
                         "start_time and end_time (HH:MM 24-hour format)."
                     ),

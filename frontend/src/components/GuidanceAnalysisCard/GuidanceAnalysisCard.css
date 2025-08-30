@@ -1,0 +1,166 @@
+/* Bar chart section theme backgrounds */
+/* Bar chart section theme backgrounds */
+.chat-history-card {
+  width: 100%;
+  margin-top: 1.2rem;
+  background: #fff;
+  border-radius: 1.1rem;
+  box-shadow: 0 2px 12px rgba(121, 85, 72, 0.08);
+  padding: 1.1rem 1.2rem;
+  min-height: 120px;
+}
+
+.bar-chart-bg {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border-radius: 1.1rem;
+  box-shadow: 0 2px 12px rgba(121, 85, 72, 0.08);
+  padding: 1.2rem 1.2rem 1.2rem 1.2rem;
+  background: #fff;
+}
+
+.dark-theme .bar-chart-bg, .dark-theme .chat-history-card {
+  background: #23272f;
+}
+
+/* Total Calls Card Styles */
+.total-calls-card {
+  background: linear-gradient(135deg, #8d6e63 0%, #5d4037 100%) !important;
+  color: #fbe9e7;
+  color: #fff;
+  border-radius: 1.1rem;
+  box-shadow: 0 6px 24px rgba(121,85,72,0.18);
+  padding: 1.2rem 1.5rem 0rem 1.3rem;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+[data-theme='dark'] .total-calls-card, .dark-theme .total-calls-card {
+  background: linear-gradient(135deg, #3e2723 0%, #6d4c41 100%) !important;
+  color: #ffe6c7;
+  box-shadow: 0 6px 24px rgba(121,85,72,0.28);
+}
+/* Ensure header is left-aligned regardless of parent flex alignment */
+.guidance-analysis-header {
+  width: 100%;
+  display: block;
+  text-align: left;
+}
+/* Guidance Analysis Card Styles */
+.guidance-analysis-card {
+  background: #f5f8fa;
+  border-radius: 1.2rem;
+    box-shadow: 0 10px 24px rgba(30,30,30,0.30);
+  padding: 0.5rem 1.5rem 2rem 1.5rem;
+  margin: 2rem;
+  /* max-width: 480px; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* ma: '2.5rem'; */
+}
+.guidance-analysis-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin-bottom: 1.5rem;
+  padding-left: 12px;
+  letter-spacing: 0.5px;
+  text-align: left !important;
+}
+
+[data-theme='dark'] .guidance-analysis-card h3, .dark-theme .guidance-analysis-card h3 {
+  color: #eaf3ff;
+}
+.guidance-sub-cards {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.guidance-sub-card {
+  background: #ffffff;
+  color: #222;
+      /* box-shadow: 0 4px 24px rgba(30,30,30,0.10); */
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+   border-radius: 0.8rem;
+  /* box-shadow: 0 2px 8px rgba(90, 50, 50, 0.06); */
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  }
+ 
+.guidance-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #795548;
+  margin-bottom: 0.3rem;
+}
+.guidance-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.3rem;
+}
+.guidance-progress {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  margin-top: 0.3rem;
+  overflow: hidden;
+}
+.guidance-progress-bar {
+  height: 100%;
+  background: #8a5c5c;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+.guidance-usage-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 48px;
+  margin-top: 0.5rem;
+}
+.guidance-usage-bar-segment {
+  width: 16px;
+  background: #e0baba;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s;
+}
+.guidance-usage-bar-monthly {
+  height: 32px;
+}
+.guidance-usage-bar-segment-monthly {
+  width: 24px;
+  background: #bfa6a6;
+}
+[data-theme='dark'] .guidance-analysis-card, .dark-theme .guidance-analysis-card, .dark-theme.bar-chart-bg {
+  background: #2c3440;
+    box-shadow: 0 4px 24px rgba(30,30,30,0.10);
+}
+[data-theme='dark'] .guidance-sub-card, .dark-theme .guidance-sub-card {
+  background: #23272f;
+  color: #eaf3ff;
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+  }
+  [data-theme='dark'] .guidance-sub-card:hover, .dark-theme .guidance-sub-card:hover {
+    box-shadow: 0 8px 32px rgba(30,30,30,0.28);
+  box-shadow: 0 2px 8px rgba(255,255,255,0.06);
+}
+[data-theme='dark'] .guidance-label, .dark-theme .guidance-label {
+  color: #e0baba;
+}
+[data-theme='dark'] .guidance-value, .dark-theme .guidance-value {
+  color: #ffd700;
+}

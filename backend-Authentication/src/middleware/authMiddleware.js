@@ -12,6 +12,13 @@ module.exports = function authenticateToken(req, res, next) {
       return res.status(403).json({ message: 'Invalid or expired token.' });
     }
     req.user = user;
+    // Issue a new token (rolling token)
+    const newToken = jwt.sign(
+      { userId: user.userId, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '60m' }
+    );
+    res.set('x-access-token', newToken);
     next();
   });
 };

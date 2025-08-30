@@ -1,3 +1,44 @@
+/* Dark theme overrides for chat UI */
+.dark-theme .chat-container,
+[data-theme='dark'] .chat-container {
+  background: #23272f;
+}
+.dark-theme .chat-messages,
+[data-theme='dark'] .chat-messages {
+  background: #23272f;
+}
+.dark-theme .message-content,
+[data-theme='dark'] .message-content {
+  background: #23272f;
+  color: #eaf3ff;
+}
+.dark-theme .message.user .message-content,
+[data-theme='dark'] .message.user .message-content {
+  background: #23272f;
+  color: #eaf3ff;
+  border: 1px solid #334155;
+}
+.dark-theme .chat-input-container,
+[data-theme='dark'] .chat-input-container {
+  background: #23272f;
+  border-top: 1px solid #334155;
+}
+.dark-theme .chat-input,
+[data-theme='dark'] .chat-input {
+  background: #23272f;
+  color: #eaf3ff;
+  border: 1px solid #334155;
+}
+.dark-theme .input-btn.clear-btn,
+[data-theme='dark'] .input-btn.clear-btn {
+  background: #23272f;
+  color: #eaf3ff;
+  border: 1px solid #eaf3ff;
+}
+.dark-theme .input-btn.clear-btn:hover,
+[data-theme='dark'] .input-btn.clear-btn:hover {
+  background: #334155;
+}
 .chat-container {
   display: flex;
   flex-direction: column;

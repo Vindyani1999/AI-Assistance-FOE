@@ -1,5 +1,6 @@
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.tools import tool
 from .load_tools_config import LoadToolsConfig
 
@@ -8,52 +9,54 @@ TOOLS_CFG = LoadToolsConfig()
 
 class ByLawRAGTool:
     """
-    A tool for retrieving relevant stories using a Retrieval-Augmented Generation (RAG) approach with vector embeddings.
+    A tool for retrieving relevant sections from the university by-laws using a Retrieval-Augmented Generation (RAG) approach with vector embeddings.
 
-    This tool leverages a pre-trained OpenAI embedding model to transform user queries into vector embeddings.
-    It then uses these embeddings to query a Chroma-based vector database to retrieve the top-k most relevant
-    stories from a specific collection stored in the database.
-
-    Attributes:
-        embedding_model (str): The name of the OpenAI embedding model used for generating vector representations of queries.
-        vectordb_dir (str): The directory where the Chroma vector database is persisted on disk.
-        k (int): The number of top-k nearest neighbor stories to retrieve from the vector database.
-        vectordb (Chroma): The Chroma vector database instance connected to the specified collection and embedding model.
-
-    Methods:
-        __init__: Initializes the tool with the specified embedding model, vector database, and retrieval parameters.
+    Automatically selects between OpenAI and HuggingFace embeddings based on config.
     """
 
     def __init__(self, embedding_model: str, vectordb_dir: str, k: int, collection_name: str) -> None:
         """
-        Initializes the StoriesRAGTool with the necessary configurations.
+        Initializes the ByLawRAGTool with the necessary configurations.
 
         Args:
-            embedding_model (str): The name of the embedding model (e.g., "text-embedding-ada-002")
-                used to convert queries into vector representations.
-            vectordb_dir (str): The directory path where the Chroma vector database is stored and persisted on disk.
-            k (int): The number of nearest neighbor stories to retrieve based on query similarity.
-            collection_name (str): The name of the collection inside the vector database that holds the relevant stories.
+            embedding_model (str): Embedding model name (e.g., "text-embedding-ada-002" for OpenAI
+                                   or "sentence-transformers/all-MiniLM-L6-v2" for HuggingFace)
+            vectordb_dir (str): Path where the Chroma DB is stored.
+            k (int): Number of results to return.
+            collection_name (str): Name of the Chroma DB collection.
         """
         self.embedding_model = embedding_model
         self.vectordb_dir = vectordb_dir
         self.k = k
+
+        # Choose embedding model
+        if self.embedding_model.startswith("text-embedding"):
+            embedder = OpenAIEmbeddings(model=self.embedding_model)
+            print(f"[INFO] Loaded OpenAI embedding model for ByLaw: {self.embedding_model}")
+        else:
+            embedder = HuggingFaceEmbeddings(model_name=self.embedding_model)
+            print(f"[INFO] Loaded HuggingFace embedding model for ByLaw: {self.embedding_model}")
+
+        # Load Chroma vectordb
         self.vectordb = Chroma(
             collection_name=collection_name,
             persist_directory=self.vectordb_dir,
-            embedding_function=OpenAIEmbeddings(model=self.embedding_model)
+            embedding_function=embedder
         )
-        print("Number of vectors in vectordb:",
-              self.vectordb._collection.count(), "\n\n")
+        print("Number of vectors in vectordb:", self.vectordb._collection.count(), "\n\n")
 
 
 @tool
 def lookup_by_law(query: str) -> str:
-    """Search among the fictional by law and find the answer to the query. Input should be the query."""
+    """
+    Search among the university by-laws and find the answer to the query.
+    Input should be the query text.
+    """
     rag_tool = ByLawRAGTool(
         embedding_model=TOOLS_CFG.by_law_rag_embedding_model,
         vectordb_dir=TOOLS_CFG.by_law_rag_vectordb_directory,
         k=TOOLS_CFG.by_law_rag_k,
-        collection_name=TOOLS_CFG.by_law_rag_collection_name)
+        collection_name=TOOLS_CFG.by_law_rag_collection_name
+    )
     docs = rag_tool.vectordb.similarity_search(query, k=rag_tool.k)
     return "\n\n".join([doc.page_content for doc in docs])

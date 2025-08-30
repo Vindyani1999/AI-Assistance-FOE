@@ -18,66 +18,13 @@ import LoginIcon from '@mui/icons-material/Login';
 import './AuthForm.mui.css';
 import { signup, verifyOtp, requestOtp, login } from '../../services/authAPI';
 import OTPPopup from './OTPPopup';
+import { useNotification } from '../../context/NotificationContext';
+import {AuthFormValues, AuthFormProps} from "../../utils/authFormValus"
+import { EMAIL_DOMAINS, DEPARTMENT_MAP, ALL_DEPARTMENTS, TITLE_OPTIONS } from '../../utils/signupData';
 
-interface AuthFormValues {
-  emailFront: string;
-  emailDomain: string;
-  password: string;
-  confirmPassword: string;
-  title: string;
-  department: string;
-  firstName: string;
-  lastName: string;
-}
-interface AuthFormProps {
-    mode: "login" | "signup";
-    onSubmit: (data: { email: string; password: string }) => void;
-    buttonText?: string;
-    theme?: "light" | "dark" | string;
-    onSwitchToLogin?: () => void;
-}
-
-
-const EMAIL_DOMAINS = [
-  '', // Placeholder for select
-  '@engug.ruh.ac.lk',
-  '@ar.univ.edu',
-  '@cee.ruh.ac.lk',
-  '@mme.ruh.ac.lk',
-  '@eie.ruh.ac.lk',
-  '@eng.ruh.ac.lk',
-  // '@lib.ruh.ac.lk',
-  // '@cis.ruh.ac.lk',
-];
-
-const DEPARTMENT_MAP: Record<string, { value: string; label: string }> = {
-  'cee.ruh.ac.lk': { value: 'civil', label: 'Civil' },
-  'mme.ruh.ac.lk': { value: 'mechanical', label: 'Mechanical' },
-  'eie.ruh.ac.lk': { value: 'electrical', label: 'Electrical' },
-  // 'eng.ruh.ac.lk': { value: 'faculty', label: 'Faculty' },
-  // 'lib.ruh.ac.lk': { value: 'library', label: 'Library' },
-  // 'cis.ruh.ac.lk': { value: 'it', label: 'IT' },
-};
-
-const ALL_DEPARTMENTS = [
-  { value: 'civil', label: 'Civil' },
-  { value: 'mechanical', label: 'Mechanical' },
-  { value: 'electrical', label: 'Electrical' },
-  // { value: 'faculty', label: 'Faculty' },
-  // { value: 'library', label: 'Library' },
-  // { value: 'it', label: 'IT' },
-  // { value: 'admin', label: 'Admin' },
-];
-
-const TITLE_OPTIONS = [
-  { value: 'mr', label: 'Mr' },
-  { value: 'mrs', label: 'Mrs' },
-  { value: 'miss', label: 'Miss' },
-  { value: 'prof', label: 'Prof' },
-  { value: 'dr', label: 'Dr' },
-];
 
 const AuthForm = (props: AuthFormProps) => {
+  const { notify } = useNotification();
   const { mode, onSubmit, buttonText, theme, onSwitchToLogin } = props;
 
   // Password requirements
@@ -207,19 +154,21 @@ const AuthForm = (props: AuthFormProps) => {
       setOtpPopupOpen(false);
       setOtp('');
       setTimer(300);
-      alert('OTP verified!');
+
+  notify('success', 'OTP verified successfully!');
       // After OTP is verified, send signup payload
       if (signupPayload) {
         try {
           await signup(signupPayload);
-          alert('Signup successful!');
+          notify('success', 'Signup successful!');
           setSignupPayload(null);
         } catch (err: any) {
-          alert(err.message || 'Signup failed');
+          notify('error', 'Signup failed', err.message);
         }
       }
     } catch (err: any) {
       setOtpError(err.message || 'Invalid OTP');
+  notify('error', 'Invalid OTP', err.message);
     }
   };
 
@@ -234,6 +183,23 @@ const AuthForm = (props: AuthFormProps) => {
 
   return (
     <Box>
+      {/* TEMP: Remove this button after testing
+      <Button variant="contained" color="success" onClick={() => notify('success', 'Success!', 'This is a test success message!')}
+        style={{ marginBottom: 16 }}>
+        Show Success Popup (Test)
+      </Button>
+      <Button variant="contained" color="error" onClick={() => notify('error', 'Error!', 'This is a test error message!')}
+        style={{ marginBottom: 16 }}>
+        Show Error Popup (Test)
+      </Button>
+      <Button variant="contained" color="info" onClick={() => notify('info', 'Info!', 'This is a test info message!')}
+        style={{ marginBottom: 16 }}>
+        Show Info Popup (Test)
+      </Button>
+      <Button variant="contained" color="warning" onClick={() => notify('warning', 'Warning!', 'This is a test warning message!')}
+        style={{ marginBottom: 16 }}>
+        Show Warning Popup (Test)
+      </Button> */}
       <Formik
         initialValues={initialValues}
         validate={validate}
@@ -259,17 +225,17 @@ const AuthForm = (props: AuthFormProps) => {
               setSignupPayload(payload);
               handleOpenOtpPopup(email);
             } catch (err: any) {
-              alert(err.message || 'Failed to send OTP');
+              notify('error', 'Failed to send OTP', err.message);
             }
           } else if (effectiveMode === 'login') {
             try {
               const result = await login(email, values.password);
-              alert('Login successful!');
+              notify('success', 'Login successful!');
               if (typeof onSubmit === 'function') {
                 onSubmit({ email, password: values.password });
               }
             } catch (err: any) {
-              alert(err.message || 'Login failed');
+              notify('error', 'Login failed', err.message);
             }
           }
           setSubmitting(false);

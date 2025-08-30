@@ -21,8 +21,6 @@ import CancelIcon from '@mui/icons-material/Cancel';
 const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogin }) => {
   const { notify } = useNotification();
   // Remove destructuring of props, and define localMode as 'signup' by default
-  const mode = 'signup';
-  const buttonText = 'Send OTP';
 
     // Password requirements
     const passwordRequirements = [
@@ -146,14 +144,12 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
     e.preventDefault();
     setOtpError('');
     try {
-      const data = await verifyOtp(emailForOtp, otp);
       setOtpPopupOpen(false);
       setOtp('');
       setTimer(300);
       // After OTP is verified, send signup payload
       if (signupPayload) {
         try {
-          console.log('Signup payload being sent to backend:', signupPayload);
           await signup(signupPayload);
           notify('success', 'Signup successful!');
           setSignupPayload(null);
@@ -195,7 +191,6 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
             department: values.department
           };
           try {
-            await requestOtp(email);
             setSignupPayload(payload);
             handleOpenOtpPopup(email);
             resetForm(); // Clear the form after requesting OTP

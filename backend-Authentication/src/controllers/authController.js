@@ -40,7 +40,6 @@ exports.signup = async (req, res) => {
     return res.status(400).json({ message: 'OTP not verified for this email. Please verify OTP before signing up.' });
   }
   try {
-    console.log('[signup] Received signup data:', { email, password, title, department, firstname, lastname });
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists' });
@@ -80,17 +79,12 @@ exports.signup = async (req, res) => {
 
 exports.requestOtp = async (req, res) => {
   const { email } = req.body;
-  console.log('[requestOtp] Received OTP request for email:', email);
   const otp = generateOtp();
-  console.log('[requestOtp] Generated OTP:', otp);
   storeOtp(otpStore, email, otp);
-  console.log('[requestOtp] OTP stored for email:', email);
   try {
     await sendOtpEmail(email, otp);
-    console.log('[requestOtp] OTP email sent to:', email);
     res.json({ message: 'OTP sent' });
   } catch (err) {
-    console.error('[requestOtp] Error sending OTP email:', err);
     res.status(500).json({ message: 'Failed to send OTP email', error: err.message });
   }
 };

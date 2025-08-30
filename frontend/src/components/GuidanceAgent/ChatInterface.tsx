@@ -57,11 +57,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     if (!currentUser) return;
     try {
       const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for getChatHistory:', userId);
       const history = await apiService.getChatHistory(userSpecificSessionId, userId);
       setMessages(history.conversation_history);
     } catch (error) {
-      console.error('Error loading chat history:', error);
       setError('Failed to load chat history');
     }
   }, [currentUser, userSpecificSessionId]);
@@ -72,11 +70,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
       setSessionsLoading(true);
       setSessionsError(null);
       const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for getChatSessions:', userId);
       const sessionsData = await apiService.getChatSessions(userId);
       setChatSessions(sessionsData.sessions);
     } catch (error) {
-      console.error('Error loading chat sessions:', error);
       setSessionsError('Failed to load chat sessions');
     } finally {
       setSessionsLoading(false);
@@ -180,11 +176,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     setMessages(prev => [...prev, newUserMessage]);
 
     // Debugging: log userId and sessionId before sending
-    console.log('[DEBUG] Sending chat message:', {
-      userId: currentUser?.email,
-      sessionId: userSpecificSessionId,
-      message: userMessage
-    });
 
     try {
       const response = await apiService.sendMessage(userMessage, userSpecificSessionId);
@@ -192,7 +183,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
       setMessages(prev => [...prev, assistantMessage]);
       loadChatSessions();
     } catch (error) {
-      console.error('Error sending message:', error);
       setError('Failed to send message. Please try again.');
       setMessages(prev => prev.slice(0, -1));
     } finally {
@@ -227,12 +217,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
     if (!currentUser) return;
     try {
       const userId = currentUser.email; // Use email as user identifier
-      console.log('[FRONTEND] Sending userId for sendFeedback:', userId);
       await apiService.sendFeedback(userSpecificSessionId, messageIndex, feedbackType, userId);
       // You could add UI feedback here, like showing a success message
-      console.log(`Feedback sent: ${feedbackType} for message ${messageIndex}`);
+      // console.log(`Feedback sent: ${feedbackType} for message ${messageIndex}`);
     } catch (error) {
-      console.error('Error sending feedback:', error);
+      // console.error('Error sending feedback:', error);
     }
   };
 
@@ -399,7 +388,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId = 'default' }) 
                 No chat history yet. Start a conversation!
               </div>
             ) : (
-              [...chatSessions].reverse().map((session) => (
+              [...chatSessions].map((session) => (
                 <div 
                   key={session.session_id}
                   className={`chat-history-item ${session.session_id === userSpecificSessionId ? 'active' : ''}`}

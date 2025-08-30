@@ -1,5 +1,11 @@
 
-import { SignupPayload, VerifyOtpResponse } from '../utils/authInterfaces';// Login API
+
+import { SignupPayload, VerifyOtpResponse } from '../utils/authInterfaces';
+let Base_Url_Auth = 'http://localhost:5000';
+
+if (Base_Url_Auth.endsWith('/')) Base_Url_Auth = Base_Url_Auth.slice(0, -1);
+
+// Login API
 // Helper to get the latest access token
 export function getAccessToken() {
   return localStorage.getItem('auth_token');
@@ -36,14 +42,10 @@ export async function login(email: string, password: string): Promise<{ message:
    //data.user.id will give you the user's ID
 }
 
-let Base_Url_Auth = 'http://localhost:5000';
-
-if (Base_Url_Auth.endsWith('/')) Base_Url_Auth = Base_Url_Auth.slice(0, -1);
-
 export async function signup(payload: SignupPayload): Promise<{ message: string }> {
   const response = await fetch(`${Base_Url_Auth}/auth/signup`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAccessToken()}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
   updateAccessTokenFromResponse(response);
@@ -59,10 +61,10 @@ export async function signup(payload: SignupPayload): Promise<{ message: string 
 export async function requestOtp(email: string): Promise<{ message: string }> {
   const response = await fetch(`${Base_Url_Auth}/auth/request-otp`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAccessToken()}` },
+    headers: { 'Content-Type': 'application/json' }, // No Authorization header
     body: JSON.stringify({ email }),
   });
-  updateAccessTokenFromResponse(response);
+  // No need to update access token for OTP request
   if (!response.ok) {
     throw new Error(`Failed to request OTP: ${response.status}`);
   }
@@ -83,6 +85,6 @@ export async function verifyOtp(email: string, otp: string): Promise<VerifyOtpRe
     throw new Error(`Failed to verify OTP: ${response.status}`);
   }
   const data = await response.json();
-  console.log('role :', data.role, '\n name :', data.name, '\n department :', data.department, '\n id :', data.id, '\n');
+  // console.log('role :', data.role, '\n name :', data.name, '\n department :', data.department, '\n id :', data.id, '\n');
   return data;
 }

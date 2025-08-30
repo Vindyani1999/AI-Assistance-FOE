@@ -90,7 +90,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
             {message.role === "assistant" && (
               <div className="message-actions">
                 <button
-                  onClick={() => console.log("Liked")}
+                  // onClick={() => console.log("Liked")}
                   className="feedback-btn like-btn"
                   title="Like this response"
                 >
@@ -106,7 +106,7 @@ const ChatUI: React.FC<ChatUIProps> = ({
                   </svg>
                 </button>
                 <button
-                  onClick={() => console.log("Disliked")}
+                  // onClick={() => console.log("Disliked")}
                   className="feedback-btn dislike-btn"
                   title="Dislike this response"
                 >

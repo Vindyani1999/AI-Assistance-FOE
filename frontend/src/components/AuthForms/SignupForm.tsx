@@ -143,17 +143,13 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setOtpError('');
-    console.log('[OTP SUBMIT] Submitting OTP:', otp, 'for email:', emailForOtp);
     try {
-      const verifyResult = await verifyOtp(emailForOtp, otp);
-      console.log('[OTP SUBMIT] OTP verification result:', verifyResult);
       setOtpPopupOpen(false);
       setOtp('');
       setTimer(300);
       // After OTP is verified, send signup payload
       if (signupPayload) {
         try {
-          console.log('[OTP SUBMIT] Signup payload being sent to backend:', signupPayload);
           await signup(signupPayload);
           notify('success', 'Signup successful!');
           setSignupPayload(null);
@@ -161,14 +157,12 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
             onSwitchToLogin();
           }
         } catch (err: any) {
-          console.error('[OTP SUBMIT] Signup failed:', err);
           notify('error', 'Signup failed', err.message);
         }
       } else {
         notify('success', 'OTP verified successfully!');
       }
     } catch (err: any) {
-      console.error('[OTP SUBMIT] OTP verification failed:', err);
       setOtpError(err.message || 'Invalid OTP');
       notify('error', 'Invalid OTP', err.message);
     }
@@ -197,15 +191,10 @@ const SignupForm: React.FC<{ onSwitchToLogin?: () => void }> = ({ onSwitchToLogi
             department: values.department
           };
           try {
-            console.log('[SIGNUP SUBMIT] Requesting OTP for:', email);
-            const otpResult = await requestOtp(email);
-            console.log('[SIGNUP SUBMIT] OTP request result:', otpResult);
             setSignupPayload(payload);
-            console.log('[SIGNUP SUBMIT] Opening OTP popup for:', email);
             handleOpenOtpPopup(email);
             resetForm(); // Clear the form after requesting OTP
           } catch (err: any) {
-            console.error('[SIGNUP SUBMIT] Failed to send OTP:', err);
             notify('error', 'Failed to send OTP', err.message);
           }
           setSubmitting(false);

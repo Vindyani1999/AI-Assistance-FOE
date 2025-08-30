@@ -79,7 +79,7 @@ class ApiService {
       session_id: sessionId,
       user_id: userEmail,
     };
-    console.log('[API DEBUG] Sending POST /chat body:', postBody);
+   
     try {
       const response = await fetch(`${this.baseUrl}/chat`, {
         method: 'POST',

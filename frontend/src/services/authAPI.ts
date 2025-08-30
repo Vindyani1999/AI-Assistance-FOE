@@ -85,6 +85,6 @@ export async function verifyOtp(email: string, otp: string): Promise<VerifyOtpRe
     throw new Error(`Failed to verify OTP: ${response.status}`);
   }
   const data = await response.json();
-  console.log('role :', data.role, '\n name :', data.name, '\n department :', data.department, '\n id :', data.id, '\n');
+  // console.log('role :', data.role, '\n name :', data.name, '\n department :', data.department, '\n id :', data.id, '\n');
   return data;
 }

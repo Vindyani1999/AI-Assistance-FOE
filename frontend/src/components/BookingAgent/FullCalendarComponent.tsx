@@ -460,8 +460,8 @@ const FullCalendarComponent: React.FC<Props> = ({
   refreshKey,
   onCellClick,
 }) => {
-  // ← Dynamic imports loaded here
-  const [FC, setFC] = useState<any>(null);
+
+const [FC, setFC] = useState<any>(null);
   const [calendarPlugins, setCalendarPlugins] = useState<any[]>([]);
 
   // Load FullCalendar dynamically so TS does not convert it to require()
@@ -474,6 +474,7 @@ const FullCalendarComponent: React.FC<Props> = ({
 
       setFC(() => fullcalendar);
       setCalendarPlugins([timeGridPlugin, interactionPlugin]);
+      // setIsOpen(true);
     };
 
     loadCalendar();
@@ -490,6 +491,29 @@ const FullCalendarComponent: React.FC<Props> = ({
   const [selectedRoomOptions, setSelectedRoomOptions] = useState<string[]>([]);
   const { notify } = useNotification();
 
+  const fetch_moduleCodes = async (email: string) => {
+      try {
+    const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/fetch_moduleCodes_by_user_email?email=${email}`);
+    setModuleOptions(response.data);
+    return response.data;
+  } catch (error:any) {
+    toast.error("❌ Failed to fetch module codes");
+    console.error("❌ Error fetching module codes:", error);
+    return [];
+  }
+};
+
+const fetch_all_halls = async () => {
+      try {
+    const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/all_halls`);
+    setRoomOptions(response.data);
+    return response.data;
+  } catch (error:any) {
+    toast.error("❌ Failed to fetch halls");
+    console.error("❌ Error fetching all halls:", error);
+    return [];
+  }
+};
   useEffect(() => {
     const getEmail = async () => {
       try {
@@ -524,9 +548,7 @@ const FullCalendarComponent: React.FC<Props> = ({
 
   const load = async (selectedRoom: any) => {
     try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/fetch_bookings?room_name=${selectedRoom}`
-      );
+      const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/fetch_bookings?room_name=${selectedRoom}`);
       const bookings = response.data;
 
       const events = bookings.map((booking: any, index: number) => ({
@@ -546,15 +568,18 @@ const FullCalendarComponent: React.FC<Props> = ({
   };
 
   const createBooking = async () => {
-    try {
-      await axios.post(`http://127.0.0.1:8000/booking/add`, formData);
-      notify("success", "✅ Booking created successfully!");
+try {
+    const response = await axios.post(`${process.env.REACT_APP_HBA_URL}/booking/add`, formData);
+    notify('success', "✅ Booking created successfully!");
+    console.log("✅ Booking created:", response.data);
+    setIsOpen(false);
     } catch (error: any) {
       notify("error", "❌ Failed to create booking");
       console.error(error);
     }
   };
 
+  
   const [lastClicked, setLastClicked] = useState<string | null>(null);
 
   const handleDateClick = (arg: any) => {
@@ -594,43 +619,37 @@ const FullCalendarComponent: React.FC<Props> = ({
       return;
     }
     createBooking();
+
   };
 
-  const fetch_moduleCodes = async (email: string) => {
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_moduleCodes_by_user_email?email=${email}`
-      );
-      setModuleOptions(response.data);
-    } catch (error) {
-      toast.error("❌ Failed to fetch module codes", {
-        toastId: "err-fetch-module-codes",
-      });
-    }
-  };
 
-  const fetch_all_halls = async () => {
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/booking/all_halls`
-      );
-      setRoomOptions(response.data);
-    } catch (error) {
-      toast.error("❌ Failed to fetch halls", { toastId: "err-fetch-halls" });
-    }
-  };
+  
 
-  const fetch_halls_by_moduleCode = async (moduleCode: string) => {
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`
-      );
-      setSelectedRoomOptions(response.data);
-    } catch (error) {
-      toast.error("❌ Failed to fetch halls by module", {
-        toastId: "err-fetch-halls-by-module",
-      });
-    }
+
+
+const fetch_halls_by_moduleCode = async (moduleCode: string) => {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`);
+    setSelectedRoomOptions(response.data);
+    return response.data;
+  } catch (error) {
+    toast.error("❌ Failed to fetch halls by module code");
+    console.error("❌ Error fetching halls:", error);
+    return [];
+  }
+  };
+  const handleOpenDialog = (booking: any) => {
+    setFormData({
+      // booking_id: booking.booking_id,
+      name: booking.name,
+      room_name: booking.room_name,
+      date: booking.date.slice(0, 10), // keep YYYY-MM-DD only
+      start_time: booking.start_time,
+      end_time: booking.end_time,
+    });
+    setIsOpen(true);
   };
 
   return (
@@ -690,7 +709,7 @@ const FullCalendarComponent: React.FC<Props> = ({
         >
           Manual Booking
         </Button>
-        <RightDrawer />
+        <RightDrawer openProp={isOpen} />
       </div>
       {/* <div className="room-select-row">
         <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -837,6 +856,6 @@ const FullCalendarComponent: React.FC<Props> = ({
       </Dialog>
     </Box>
   );
-};
 
+};
 export default FullCalendarComponent;

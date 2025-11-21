@@ -16,7 +16,7 @@
     "moduleResolution": "node16",
     // Temporarily silence TypeScript deprecation warnings that will be enforced in TS 7.0
     // Set to "6.0" to ignore deprecations introduced before TS 6.0
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "resolveJsonModule": true,
     "isolatedModules": false,
     "noEmit": true,

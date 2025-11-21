@@ -16,13 +16,15 @@ from src.deepseek_llm import DeepSeekLLM
 from fastapi.middleware.cors import CORSMiddleware
 from src.availability_logic import fetch_user_profile_by_email as fetch_profile_logic
 from src.swap.swapMain import router as swap_router
+from dotenv import load_dotenv
+import os
+load_dotenv()
 app = FastAPI()
 
 # 👇 Allow frontend on localhost:3000
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+origins_env = os.getenv("ALLOWED_ORIGINS", "")
+origins: List[str] = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
+
 
 app.add_middleware(
     CORSMiddleware,

@@ -17,9 +17,11 @@ import {
   DialogActions,
   TextField,
 } from "@mui/material";
-import { useNotification } from "../../context/NotificationContext";
-import { fetchUserEmailFromProfile } from "../../services/api";
+import { useNotification } from '../../context/NotificationContext';
+
 import { fetchUserProfile } from "../../services/userAPI";
+import { fetchUserEmailFromProfile, apiService } from "../../services/api";
+import { getAccessToken } from '../../services/authAPI';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { SelectChangeEvent } from "@mui/material/Select";
@@ -77,8 +79,15 @@ const BookingChatInterface: React.FC = () => {
     end_time: "",
   });
   //remove
-  const [sessionId] = useState("");
+  
   const { notify } = useNotification();
+  
+  // Generate a proper session ID
+  const [sessionId] = useState(() => 
+    `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  );  
+  
+
   const { theme } = useTheme();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -94,6 +103,7 @@ const BookingChatInterface: React.FC = () => {
     };
     getEmail();
   }, []);
+
   // Called when chat updates
   const handleChatUpdate = () => {
     setRefreshCalendar((prev) => prev + 1); // increment to trigger refresh
@@ -172,34 +182,32 @@ const BookingChatInterface: React.FC = () => {
       };
       setMessages((prev) => [...prev, bookingMessage]);
 
-      const response = await axios.post("http://127.0.0.1:8000/ask_llm/", {
-        question: `Book ${room_name} on ${date} from ${startTimeStr} to ${endTimeStr}`,
-        session_id: sessionId,
-      });
+      // Use apiService instead of direct axios call
+      const response = await apiService.askLLM(
+        sessionId, 
+        `Book ${room_name} on ${date} from ${startTimeStr} to ${endTimeStr}`
+      );
 
       let responseContent = "";
 
-      if (response.data.message) {
-        responseContent = response.data.message;
+      if (response.message) {
+        responseContent = response.message;
       }
 
-      if (response.data.status === "available" || response.data.booking_id) {
-        responseContent = `✅ Successfully booked ${room_name}! ${response.data.message}`;
-      } else if (response.data.status === "unavailable") {
-        responseContent = `⚠️ ${response.data.message}`;
-      } else if (response.data.status === "room_not_found") {
-        responseContent = `❌ ${response.data.message}`;
-      } else if (response.data.status === "missing_parameters") {
-        responseContent = `❓ ${response.data.message}`;
+      if (response.status === "available" || response.booking_id) {
+        responseContent = `✅ Successfully booked ${room_name}! ${response.message}`;
+      } else if (response.status === "unavailable") {
+        responseContent = `⚠️ ${response.message}`;
+      } else if (response.status === "room_not_found") {
+        responseContent = `❌ ${response.message}`;
+      } else if (response.status === "missing_parameters") {
+        responseContent = `❓ ${response.message}`;
       }
 
       const responseMessage: Message = {
         role: "assistant",
-        content:
-          responseContent ||
-          response.data.message ||
-          "Booking processed successfully!",
-        recommendations: response.data.recommendations || [],
+        content: responseContent || response.message || "Booking processed successfully!",
+        recommendations: response.recommendations || [],
         showRecommendations: false,
       };
 
@@ -428,8 +436,10 @@ const BookingChatInterface: React.FC = () => {
     }
   };
 
+// MAIN FIX: Use apiService instead of direct axios call
   const sendMessage = async () => {
     if (!inputValue.trim()) return;
+    
     const newMessage: Message = { role: "user", content: inputValue };
     setMessages((prev) => [...prev, newMessage]);
     setInputValue("");
@@ -437,87 +447,85 @@ const BookingChatInterface: React.FC = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/ask_llm/", {
-        question: inputValue,
-        session_id: sessionId,
-      });
+      // Use apiService.askLLM instead of direct axios call
+      const response = await apiService.askLLM(sessionId, inputValue);
 
       let responseContent = "";
       let recommendations: Recommendation[] = [];
       let showRecommendations = false;
 
-      if (response.data.message) {
-        responseContent = response.data.message;
+      if (response.message) {
+        responseContent = response.message;
       }
 
-      if (
-        response.data.recommendations &&
-        response.data.recommendations.length > 0
-      ) {
-        recommendations = response.data.recommendations;
+      if (response.recommendations && response.recommendations.length > 0) {
+        recommendations = response.recommendations;
         showRecommendations = true;
       }
 
       if (
-        response.data.status === "unavailable" ||
-        response.data.status === "no_slots_available"
+        response.status === "unavailable" ||
+        response.status === "no_slots_available"
       ) {
         if (
-          response.data.message &&
-          response.data.message.includes("already booked for that time")
+          response.message &&
+          response.message.includes("already booked for that time")
         ) {
           showRecommendations = true;
         }
       }
 
-      if (response.data.status === "room_not_found") {
-        responseContent = `❌ ${response.data.message}`;
+      if (response.status === "room_not_found") {
+        responseContent = `❌ ${response.message}`;
         showRecommendations = false;
-      } else if (response.data.status === "unavailable") {
-        responseContent = `⚠️ ${response.data.message}`;
+      } else if (response.status === "unavailable") {
+        responseContent = `⚠️ ${response.message}`;
         showRecommendations =
-          response.data.message &&
-          response.data.message.includes("already booked for that time") &&
+          response.message &&
+          response.message.includes("already booked for that time") &&
           recommendations.length > 0;
-      } else if (response.data.status === "available") {
-        responseContent = `✅ ${response.data.message}`;
-      } else if (response.data.status === "missing_parameters") {
-        responseContent = `❓ Please provide more information: ${response.data.message}`;
-      } else if (response.data.status === "no_slots_available") {
-        responseContent = `⚠️ ${response.data.message}`;
+      } else if (response.status === "available") {
+        responseContent = `✅ ${response.message}`;
+      } else if (response.status === "missing_parameters") {
+        responseContent = `❓ Please provide more information: ${response.message}`;
+      } else if (response.status === "no_slots_available") {
+        responseContent = `⚠️ ${response.message}`;
         showRecommendations =
-          response.data.message &&
-          response.data.message.includes("already booked for that time") &&
+          response.message &&
+          response.message.includes("already booked for that time") &&
           recommendations.length > 0;
       }
 
-      // Fake API call
-      setTimeout(() => {
-        const responseMessage: Message = {
-          role: "assistant",
-          content: showRecommendations
-            ? formatMessageWithRecommendations(
-                responseContent ||
-                  "I couldn't process your request. Please try again.",
-                recommendations
-              )
-            : responseContent || `${response.data.message}`,
-          recommendations: recommendations,
-          showRecommendations: showRecommendations,
-        };
-        setMessages((prev) => [...prev, responseMessage]);
-        setIsLoading(false);
-      }, 1000);
+      const responseMessage: Message = {
+        role: "assistant",
+        content: showRecommendations
+          ? formatMessageWithRecommendations(
+              responseContent || "I couldn't process your request. Please try again.",
+              recommendations
+            )
+          : responseContent || `${response.message}`,
+        recommendations: recommendations,
+        showRecommendations: showRecommendations,
+      };
+
+      setMessages((prev) => [...prev, responseMessage]);
       handleChatUpdate();
     } catch (err) {
       console.error("API Error:", err);
 
-      if (axios.isAxiosError(err) && err.response) {
-        if (
+      let errorContent = "❌ Something went wrong. Please try again.";
+      
+      // Handle authorization errors
+      if (err instanceof Error && err.message.includes('Access denied')) {
+        errorContent = `🔒 ${err.message}`;
+      } else if (axios.isAxiosError(err) && err.response) {
+        if (err.response.status === 403) {
+          errorContent = `🔒 Access denied. You can only modify bookings you created.`;
+        } else if (
           err.response.data?.detail &&
           typeof err.response.data.detail === "object"
         ) {
-          let errorContent = `❌ ${
+          errorContent = `❌ ${
             err.response.data.detail.message || err.response.data.detail.error
           }`;
           let recommendations: Recommendation[] = [];
@@ -542,12 +550,21 @@ const BookingChatInterface: React.FC = () => {
             showRecommendations: showRecommendations,
           };
           setMessages((prev) => [...prev, errorMessage]);
+          setIsLoading(false);
+          return;
+        } else if (err.response.data?.detail && typeof err.response.data.detail === "string") {
+          errorContent = `❌ ${err.response.data.detail}`;
         } else {
-          setError(`Error ${err.response.status}: ${err.response.statusText}`);
+          errorContent = `❌ Error ${err.response.status}: ${err.response.statusText}`;
         }
-      } else {
-        setError("Something went wrong. Please try again.");
       }
+
+      const errorMessage: Message = {
+        role: "assistant",
+        content: errorContent,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -567,6 +584,7 @@ const BookingChatInterface: React.FC = () => {
   const formatMessage = (text: string): string => {
     return text;
   };
+
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -592,12 +610,14 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.post(
-        `http://127.0.0.1:8000/booking/add`,
+        `${process.env.REACT_APP_HBA_URL}/booking/add`,
         formData
       );
 
       // Optionally, refresh the calendar or show a success message
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error creating booking:", error);
+    }
   };
 
   const deleteBooking = async (bookingId: number) => {
@@ -605,43 +625,69 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.delete(
-        `http://127.0.0.1:8000/booking/delete`,
+        `${process.env.REACT_APP_HBA_URL}/booking/delete`,
         {
           data: { booking_id: bookingId },
+          headers: {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'Content-Type': 'application/json',
+          },
         }
       );
+      toast.success("✅ Booking deleted successfully!");
       handleChatUpdate();
       // Optionally, refresh the calendar or show a success message
-    } catch (error) {}
+   } catch (error: any) {
+      let errorMessage = `❌ Failed to delete booking: ${error.response?.data?.message || error.message}`;
+      
+      // Handle authorization errors
+      if (error.response?.status === 403) {
+        errorMessage = "🔒 Access denied. You can only delete bookings you created.";
+      } else if (error.response?.data?.detail && typeof error.response.data.detail === 'string') {
+        errorMessage = `❌ ${error.response.data.detail}`;
+      }
+      
+      toast.error(errorMessage);
+      console.error("❌ Error deleting booking:", error);
+    }
   };
 
   const updateBooking = async (bookingId: number, updatedData: any) => {
     try {
-      // ✅ Normalize date to YYYY-MM-DD
       let formattedDate = updatedData.date;
       if (formattedDate) {
         formattedDate = new Date(formattedDate).toISOString().split("T")[0];
-        // e.g. "2025-08-18T09:38:40" → "2025-08-18"
       }
+   
 
       const response = await axios.put(
-        `http://127.0.0.1:8000/booking/update_booking`,
+        `${process.env.REACT_APP_HBA_URL}/booking/update_booking`,
         {
           booking_id: bookingId,
           ...updatedData,
-          date: formattedDate, // 👈 send normalized date
+          date: formattedDate,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'Content-Type': 'application/json',
+          },
         }
       );
-      notify("success", "✅ Booking updated successfully!");
+      notify('success', "✅ Booking updated successfully!");
       console.log("✅ Booking updated:", response.data);
       handleChatUpdate();
     } catch (error: any) {
-      notify(
-        "error",
-        `❌ Failed to update booking: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+      let errorMessage = `❌ Failed to update booking: ${error.response?.data?.message || error.message}`;
+      
+      // Handle authorization errors
+      if (error.response?.status === 403) {
+        errorMessage = "🔒 Access denied. You can only update bookings you created.";
+      } else if (error.response?.data?.detail && typeof error.response.data.detail === 'string') {
+        errorMessage = `❌ ${error.response.data.detail}`;
+      }
+      
+      notify('error', errorMessage);
       console.error("❌ Error updating booking:", error);
     }
   };
@@ -651,7 +697,7 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_booking_by_id`,
+        `${process.env.REACT_APP_HBA_URL}/booking/fetch_booking_by_id`,
         {
           params: { booking_id: calendarCellInfo.id },
         }
@@ -671,159 +717,142 @@ const BookingChatInterface: React.FC = () => {
       fetch_halls_by_moduleCode(response.data.name);
       // Optionally, refresh the calendar or show a success message
     } catch (error) {
-      toast.error("❌ Failed to fetch booking details", {
-        toastId: "err-fetch-booking-details",
-      });
+      // toast.error("❌ Failed to fetch booking details");
       console.error("❌ Error fetching booking:", error);
     }
   };
   const fetch_moduleCodes_by_user_email = async (email: string) => {
     const apiUrl = process.env.REACT_APP_API_URL;
 
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_moduleCodes_by_user_email?email=${email}`
-      );
-      setModuleOptions(response.data);
-      return response.data;
-    } catch (error) {
-      toast.error("❌ Failed to fetch module codes", {
-        toastId: "err-fetch-module-codes",
-      });
-      console.error("❌ Error fetching module codes:", error);
-      return [];
-    }
-  };
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/fetch_moduleCodes_by_user_email?email=${email}`);
+    setModuleOptions(response.data);
+    return response.data;
+  } catch (error) {
+    // toast.error("❌ Failed to fetch module codes");
+    console.error("❌ Error fetching module codes:", error);
+    return [];
+  }
+};
 
-  const fetch_halls_by_moduleCode = async (moduleCode: string) => {
-    const apiUrl = process.env.REACT_APP_API_URL;
+const fetch_halls_by_moduleCode = async (moduleCode: string) => {
+  const apiUrl = process.env.REACT_APP_API_URL;
 
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`
-      );
-      setSelectedRoomOptions(response.data);
-      return response.data;
-    } catch (error) {
-      toast.error("❌ Failed to fetch halls", { toastId: "err-fetch-halls" });
-      console.error("❌ Error fetching halls:", error);
-      return [];
-    }
-  };
-  useEffect(() => {
-    if (calendarCellInfo) {
-      fetchBookingById(calendarCellInfo.id);
-      // fetch_user_id();
-      if (email) fetch_moduleCodes_by_user_email(email);
-    }
-  }, [calendarCellInfo]);
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`);
+    setSelectedRoomOptions(response.data);
+    return response.data;
+  } catch (error) {
+    // toast.error("❌ Failed to fetch halls");
+    console.error("❌ Error fetching halls:", error);
+    return [];
+  }
+};
+useEffect(() => {
+  if (calendarCellInfo) {
+    fetchBookingById(calendarCellInfo.id);
+    // fetch_user_id();
+    if(email)
+    fetch_moduleCodes_by_user_email(email)
+  }
+}, [calendarCellInfo]);
 
-  // const [userID, setUserID] = useState<number | null>(null);
-  // const fetch_user_id = async () => {
-  //   try {
-  //     const response=await axios.get(`http://127.0.0.1:8000/fetch_user_profile_by_email/${email}`);
-  //     setUserID(response.data.id);
-  //   } catch (error) {
-  //     console.error("Error fetching user ID:", error);
-  //   }
-  // };
+// const [userID, setUserID] = useState<number | null>(null);
+// const fetch_user_id = async () => {
+//   try {
+//     const response=await axios.get(`http://127.0.0.1:8000/fetch_user_profile_by_email/${email}`);
+//     setUserID(response.data.id);
+//   } catch (error) {
+//     console.error("Error fetching user ID:", error);
+//   }
+// };
 
-  const [bookingOptions, setBookingOptions] = React.useState<
-    { code: string; time: string; id: number }[]
-  >([]);
-  const [swapData, setSwapData] = useState<{
-    date: string;
-    name: string;
-    start_time: string;
-    end_time: string;
-    id: number;
-  }>({
-    date: "",
-    name: "",
-    id: 0,
-    start_time: "",
-    end_time: "",
-  });
-  const create_swap_request = async () => {
-    console.log("Swap Data", swapData);
-    // console.log("userID:", userID);
 
-    try {
-      const response = await axios.post(`http://127.0.0.1:8000/swap/request`, {
-        requested_by_email: email,
-        requested_booking_id: swapData.id,
-        offered_booking_id: Number(calendarCellInfo.id),
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error creating swap request:", error);
-      throw error;
-    }
-  };
+const [bookingOptions, setBookingOptions] = React.useState<{code: string; time: string; id: number}[]>([]);
+const [swapData, setSwapData] = useState<{date: string; name: string; start_time: string; end_time: string; id: number}>({
+  date: "",
+  name: "",
+  id: 0,
+  start_time: "",
+  end_time: ""
+});
+const create_swap_request = async () => {
+  console.log("Swap Data", swapData);
+  // console.log("userID:", userID);
 
-  //complete this function add aufill section
-  const fetch_booking_by_date_and_roomId = async (
-    date: string,
-    roomId: number
-  ) => {
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/bookings/by-date/${date}/${roomId}`
-      );
-      return response.data;
-    } catch (error) {
-      toast.error("❌ Failed to fetch booking", {
-        toastId: "err-fetch-booking",
-      });
-      console.error("❌ Error fetching booking:", error);
-      return null;
-    }
-  };
-  const handleDateChange = async (date: string) => {
-    handleSwapChange("date", date);
-    // LT1
-    if (formData.room_id) {
-      // only fetch if roomId is 17
-      const bookings = await fetch_booking_by_date_and_roomId(
-        date,
-        formData.room_id
-      );
+  try {
+    const response = await axios.post(process.env.REACT_APP_HBA_URL + `/swap/request`, {
+      requested_by_email: email,
+      requested_booking_id:Number(calendarCellInfo.id),
+      offered_booking_id: Number(swapData.id)
+    });
+    notify('success', "✅ Swap request created successfully!");
+    setIsSwap(false)
+    return response.data;
+    
+  } catch (error) {
+    notify('error', "❌ Failed to create swap request.");
 
-      if (bookings) {
-        const options = bookings.map((b: any) => ({
-          code: b.name, // module code (assuming `name` is your moduleCode)
-          time: `${b.start_time} - ${b.end_time}`,
-          id: b.id, // timeslot
-        }));
+    // console.error("Error creating swap request:", error);
+    throw error;
+  }
+};
 
-        setBookingOptions(options);
-      }
-    }
-  };
-  const handleSelect = (e: SelectChangeEvent<number | string>) => {
-    // MUI often returns string even for numeric values, so normalize to number
+
+//complete this function add aufill section
+const fetch_booking_by_date_and_roomId = async (date: string, roomId: number) => {
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/bookings/by-date/${date}/${roomId}`);
+    return response.data;
+  } catch (error) {
+    // toast.error("❌ Failed to fetch booking");
+    console.error("❌ Error fetching booking:", error);
+    return null;
+  }
+};
+// Update handleSelect function
+const handleSelect = (e: SelectChangeEvent<number | string>) => {
     const raw = e.target.value;
-    console.log("Raw value from select event:", raw, typeof raw);
-
     const selectedId = typeof raw === "string" ? Number(raw) : (raw as number);
-
-    console.log("raw value from select:", raw, "parsed id:", selectedId);
-
+    
+    // Find the selected booking option
     const selectedOption = bookingOptions.find((o) => o.id === selectedId);
-    if (!selectedOption) {
-      // debug: this means types or values don't match
-      console.warn(
-        "Selected option not found for id:",
-        selectedId,
-        bookingOptions
-      );
+    
+    if (selectedOption) {
+        // Update all relevant swap data
+        setSwapData((prev) => ({
+            ...prev,
+            id: selectedId,
+            name: selectedOption.code, // Set the module code
+            start_time: selectedOption.time.split(' - ')[0], // Set start time
+            end_time: selectedOption.time.split(' - ')[1], // Set end time
+        }));
     }
-    // setSwapData(prev => ({...prev, name: e.target.value}));
+};
+
+// Update handleDateChange function
+const handleDateChange = async (date: string) => {
     setSwapData((prev) => ({
-      ...prev,
-      id: selectedId,
+        ...prev,
+        date: date,
+        name: '', // Reset module code when date changes
+        start_time: '',
+        end_time: ''
     }));
-  };
+
+    if (formData.room_id) {
+        const bookings = await fetch_booking_by_date_and_roomId(date, formData.room_id);
+
+        if (bookings) {
+            const options = bookings.map((b: any) => ({
+                code: b.name,
+                time: `${b.start_time} - ${b.end_time}`,
+                id: b.id
+            }));
+            setBookingOptions(options);
+        }
+    }
+};
 
   return (
     <div
@@ -992,16 +1021,25 @@ const BookingChatInterface: React.FC = () => {
               >
                 Edit
               </Button>
-              <Button
-                onClick={() => {
-                  setIsSwap(true);
-                  fetchBookingById(calendarCellInfo.id);
-                }}
-                variant="contained"
-                color="primary"
-              >
-                Swap
-              </Button>
+
+              {/* show Swap only when selected cell's title matches a module option */}
+              {calendarCellInfo &&
+                moduleOptions.some(
+                  (m) =>
+                    String(m).toLowerCase().trim() ===
+                    String(calendarCellInfo.title).toLowerCase().trim()
+                ) && (
+                  <Button
+                    onClick={() => {
+                      setIsSwap(true);
+                      fetchBookingById(calendarCellInfo.id);
+                    }}
+                    variant="contained"
+                    color="primary"
+                  >
+                    Swap
+                  </Button>
+              )}
               {/* <Button
             onClick={() => deleteBooking(calendarCellInfo.id)}
             variant="contained"

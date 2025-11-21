@@ -4,8 +4,8 @@ export async function fetchUserEmailFromProfile(): Promise<string | null> {
   const token = getAccessToken();
   if (!token) return null;
   try {
-    const response = await fetch("http://localhost:5000/auth/me", {
-      method: "GET",
+    const response = await fetch(process.env.REACT_APP_AUTH_URL + '/auth/me', {
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -94,6 +94,14 @@ export interface ChatSessionsResponse {
 
 class ApiService {
   // Example: include user email in chat requests automatically
+  private baseUrl: string;
+
+  constructor() {
+    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  }
+
+  // Send message to LLM (Backend-HBA)
+  // async sendMessage(message: string, sessionId: string = 'default'): Promise<ChatResponse> {
   async sendMessage(
     message: string,
     sessionId: string = "default",
@@ -129,6 +137,66 @@ class ApiService {
       throw error;
     }
   }
+
+  // Ask LLM for booking operations with enhanced error handling
+  async askLLM(sessionId: string, question: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/ask_llm/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          question: question,
+        }),
+      });
+      updateAccessTokenFromResponse(response);
+      
+      // Handle authorization errors specifically
+      if (response.status === 403) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Access denied. You can only modify bookings you created.');
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error asking LLM:', error);
+      throw error;
+    }
+  }
+
+  // Book recommendation directly
+  async bookRecommendation(sessionId: string, recommendation: any): Promise<any> {
+    const userEmail = await fetchUserEmailFromProfile();
+    try {
+      const response = await fetch(`${this.baseUrl}/book_recommendation/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          recommendation: recommendation,
+          created_by: userEmail || 'unknown',
+        }),
+      });
+      updateAccessTokenFromResponse(response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error booking recommendation:', error);
+      throw error;
+    }
+  }
+
   // Create a new chat session for the user
   async createNewChatSession(
     userId?: string
@@ -152,11 +220,6 @@ class ApiService {
       console.error("Error creating new chat session:", error);
       throw error;
     }
-  }
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
   }
 
   // Send feedback for a message

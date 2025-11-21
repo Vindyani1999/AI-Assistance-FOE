@@ -4,7 +4,8 @@ import "../BookingAgent/BookingChatInterface.css";
 import BackupIcon from "@mui/icons-material/Backup";
 import DescriptionIcon from "@mui/icons-material/Description";
 import PlannerScreen from "./plannerScreen";
-import ExamTimeTable from "./ExamTimeTable";
+import ExamTimeTable from "./ExamTimeTable2";
+import axios from "axios";
 // import Home from "./Home";
 
 const PlannerChatInterface: React.FC = () => {
@@ -22,11 +23,17 @@ const PlannerChatInterface: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [lastDownloadUrl, setLastDownloadUrl] = useState<string | null>(null);
   const [lastDownloadName, setLastDownloadName] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
+   const [selectedFile, setSelectedFile] = React.useState<File | null>(null)  ;
 
+
+const handleFileChangee = (even: any) => {
+    setSelectedFile(even.target.files[0]);
+  };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files && e.target.files[0];
     if (f) {
@@ -35,6 +42,7 @@ const PlannerChatInterface: React.FC = () => {
       // We could parse here if needed. For now we just keep the name.
     }
   };
+ 
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -58,6 +66,11 @@ const PlannerChatInterface: React.FC = () => {
     e.stopPropagation();
     setIsDragging(false);
   };
+   
+  const [firstExamFile, setFirstExamFile] = React.useState<File | null>(null);
+  const handleExamFileChange = (event:any) => {
+    setFirstExamFile(event.target.files[0]);
+  };
 
   const generateTimetable = () => {
     // Create a small CSV placeholder to download (no persistent storage)
@@ -70,7 +83,67 @@ const PlannerChatInterface: React.FC = () => {
     setLastDownloadUrl(url);
     setLastDownloadName(`${mode}-timetable-${new Date().toISOString()}.csv`);
   };
+const handleUpload = async () => {
+    if (!uploadedFile) {
+      alert("Please select a file first.");
+      return;
+    }
 
+    const formData = new FormData();
+    formData.append("file", uploadedFile);
+
+    try {
+      if (selectedView === "academic") {
+        const response = await axios.post(
+        process.env.REACT_APP_PLANNER_URL + "/api/upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      alert(response.data);
+      await setIsFetching(true);
+      }else if (selectedView === "exam") {
+        const response = await axios.post(
+        process.env.REACT_APP_PLANNER_URL + "/api/uploadExam",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      alert(response.data);
+      await setIsFetching(true);
+      }
+
+      
+      // await getCalenderData(); // Refresh timetable
+    } catch (error: any) {
+      const message =
+        error.response?.data || "Upload failed. Please try again.";
+      alert(message);
+      console.error("Upload failed:", error);
+    }
+  };
+  // const handleExamUpload = async () => {
+  //   if (!firstExamFile) {
+  //     alert("Please select a file first.");
+  //     return;
+  //   }
+
+  //   const formData = new FormData();
+  //   formData.append("file", firstExamFile);
+
+  //   try {
+  //     const response = await axios.post(
+  //       process.env.REACT_APP_PLANNER_URL + "/api/uploadExam",
+  //       formData,
+  //       { headers: { "Content-Type": "multipart/form-data" } }
+  //     );
+  //     alert(response.data);
+  //     // await getCalenderData(); // Refresh timetable
+  //   } catch (error: any) {
+  //     const message =
+  //       error.response?.data || "Upload failed. Please try again.";
+  //     alert(message);
+  //     console.error("Upload failed:", error);
+  //   }
+  // };
   const triggerDownload = () => {
     if (!lastDownloadUrl || !lastDownloadName) return;
     const a = document.createElement("a");
@@ -236,9 +309,9 @@ const PlannerChatInterface: React.FC = () => {
               }}
             >
               {selectedView === "academic" ? (
-                <PlannerScreen />
+                <PlannerScreen isFetching={isFetching} />
               ) : (
-                <ExamTimeTable />
+                <ExamTimeTable isFetching={isFetching} />
               )}
             </div>
           </div>
@@ -351,7 +424,7 @@ const PlannerChatInterface: React.FC = () => {
                 }}
               >
                 <button
-                  onClick={generateTimetable}
+                  onClick={handleUpload}
                   disabled={!uploadedFile}
                   style={{
                     width: "100%",

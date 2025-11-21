@@ -14,6 +14,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import axios from "axios";
+import { useEffect } from "react";
+import "./ExamTimeTable.css";
 import { useTheme as useAppTheme } from "../../context/ThemeContext";
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -50,6 +52,26 @@ const timeSlots = Array.from(
 
 // Timetable display table
 function TimetableTable({ timetable }) {
+const [selectedFile, setSelectedFile] = React.useState(null);
+  // const [theme, setTheme] = React.useState("light");
+
+    useEffect(() => {
+    const docTheme =
+      document.documentElement.getAttribute("data-theme") ||
+      (document.body.classList.contains("dark-theme") ? "dark" : null);
+    // if (docTheme) setTheme(docTheme === "dark" ? "dark" : "light");
+    // basic listener to react to future changes (optional)
+    const observer = new MutationObserver(() => {
+      const newTheme =
+        document.documentElement.getAttribute("data-theme") ||
+        (document.body.classList.contains("dark-theme") ? "dark" : "light");
+      // setTheme(newTheme === "dark" ? "dark" : "light");
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
+
   const theme = useMuiTheme();
   // Prefer CSS variables provided by FullCalendarTheme.css (supports dark/light)
   // with a fallback to the MUI palette when variables are not present.
@@ -133,7 +155,7 @@ function TimetableTable({ timetable }) {
   );
 }
 
-export default function PlannerScreen() {
+export default function PlannerScreen({ isFetching }) {
   const [tab, setTab] = React.useState(0);
   const { theme: appTheme } = useAppTheme();
   const muiTheme = useMuiTheme();
@@ -151,14 +173,70 @@ export default function PlannerScreen() {
     setTab(newValue);
     setSemester(semesters[newValue]); // Link tab index to actual semester
   };
+const [selectedFile, setSelectedFile] = React.useState(null);
+  const handleFileChange = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+  const [firstExamFile, setFirstExamFile] = React.useState(null);
+  const handleExamFileChange = (event) => {
+    setFirstExamFile(event.target.files[0]);
+  };
 
-  // Upload / exam upload are handled by the PlannerChatInterface sidebar
+  // File upload handler
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      alert("Please select a file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const response = await axios.post(
+        process.env.REACT_APP_PLANNER_URL + "/api/upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      alert(response.data);
+      await getCalenderData(); // Refresh timetable
+    } catch (error) {
+      const message =
+        error.response?.data || "Upload failed. Please try again.";
+      alert(message);
+      console.error("Upload failed:", error);
+    }
+  };
+  const handleExamUpload = async () => {
+    if (!firstExamFile) {
+      alert("Please select a file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", firstExamFile);
+
+    try {
+      const response = await axios.post(
+        process.env.REACT_APP_PLANNER_URL + "/api/uploadExam",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      alert(response.data);
+      await getCalenderData(); // Refresh timetable
+    } catch (error) {
+      const message =
+        error.response?.data || "Upload failed. Please try again.";
+      alert(message);
+      console.error("Upload failed:", error);
+    }
+  };
 
   // Fetch timetable data from backend
   const getCalenderData = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8080/api/solver-results"
+        process.env.REACT_APP_PLANNER_URL + "/api/solver-results"
       );
       const data = response.data || [];
 
@@ -204,7 +282,7 @@ export default function PlannerScreen() {
     getCalenderData();
     // we intentionally only run when semester changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [semester]);
+  }, [semester, isFetching]);
 
   return (
     <Box sx={{ flexGrow: 1 }} data-theme={appTheme}>

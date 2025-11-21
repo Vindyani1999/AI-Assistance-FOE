@@ -1,6 +1,7 @@
-import { SignupPayload, VerifyOtpResponse } from "../utils/authInterfaces";
-let Base_Url_Auth = "http://localhost:5000";
+import { SignupPayload, VerifyOtpResponse } from '../utils/authInterfaces';
+let Base_Url_Auth = process.env.REACT_APP_AUTH_URL||'http://localhost:5000';
 
+if (Base_Url_Auth.endsWith('/')) Base_Url_Auth = Base_Url_Auth.slice(0, -1);
 if (Base_Url_Auth.endsWith("/")) Base_Url_Auth = Base_Url_Auth.slice(0, -1);
 
 // Login API

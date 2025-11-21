@@ -14,7 +14,7 @@ export const quickActionsList: QuickAction[] = [
     id: "booking",
     name: "Booking Agent",
     description: "Book lecture halls & facilities",
-    link: "https://localhost:3000/booking-chat",
+    link: `${process.env.REACT_APP_URL}/booking-chat`,
     image: "/booking.png",
     agent: "booking",
     visible: true
@@ -23,7 +23,7 @@ export const quickActionsList: QuickAction[] = [
     id: "planner",
     name: "Planner Agent",
     description: "Plan academic time tables",
-    link: "http://localhost:3000/planner-chat",
+    link: `${process.env.REACT_APP_URL}/planner-chat`,
     image: "/planner.png",
     agent: "planner",
     visible: true
@@ -32,7 +32,7 @@ export const quickActionsList: QuickAction[] = [
     id: "guidance",
     name: "Guidance Agent",
     description: "Get academic guidance",
-    link: "https://localhost:3000/guidance-chat",
+    link: `${process.env.REACT_APP_URL}/guidance-chat`,
     image: "/attendance.png",
     agent: "guidance",
     visible: true

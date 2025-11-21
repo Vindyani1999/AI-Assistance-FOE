@@ -1,0 +1,100 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "@123"
+      MYSQL_DATABASE: timetable_db
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p@123"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  auth-backend:
+    build:
+      context: ./backend-Authentication
+      dockerfile: Dockerfile
+    container_name: auth-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend-Authentication/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  backend-planner:
+    build:
+      context: ./backend-Planner/plannerAgentBackend
+      dockerfile: Dockerfile
+    container_name: backend-planner
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/timetable_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "@123"
+    depends_on:
+      mysql:
+        condition: service_healthy
+  
+  backend-hba:
+    build:
+      context: ./backend-HBA
+      dockerfile: Dockerfile
+    container_name: backend-hba
+    ports:
+      - "7000:7000"
+    env_file:
+      - ./backend-HBA/.env
+    volumes:
+      - ./backend-HBA/data:/app/data
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_AUTH_URL=http://auth-backend:5000
+      - REACT_APP_PLANNER_URL=http://backend-planner:8080
+    depends_on:
+      - auth-backend
+      - backend-planner
+    stdin_open: true
+    tty: true
+
+volumes:
+  mysql_data:
+  mongo_data:

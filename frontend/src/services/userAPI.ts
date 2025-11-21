@@ -2,9 +2,9 @@ import { getAccessToken } from "./authAPI";
 
 export async function fetchUserProfile() {
   const token = getAccessToken();
-  if (!token) throw new Error("No auth token");
-  const response = await fetch("http://localhost:5000/auth/me", {
-    method: "GET",
+  if (!token) throw new Error('No auth token');
+  const response = await fetch(process.env.REACT_APP_AUTH_URL + '/auth/me', {
+    method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

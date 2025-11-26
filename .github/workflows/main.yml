@@ -31,7 +31,7 @@ jobs:
 
       - name: Build and push backend-authentication image 
         run: | 
-          cd backend-authentication 
+          cd backend-Authentication 
           docker build -t nushan2000/auth-backend:latest . 
           docker push nushan2000/auth-backend:latest
 

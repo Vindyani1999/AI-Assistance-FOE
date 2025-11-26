@@ -56,10 +56,10 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+# *.log
+# local_settings.py
+# db.sqlite3
+# db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -250,20 +250,20 @@ logs
 *~
 
 # OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# .DS_Store
+# .DS_Store?
+# ._*
+# .Spotlight-V100
+# .Trashes
+# ehthumbs.db
+# Thumbs.db
 
 # Project specific
 memory/*.csv
-data/*/chroma.sqlite3
-*.db
-*.sqlite
-*.sqlite3
+# data/*/chroma.sqlite3
+# *.db
+# *.sqlite
+# *.sqlite3
 
 # API Keys and sensitive data
 config.json

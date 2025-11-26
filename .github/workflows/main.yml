@@ -1,0 +1,37 @@
+name: Deploy auth backend to Local Network VPS
+
+on:
+  push:
+    branches:
+      - Feature-17
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Create .env file inside frontend folder
+        run: echo "${{ secrets.ENV_FILE }}" > ./backend-Authentication/.env
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push frontend image
+        run: |
+          cd frontend
+          docker build -t nushan2000/auth-backend:latest .
+          docker push nushan2000/auth-backend:latest
+
+      - name: Deploy to Local Network VPS (10.50.227.121)
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: 10.50.227.182
+          username: deieprj
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            cd ~/ai
+            docker-compose pull auth-backend
+            docker-compose up -d auth-backend

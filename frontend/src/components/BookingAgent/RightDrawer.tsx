@@ -67,7 +67,7 @@ export default function RightDrawer(openProp:any) {
       // notify('success', "✅ Swap requests fetched successfully!");
     } catch (error) {
       console.error("Error fetching swap requests:", error);
-      notify('error', "❌ Failed to fetch swap requests.");
+      // notify('error', "❌ Failed to fetch swap requests.");
     }
     
     

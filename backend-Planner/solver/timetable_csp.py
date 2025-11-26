@@ -135,34 +135,25 @@ def build_model(modules, halls, days, slots_per_day):
         # --- SAME-DEPARTMENT + SAME-SEMESTER NO-SLOT-CONFLICT (hard)
         # --- SAME-DEPARTMENT + SAME-SEMESTER NO-TIME-OVERLAP (hard)
         # --- SAME-DEPARTMENT + SAME-SEMESTER NO-TIME-OVERLAP (hard)
+# For every pair of same-department, same-semester modules
     for dept, mod_list in dept_map.items():
-        n = len(mod_list)
-        for i in range(n):
-            for j in range(i + 1, n):
+        for i in range(len(mod_list)):
+            for j in range(i+1, len(mod_list)):
                 mi = mod_list[i]
                 mj = mod_list[j]
-
-                # Apply restriction only if same semester
                 if mi["semester"] != mj["semester"]:
                     continue
-
+                
                 ci = mi["code"]
                 cj = mj["code"]
-
+    
+                # Add no-overlap constraint for all halls & days
                 for d_idx in range(len(days)):
-                    both_on_same_day = [day_presence[(ci, d_idx)], day_presence[(cj, d_idx)]]
-
-                    # Boolean vars to represent ordering
-                    ci_before_cj = model.NewBoolVar(f"{ci}_before_{cj}_d{d_idx}")
-                    cj_before_ci = model.NewBoolVar(f"{cj}_before_{ci}_d{d_idx}")
-
-                    # If ci_before_cj → ci.end <= cj.slot
-                    model.Add(module_vars[ci]["end"] <= module_vars[cj]["slot"]).OnlyEnforceIf(ci_before_cj)
-                    # If cj_before_ci → cj.end <= ci.slot
-                    model.Add(module_vars[cj]["end"] <= module_vars[ci]["slot"]).OnlyEnforceIf(cj_before_ci)
-
-                    # Ensure at least one of these two orderings holds when both are on the same day
-                    model.AddBoolOr([ci_before_cj, cj_before_ci]).OnlyEnforceIf(both_on_same_day)
+                    for h_idx in range(len(halls)):
+                        model.AddNoOverlap([
+                            module_vars[ci]["slot"].IntervalVar(module_vars[ci]["dur"], module_vars[ci]["end"]),
+                            module_vars[cj]["slot"].IntervalVar(module_vars[cj]["dur"], module_vars[cj]["end"])
+                        ])
 
 
 
@@ -291,7 +282,7 @@ def generate_expanded_json(status, solver, module_vars, modules, halls, days):
 # ----------------------------
 def main():
     days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    slots_per_day = 8
+    slots_per_day = 20
 
     modules, halls = load_data()
     model, module_vars, presence_vars, day_presence = build_model(modules, halls, days, slots_per_day)

@@ -27,3 +27,7 @@ tenacity==8.5.0
 scikit-learn==1.7.1
 sentence-transformers==5.0.0
 transformers==4.54.1
+motor
+assemblyai
+pyprojroot
+langgraph

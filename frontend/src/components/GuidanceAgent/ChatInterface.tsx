@@ -35,6 +35,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [inputValue, setInputValue] = useState("");
   const [guidanceFilters, setGuidanceFilters] = useState<string[]>(["all"]);
   const [availableSources, setAvailableSources] = useState(SOURCE_OPTIONS);
+  const [useUniversityDocs, setUseUniversityDocs] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
@@ -64,19 +65,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setUserSpecificSessionId(sessionId);
   }, [sessionId, navigate]);
 
-  // Configure source chips and default selection based on user role
+  // Configure source chips and default selection based on user role and toggle
   useEffect(() => {
     if (!currentUser) return;
     const email = currentUser?.email as string | undefined;
-    if (userRoleUtils.isUndergraduate(email)) {
+    const isUG = userRoleUtils.isUndergraduate(email);
+    if (isUG) {
       setAvailableSources(SOURCE_OPTIONS);
       setGuidanceFilters(["all"]);
     } else {
-      // non-students see both sets and start with no selection
-      setAvailableSources([...SOURCE_OPTIONS, ...SOURCE_OPTIONS_LECTURER]);
+      // non-students see the selected set depending on the toggle
+      const sources = useUniversityDocs ? SOURCE_OPTIONS : SOURCE_OPTIONS_LECTURER;
+      setAvailableSources(sources);
+      // Do not pre-select any chips by default — user must pick chits explicitly
       setGuidanceFilters([]);
     }
-  }, [currentUser]);
+  }, [currentUser, useUniversityDocs]);
 
   const loadChatHistory = useCallback(async () => {
     if (!currentUser) return;
@@ -435,10 +439,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const toggleFilter = (key: string) => {
     if (key === "all") {
       setGuidanceFilters(["all"]);
-      // if input is empty, add a polite hint for the user
-      if (!inputValue || inputValue.trim().length === 0) {
-        setInputValue("Please go through only the selected documents.");
-      }
       return;
     }
     setGuidanceFilters((prev) => {
@@ -458,17 +458,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
       return arr;
     });
+  };
 
-    // If the input is empty, populate it with a short, polite hint referencing the clicked source
-    try {
-      if (!inputValue || inputValue.trim().length === 0) {
-        const opt = availableSources.find((o) => o.key === key);
-        const label = opt?.label || key;
-        setInputValue(`Please go through only the ${label}.`);
-      }
-    } catch (e) {
-      // defensive: ignore any issues when computing hint
-    }
+  const handleDocsToggle = (useUniv: boolean) => {
+    setUseUniversityDocs(useUniv);
+    // Do not auto-select chips when toggling document groups.
+    // Keep existing chip selection (or lack of selection) so the user explicitly picks chits.
   };
 
   const handleFeedback = async (
@@ -779,26 +774,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         <div className="chat-input-container">
           <div className="input-wrapper">
-            {/* Guidance source filter - small horizontal buttons inside input area */}
-            <div
-              className="filter-row"
-              role="toolbar"
-              aria-label="Guidance source filters"
-            >
-              {availableSources.map((opt) => {
-                const selected = guidanceFilters.includes(opt.key);
-                return (
+            {/* Guidance source filter - toggle + chips grouped together */}
+            <div className="filters-toggle-container">
+              {!isUndergrad && (
+                <div className="toggle-row">
                   <button
-                    key={opt.key}
-                    className={`filter-btn ${selected ? "selected" : ""}`}
-                    onClick={() => toggleFilter(opt.key)}
-                    aria-pressed={selected}
                     type="button"
+                    className={`toggle-btn ${useUniversityDocs ? "active" : ""}`}
+                    onClick={() => handleDocsToggle(true)}
                   >
-                    {opt.label}
+                    University docs
                   </button>
-                );
-              })}
+                  <button
+                    type="button"
+                    className={`toggle-btn ${!useUniversityDocs ? "active" : ""}`}
+                    onClick={() => handleDocsToggle(false)}
+                  >
+                    Governance docs
+                  </button>
+                </div>
+              )}
+
+              <div
+                className="filter-row"
+                role="toolbar"
+                aria-label="Guidance source filters"
+              >
+                {availableSources.map((opt) => {
+                  const selected = guidanceFilters.includes(opt.key);
+                  return (
+                    <button
+                      key={opt.key}
+                      className={`filter-btn ${selected ? "selected" : ""}`}
+                      onClick={() => toggleFilter(opt.key)}
+                      aria-pressed={selected}
+                      type="button"
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <textarea

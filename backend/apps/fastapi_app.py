@@ -332,7 +332,7 @@ async def ruh_chat_voice_endpoint(
         with open(temp_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        if ext not in [".wav", ".mp3"]:
+        if ext not in [".wav", ".mp3", ".webm"]:
             converted_path = f"converted_{uuid4()}.wav"
             audio = AudioSegment.from_file(temp_path)
             audio.export(converted_path, format="wav")
@@ -377,7 +377,7 @@ async def ugc_chat_voice_endpoint(
         with open(temp_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        if ext not in [".wav", ".mp3"]:
+        if ext not in [".wav", ".mp3", ".webm"]:
             converted_path = f"converted_{uuid4()}.wav"
             audio = AudioSegment.from_file(temp_path)
             audio.export(converted_path, format="wav")

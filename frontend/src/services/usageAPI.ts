@@ -1,6 +1,6 @@
 import { getAccessToken } from "./authAPI";
 
-const DEFAULT_AUTH_BASE = "http://auth-backend:5000";
+const DEFAULT_AUTH_BASE = "http://10.50.227.182:5000";
 
 export async function getMonthlyLoginDates(
   year: number,

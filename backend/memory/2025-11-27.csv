@@ -87,3 +87,82 @@ Suppose 2 modules:
 - GPA = (0.45 + 2.10) / (0.15 + 0.60) = 2.55 / 0.75 = **3.40**
 
 For full details, refer to **Student Handbook** (Sections 12.3, 6.6) or **By-Laws** (Equations 12.3, 6.6). Contact faculty for grade tables or personal calculations."
+1,17:13:02,"How GPA calculate?
+
+[Search only in: Student handbook]","**GPA (likely referring to Semester GPA or SGPA) and CGPA Calculation (from UGC Guidelines):**
+
+### Key Notes:
+- **Continuous Assessment**: Weightage varies by module; do **not** use fixed weightages in SGPA calculations.
+- **Industrial Training**: Allocated GPA credits.
+- **Academic Progression**: Students need a cumulative GPA of ≥2.0 after first three semesters to register for the fifth semester.
+- All semesters must be completed for degree award.
+- **Maximum Completion Period**: Typically 4 academic years for class awards.
+
+### CGPA Formula:
+The Cumulative Grade Point Average (CGPA) is the weighted average of grade points for all registered GPA modules (excluding academic concessions or withdrawals):
+
+\[
+\text{CGPA} = \frac{\sum_{i=1}^{n} C_i \cdot \text{GP}_i}{\sum_{i=1}^{n} C_i}
+\]
+
+- \(C_i\): Number of credits for the \(i\)-th module.
+- \(\text{GP}_i\): Grade points earned for the \(i\)-th module.
+- \(n\): Total number of registered GPA modules.
+- **Weightage**: Uniform across semesters.
+
+### CGPA Cut-offs for Classes/Pass:
+| Class              | CGPA Range |
+|--------------------|------------|
+| First Class        | ≥ 3.70     |
+| Second Class (Upper) | 3.30–3.69 |
+| Second Class (Lower)| 3.00–3.29 |
+| Pass               | 2.00–2.99 |
+
+(Exact ranges may vary; all degree requirements must be met within 4 years.)
+
+SGPA follows a similar credit-weighted logic per semester, but specifics depend on programme assessment rules (formative/summative exams, grading scheme). Refer to your specific programme's Annex 4a for module details, repeat exams, and contributions (e.g., in-plant training). 
+
+No direct ""Student Handbook"" match found, but this aligns with UGC-related academic guidelines. For programme-specific details, check your institution's handbook."
+1,17:13:22,"How GPA calculate?
+
+[Search only in: Student handbook]","**GPA Calculation (from Student Handbook):**
+
+### Final GPA (Grade Point Average at End of Degree Programme)
+- Calculated **at the end of the study programme** after fulfilling all graduation requirements (Section 12).
+- Considers **all core modules, Technical Elective (TE) modules, and General Elective (GE) modules** counted for GPA.
+- **Optimized for maximum GPA**: If the number of TE/GE modules exceeds requirements, excess modules are selected and removed to maximize the GPA.
+- **Formula (Equation 12.3)**:  
+  ```
+  GPA = (∑_{i=1 to n} v_i × C_i × GPV_i) / (∑_{i=1 to n} v_i × C_i)
+  ```
+  - **n**: Number of modules with earned GPA up to end of study.
+  - **C_i**: Credits for the *i*th module.
+  - **GPV_i**: Grade Point Value for the *i*th module.
+  - **v_i** (weights):  
+    - 0.05 for modules in Semesters 1 & 2.  
+    - 0.15 for modules in Semesters 3, 4, 5, 6, 7, & 8.
+
+- This is essentially the **Cumulative Grade Point Average (CGPA)** rounded to the nearest second decimal place.
+- **Not calculated** if grades MC, AC, or WH are received.
+
+### Semester Grade Point Average (SGPA)
+- Calculated per semester.
+- **Formula (Equation 12.1)**:  
+  ```
+  SGPA = (∑_{j=1 to n} C_j × GPV_j) / (∑_{j=1 to n} C_j)
+  ```
+  - **n**: Number of registered GPA modules in the semester.
+  - **C_j**: Credits for *j*th module.
+  - **GPV_j**: Grade Point Value for *j*th module.
+- **Not calculated** if MC, AC, or WH grades.
+- Rounded to nearest second decimal; reported on transcripts.
+
+### Cumulative Grade Point Average (CGPA, up to a point)
+- Uses similar weighted formula as final GPA (Equation 12.2, like 12.3).
+- Rounded to nearest second decimal.
+
+**Notes**:
+- Student must complete requirements within 8 academic years from Common Core admission (extendable with Senate approval).
+- Academic integrity required; no unauthorized help."
+1,17:20:02,hi,Hi! How can I assist you today? Got more questions about GPA or anything from the student handbook? 😊
+1,17:20:07,hi,Hi! How can I help you today? 😊

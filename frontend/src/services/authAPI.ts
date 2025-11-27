@@ -7,6 +7,7 @@ export function getAccessToken() {
   return localStorage.getItem("auth_token");
 }
 
+
 // Helper to update access token from response headers (if present)
 function updateAccessTokenFromResponse(response: Response) {
   const newToken = response.headers.get("x-access-token");

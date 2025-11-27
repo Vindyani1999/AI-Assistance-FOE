@@ -86,9 +86,8 @@ services:
     container_name: frontend
     ports:
       - "3000:80"
-    environment:
-      - REACT_APP_AUTH_URL=http://auth-backend:5000
-      - REACT_APP_PLANNER_URL=http://backend-planner:8080
+    env_file:
+      - ./frontend/.env
     depends_on:
       - auth-backend
       - backend-planner

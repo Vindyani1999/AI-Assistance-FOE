@@ -6,7 +6,7 @@ import json
 # 1. LOAD DATA
 # ----------------------------
 def load_data():
-    file_path = "../data/planner_agent_data_nushan.xlsx"
+    file_path = "../data/planner_agent_data_nushan2.xlsx"
     modules_df = pd.read_excel(file_path, sheet_name="module codes")
     halls_df = pd.read_excel(file_path, sheet_name="halls-exam")
 

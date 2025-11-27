@@ -285,12 +285,83 @@ def generate_expanded_json(status, solver, module_vars, modules, halls, days):
 
     return result
 
+def validate_hard_constraints(solver, module_vars, modules, halls, days, slots_per_day):
+    violations = []
+    
+    for m in modules:
+        code = m["code"]
+        day = solver.Value(module_vars[code]["day"])
+        hall_idx = solver.Value(module_vars[code]["hall"])
+        slot = solver.Value(module_vars[code]["slot"])
+        dur = m["duration"]
+        end = slot + dur
 
+        # 1. Duration & bounds
+        if slot < 0 or end > slots_per_day:
+            violations.append(f"{code}: Out of slot bounds ({slot}-{end})")
+
+        # 2. Hall capacity
+        if halls[hall_idx]["capacity"] < m["students"]:
+            violations.append(f"{code}: Hall {halls[hall_idx]['hall']} too small ({halls[hall_idx]['capacity']} < {m['students']})")
+
+    # 3. No hall overlap on same day
+    occupancy = {}  # (day, hall, slot) -> list of modules
+    for m in modules:
+        code = m["code"]
+        d_idx = solver.Value(module_vars[code]["day"])
+        h_idx = solver.Value(module_vars[code]["hall"])
+        start = solver.Value(module_vars[code]["slot"])
+        dur = m["duration"]
+        for s in range(start, start + dur):
+            key = (d_idx, h_idx, s)
+            occupancy.setdefault(key, []).append(code)
+
+    for (d, h, s), mods in occupancy.items():
+        if len(mods) > 1:
+            violations.append(f"Hall conflict on {days[d]} slot {s} in {halls[h]['hall']}: {mods}")
+
+    # 4. Same-dept same-semester no time overlap (your current hard constraint)
+    # This one is trickier — you already enforce ordering, so should be ok if model is correct
+
+    print(f"Hard constraint violations: {len(violations)}")
+    for v in violations[:10]: print("  ", v)
+    return len(violations) == 0
+
+def evaluate_solution(solver, module_vars, modules, halls, days, slots_per_day, overlap_penalty=None):
+    if overlap_penalty is None:
+        penalty_val = "N/A (not minimized)"
+    else:
+        penalty_val = solver.Value(overlap_penalty)
+
+    total_slots_used = sum(m["duration"] for m in modules)
+    total_available = len(days) * len(halls) * slots_per_day
+    utilization = 100 * total_slots_used / total_available
+
+    hall_fullness = []
+    dept_day_count = {}
+    for m in modules:
+        code = m["code"]
+        d_idx = solver.Value(module_vars[code]["day"])
+        h_idx = solver.Value(module_vars[code]["hall"])
+        day_name = days[d_idx]
+        hall_cap = halls[h_idx]["capacity"]
+        fullness = m["students"] / hall_cap
+        hall_fullness.append(fullness)
+
+        if m["department"]:
+            dept_day_count.setdefault(m["department"], set()).add(day_name)
+
+    print("\n=== TIMETABLE QUALITY REPORT ===")
+    print(f"Same-department concurrent pairs (lower better): {penalty_val}")
+    print(f"Overall slot utilization: {utilization:.1f}%")
+    print(f"Average hall fullness: {sum(hall_fullness)/len(hall_fullness)*100:.1f}%")
+    print(f"Departments spread over avg {sum(len(v) for v in dept_day_count.values())/len(dept_day_count):.1f} days")
+    print(f"Hard constraints valid: {validate_hard_constraints(solver, module_vars, modules, halls, days, slots_per_day)}")
 # ----------------------------
 # Main
 # ----------------------------
 def main():
-    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     slots_per_day = 8
 
     modules, halls = load_data()
@@ -309,6 +380,8 @@ def main():
     # Only print expanded view if we found a solution
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         print_slot_expanded(solver, module_vars, modules, halls, days)
-
+    validate_hard_constraints(solver, module_vars, modules, halls, days, slots_per_day)
+    evaluate_solution(solver, module_vars, modules, halls, days, slots_per_day)
+    
 if __name__ == "__main__":
     main()

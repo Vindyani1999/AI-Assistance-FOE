@@ -92,7 +92,8 @@ class ApiService {
         });
         updateAccessTokenFromResponse(response);
         handleAuthError(response);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
       }
 
@@ -199,12 +200,15 @@ class ApiService {
       }
       // both present (legacy) -> combine
       const combinedResponse: ChatResponse = {
-        response: `[RUH]\n${ruhRespJson?.response || "(no response)"}\n\n[UGC]\n${ugcRespJson?.response || "(no response)"}`,
+        response: `[RUH]\n${
+          ruhRespJson?.response || "(no response)"
+        }\n\n[UGC]\n${ugcRespJson?.response || "(no response)"}`,
         conversation_history: [
           ...(ruhRespJson?.conversation_history || []),
           ...(ugcRespJson?.conversation_history || []),
         ],
-        session_id: ruhRespJson?.session_id || ugcRespJson?.session_id || sessionId,
+        session_id:
+          ruhRespJson?.session_id || ugcRespJson?.session_id || sessionId,
       };
       return combinedResponse;
     } catch (error) {

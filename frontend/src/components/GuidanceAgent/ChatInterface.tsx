@@ -75,7 +75,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setGuidanceFilters(["all"]);
     } else {
       // non-students see the selected set depending on the toggle
-      const sources = useUniversityDocs ? SOURCE_OPTIONS : SOURCE_OPTIONS_LECTURER;
+      const sources = useUniversityDocs
+        ? SOURCE_OPTIONS
+        : SOURCE_OPTIONS_LECTURER;
       setAvailableSources(sources);
       // Do not pre-select any chips by default — user must pick chits explicitly
       setGuidanceFilters([]);
@@ -781,14 +783,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div className="toggle-row">
                   <button
                     type="button"
-                    className={`toggle-btn ${useUniversityDocs ? "active" : ""}`}
+                    className={`toggle-btn ${
+                      useUniversityDocs ? "active" : ""
+                    }`}
                     onClick={() => handleDocsToggle(true)}
                   >
                     University docs
                   </button>
                   <button
                     type="button"
-                    className={`toggle-btn ${!useUniversityDocs ? "active" : ""}`}
+                    className={`toggle-btn ${
+                      !useUniversityDocs ? "active" : ""
+                    }`}
                     onClick={() => handleDocsToggle(false)}
                   >
                     Governance docs

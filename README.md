@@ -2,95 +2,32 @@
 
 An AI assistant platform containing multi-agent system
 
-![alt text](image.png)
 
-![alt text](image-1.png)
-<!-- Image 5 -->
-<img src="https://github.com/user-attachments/assets/feffae57-3ee0-4833-88db-e832659b9950" width="800" style="margin-bottom: 20px;" />
-<br>
-</br>
-<!-- Image 6 -->
-<img src="https://github.com/user-attachments/assets/949ace59-c6f4-4af9-86c9-003aadb87c0d" width="800" style="margin-bottom: 20px;" />
-<br>
-</br>
-<img src="https://github.com/user-attachments/assets/b8f517b2-2066-4525-b548-b932c313cee6" width="800" style="margin-bottom: 10;" />
-<br>
+<img width="1920" height="1080" alt="Screenshot (152)" src="https://github.com/user-attachments/assets/08dfe98a-0196-4966-b60b-c7b6da873e45" />
 </br>
 
-<!-- Image 2 -->
-<img src="https://github.com/user-attachments/assets/331cd8cc-51ac-41c4-a67f-125a28c53c1c" width="800" style="margin-bottom: 20px;" />
-<br>
+<img width="1920" height="1080" alt="Screenshot (153)" src="https://github.com/user-attachments/assets/901dba64-4bf5-4e15-b198-488d2b120a23" />
+
 </br>
-<img src="https://github.com/user-attachments/assets/3a1ed740-f6b6-448d-a686-58130a586c1d" width="800" style="margin-bottom: 20px;" />
-
-<br>
+<img width="1920" height="1080" alt="Screenshot (154)" src="https://github.com/user-attachments/assets/4b78a47f-c97e-49bd-8c92-f11634d1a0e8" />
 </br>
-<!-- Image 3 -->
-<img src="https://github.com/user-attachments/assets/92c66f4f-a1f2-46b3-a4ac-b3cefcbaed1e" width="800" style="margin-bottom: 20px;" />
+<img width="1920" height="1080" alt="Screenshot (155)" src="https://github.com/user-attachments/assets/c14670d3-73b0-4d11-8f8d-9bbbd33f8b8e" />
+</br>
+<img width="1920" height="1080" alt="Screenshot (156)" src="https://github.com/user-attachments/assets/138dadd0-5cd9-447e-b707-8fd7f5022144" />
+</br>
+<img width="1920" height="1080" alt="Screenshot (157)" src="https://github.com/user-attachments/assets/7d6ea0d8-5111-43b1-b327-3b28d7653ca2" />
+
+</br>
 
 
-## Project Structure
+<img width="1920" height="1080" alt="Screenshot (158)" src="https://github.com/user-attachments/assets/3468909c-2dbb-4201-bb33-4ca7ce6c5335" />
+</br>
+<img width="1920" height="1080" alt="Screenshot (159)" src="https://github.com/user-attachments/assets/9705caac-d557-400e-b79e-8e490b43a5e3" />
+</br>
+<img width="1920" height="1080" alt="Screenshot (160)" src="https://github.com/user-attachments/assets/9506d34c-02ea-4142-aad7-5be885b545ba" />
+</br>
+<img width="1920" height="1080" alt="Screenshot (161)" src="https://github.com/user-attachments/assets/0c6e8b16-c52d-4958-b45d-9b9d356766e3" />
 
-- `backend/` — Python backend (FastAPI)
-- `frontend/` — React TypeScript frontend
-- `data/` — Databases, documents, vector stores
-- `assets/` — Images and static files
-- `scripts/` — Utility scripts
-- `docs/` — Documentation
-- `notebooks/` — Jupyter notebooks
-
-## Completed sections
-
-- [x] Database integration
-- [x] Vector database preparation
-- [x] Backend setup (FastAPI)
-    - [x] Web search tool for Guidance Agent
-    - [x] RAG tool for Guidance Agent
-    - [x] SQL tool (mini databases) for Guidance Agent
-- [x] Frontend setup with React + Typescript
-    - [x] Chat interface for GA
-    - [x] Landing page 
-    - [ ] University email login
-    - [ ] User separated chat interfaces
-- [x] Agent can select required tool based on user query
-- [x] Agent can understand user queries whether they are grammatically wrong
-- [x] Agent has chat history
-- [x] Rearrange folder structure
-
-## Quick Start
-
-1. **Backend:**
-   
-   The backend provides a FastAPI REST API interface designed to work with the React frontend:
-
-```bash
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-```
-Required environment variables:
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `TAVILY_API_KEY`: Your Tavily search API key
-- `LANGCHAIN_API_KEY`: Your LangChain API key
-
-2. **Frontend (optional):**
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-3. **Prepare vector DB:**
-   - `cd backend`
-   - `python scripts/prepare_vector_db.py`
-
-## Requirements
-
-- Python 3.9+
-- Node.js 16+
-- API keys for OpenAI, Tavily, LangChain (see `.env.example`)
 
 ## Databases
 

@@ -189,8 +189,8 @@ if __name__ == "__main__":
         "How is bid evaluation carried out according to the NPA manual?",
     ]
     queries_by_law = [
-        "How many core modules are there in the Civil and Environmental Engineering ?",
-        "How many core modules are there in the Electrical and Information Engineering  ?",
+        "Besides this by-law, what other rules are applicable to students in this degree programme? Besides this by-law, what other rules are applicable to students in this degree programme?",
+        "Under which section of the Universities Act was this by-law made?",
     ]
 
     datasets = [

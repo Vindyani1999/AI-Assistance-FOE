@@ -1,5 +1,5 @@
 primary_agent:
-  llm: x-ai/grok-4.1-fast:free #z-ai/glm-4.5-air:free #google/gemini-2.0-flash-exp:free #z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
+  llm: z-ai/glm-4.5-air:free #google/gemini-2.0-flash-exp:free #z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
   llm_temperature: 0.0
 
 

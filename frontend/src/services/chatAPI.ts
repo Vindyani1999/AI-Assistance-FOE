@@ -66,33 +66,86 @@ class ApiService {
     guidanceFilter?: string
   ): Promise<ChatResponse> {
     const userEmail = await fetchUserEmailFromProfile();
-    const postBody: any = {
+    const postBodyBase: any = {
       message,
       session_id: sessionId,
       user_id: userEmail,
     };
     if (guidanceFilter) {
-      postBody.guidance_filter = guidanceFilter;
+      postBodyBase.guidance_filter = guidanceFilter;
     }
 
     try {
-      const prefix = userRoleUtils.isUndergraduate(userEmail as any)
-        ? "ugc"
-        : "ruh";
-      const response = await fetch(`${Guidance_Base_URL}/${prefix}/chat`, {
+      const isUG = userRoleUtils.isUndergraduate(userEmail as any);
+      // Undergraduates: single ruh endpoint (existing behaviour)
+      if (isUG) {
+        const response = await fetch(`${Guidance_Base_URL}/ruh/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+        updateAccessTokenFromResponse(response);
+        handleAuthError(response);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+      }
+
+      // Non-undergrads: call BOTH ruh and ugc and combine results so the UI can show both
+      const ruhPromise = fetch(`${Guidance_Base_URL}/ruh/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getAccessToken()}`,
         },
-        body: JSON.stringify(postBody),
+        body: JSON.stringify(postBodyBase),
       });
-      updateAccessTokenFromResponse(response);
-      handleAuthError(response);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const ugcPromise = fetch(`${Guidance_Base_URL}/ugc/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: JSON.stringify(postBodyBase),
+      });
+
+      // run sequentially to ensure auth headers/tokens are refreshed per response if backend rotates tokens
+      let ruhRespJson: any = null;
+      let ugcRespJson: any = null;
+
+      try {
+        const ruhResp = await ruhPromise;
+        updateAccessTokenFromResponse(ruhResp);
+        handleAuthError(ruhResp);
+        if (ruhResp.ok) ruhRespJson = await ruhResp.json();
+        else ruhRespJson = { response: `RUH request failed: ${ruhResp.status}`, conversation_history: [], session_id: sessionId };
+      } catch (e) {
+        ruhRespJson = { response: `RUH request error: ${String(e)}`, conversation_history: [], session_id: sessionId };
       }
-      return await response.json();
+
+      try {
+        const ugcResp = await ugcPromise;
+        updateAccessTokenFromResponse(ugcResp);
+        handleAuthError(ugcResp);
+        if (ugcResp.ok) ugcRespJson = await ugcResp.json();
+        else ugcRespJson = { response: `UGC request failed: ${ugcResp.status}`, conversation_history: [], session_id: sessionId };
+      } catch (e) {
+        ugcRespJson = { response: `UGC request error: ${String(e)}`, conversation_history: [], session_id: sessionId };
+      }
+
+      // Compose a single ChatResponse-shaped object
+      const combinedResponse: ChatResponse = {
+        response: `[RUH]\n${ruhRespJson?.response || "(no response)"}\n\n[UGC]\n${ugcRespJson?.response || "(no response)"}`,
+        conversation_history: [
+          ...(ruhRespJson?.conversation_history || []),
+          ...(ugcRespJson?.conversation_history || []),
+        ],
+        session_id: ruhRespJson?.session_id || ugcRespJson?.session_id || sessionId,
+      };
+      return combinedResponse;
     } catch (error) {
       console.error("Error sending message:", error);
       throw error;

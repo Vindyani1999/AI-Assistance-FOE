@@ -10,7 +10,8 @@ import MicIcon from "@mui/icons-material/Mic";
 // import IconButton from "@mui/material/IconButton";
 import VoiceChatPopupImpl from "./GuidanceVoicePopup";
 import { ChatInterfaceProps } from "../../utils/types";
-import { SOURCE_OPTIONS } from "../../utils/CONSTANTS";
+import { SOURCE_OPTIONS, SOURCE_OPTIONS_LECTURER } from "../../utils/CONSTANTS";
+import userRoleUtils from "../../utils/userRole";
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   sessionId = "default",
@@ -33,6 +34,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
   const [inputValue, setInputValue] = useState("");
   const [guidanceFilters, setGuidanceFilters] = useState<string[]>(["all"]);
+  const [availableSources, setAvailableSources] = useState(SOURCE_OPTIONS);
+  const [useUniversityDocs, setUseUniversityDocs] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
@@ -47,6 +50,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const pendingVoiceIndexRef = useRef<number | null>(null);
   const [voiceUploading, setVoiceUploading] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const isUndergrad = userRoleUtils.isUndergraduate(currentUser?.email as any);
 
   useEffect(() => {
     async function fetchUser() {
@@ -60,6 +64,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     fetchUser();
     setUserSpecificSessionId(sessionId);
   }, [sessionId, navigate]);
+
+  // Configure source chips and default selection based on user role and toggle
+  useEffect(() => {
+    if (!currentUser) return;
+    const email = currentUser?.email as string | undefined;
+    const isUG = userRoleUtils.isUndergraduate(email);
+    if (isUG) {
+      setAvailableSources(SOURCE_OPTIONS);
+      setGuidanceFilters(["all"]);
+    } else {
+      // non-students see the selected set depending on the toggle
+      const sources = useUniversityDocs ? SOURCE_OPTIONS : SOURCE_OPTIONS_LECTURER;
+      setAvailableSources(sources);
+      // Do not pre-select any chips by default — user must pick chits explicitly
+      setGuidanceFilters([]);
+    }
+  }, [currentUser, useUniversityDocs]);
 
   const loadChatHistory = useCallback(async () => {
     if (!currentUser) return;
@@ -303,7 +324,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading || !currentUser) return;
+    if (!currentUser) return;
+    if (!inputValue.trim() || isLoading) return;
+    // Non-undergraduates must select at least one guidance source (chit)
+    if (!isUndergrad && (!guidanceFilters || guidanceFilters.length === 0)) {
+      setError("Please select at least one guidance source before sending.");
+      return;
+    }
     await sendText(inputValue.trim());
   };
 
@@ -314,6 +341,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const skipLocal = options?.skipLocal || false;
     const force = options?.force || false;
     if (!text || (!force && isLoading) || !currentUser) return;
+    // Enforce chit selection for non-undergraduates unless forced.
+    const isUG = userRoleUtils.isUndergraduate(currentUser?.email as any);
+    if (!isUG && (!guidanceFilters || guidanceFilters.length === 0) && !force) {
+      setError("Please select at least one guidance source before sending.");
+      return;
+    }
     const userMessage = text;
     setInputValue((prev) => (prev === text ? "" : prev));
     setIsLoading(true);
@@ -328,12 +361,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     try {
-      const guidanceToSend =
-        !guidanceFilters ||
-        guidanceFilters.length === 0 ||
-        guidanceFilters.includes("all")
-          ? "all"
-          : guidanceFilters.join(",");
+      let guidanceToSend: string | undefined;
+      const isUndergrad = userRoleUtils.isUndergraduate(
+        currentUser?.email as any
+      );
+      if (isUndergrad) {
+        guidanceToSend =
+          !guidanceFilters ||
+          guidanceFilters.length === 0 ||
+          guidanceFilters.includes("all")
+            ? "all"
+            : guidanceFilters.join(",");
+      } else {
+        // Non-undergrads: if nothing selected, omit guidance_filter so backend
+        // receives no restriction. If selections exist, join them.
+        guidanceToSend =
+          guidanceFilters && guidanceFilters.length > 0
+            ? guidanceFilters.join(",")
+            : undefined;
+      }
 
       let outgoingMessage = userMessage;
       if (guidanceToSend !== "all") {
@@ -358,15 +404,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         content: response.response,
       };
       setMessages((prev) => [...prev, assistantMessage]);
-      (async () => {
-        try {
-          await playAssistantMedia(response);
-        } catch (e) {
-          console.warn("assistant playback error", e);
-        }
-      })();
+      // Only play assistant audio/TTS if the voice popup is currently open
+      if (voicePopupVisible) {
+        (async () => {
+          try {
+            await playAssistantMedia(response);
+          } catch (e) {
+            console.warn("assistant playback error", e);
+          }
+        })();
+      }
       loadChatSessions();
-      setGuidanceFilters(["all"]);
+      // Reset selection to sensible default based on role
+      if (userRoleUtils.isUndergraduate(currentUser?.email as any)) {
+        setGuidanceFilters(["all"]);
+      } else {
+        setGuidanceFilters([]);
+      }
     } catch (error) {
       setError("Failed to send message. Please try again.");
       if (!options?.skipLocal) setMessages((prev) => prev.slice(0, -1));
@@ -395,8 +449,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setPrev.add(key);
       }
       const arr = Array.from(setPrev);
-      return arr.length === 0 ? ["all"] : arr;
+      // For undergraduates, if nothing is selected fallback to 'all'.
+      // For non-undergrads allow an empty selection (no guidance filter sent).
+      if (arr.length === 0) {
+        if (userRoleUtils.isUndergraduate(currentUser?.email as any))
+          return ["all"];
+        return [];
+      }
+      return arr;
     });
+  };
+
+  const handleDocsToggle = (useUniv: boolean) => {
+    setUseUniversityDocs(useUniv);
+    // Do not auto-select chips when toggling document groups.
+    // Keep existing chip selection (or lack of selection) so the user explicitly picks chits.
   };
 
   const handleFeedback = async (
@@ -472,39 +539,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         return next;
       });
       // Play assistant audio / TTS and show talking.gif while speaking
-      (async () => {
-        try {
-          setIsPlayingAudio(true);
-          // try audio_url
-          if (resp?.audio_url) {
-            const audio = new Audio(resp.audio_url);
-            await audio.play();
-          } else if (resp?.audio_base64) {
-            const bstr = atob(resp.audio_base64);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) u8arr[n] = bstr.charCodeAt(n);
-            const blob = new Blob([u8arr], { type: "audio/mpeg" });
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            await audio.play();
-            URL.revokeObjectURL(url);
-          } else if (resp?.response || resp?.assistant_text || resp?.text) {
-            const t = resp?.response || resp?.assistant_text || resp?.text;
-            if (window.speechSynthesis) {
-              await new Promise<void>((resolve) => {
-                const ut = new SpeechSynthesisUtterance(t);
-                ut.onend = () => resolve();
-                window.speechSynthesis.speak(ut);
-              });
+      // Only play assistant audio/TTS if guidance voice popup is open
+      if (voicePopupVisible) {
+        (async () => {
+          try {
+            setIsPlayingAudio(true);
+            // try audio_url
+            if (resp?.audio_url) {
+              const audio = new Audio(resp.audio_url);
+              await audio.play();
+            } else if (resp?.audio_base64) {
+              const bstr = atob(resp.audio_base64);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) u8arr[n] = bstr.charCodeAt(n);
+              const blob = new Blob([u8arr], { type: "audio/mpeg" });
+              const url = URL.createObjectURL(blob);
+              const audio = new Audio(url);
+              await audio.play();
+              URL.revokeObjectURL(url);
+            } else if (resp?.response || resp?.assistant_text || resp?.text) {
+              const t = resp?.response || resp?.assistant_text || resp?.text;
+              if (window.speechSynthesis) {
+                await new Promise<void>((resolve) => {
+                  const ut = new SpeechSynthesisUtterance(t);
+                  ut.onend = () => resolve();
+                  window.speechSynthesis.speak(ut);
+                });
+              }
             }
+          } catch (e) {
+            console.warn("play assistant audio failed", e);
+          } finally {
+            setIsPlayingAudio(false);
           }
-        } catch (e) {
-          console.warn("play assistant audio failed", e);
-        } finally {
-          setIsPlayingAudio(false);
-        }
-      })();
+        })();
+      }
       // clear pending marker and loading
       pendingVoiceIndexRef.current = null;
       setVoiceUploading(false);
@@ -544,10 +614,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           };
           setMessages((prev) => [...prev, assistantMessage]);
           // Speak the assistant response from routed voice
-          try {
-            await playAssistantMedia(resp);
-          } catch (e) {
-            console.warn("assistant playback error (routed)", e);
+          // Only play routed assistant audio/TTS if guidance voice popup is open
+          if (voicePopupVisible) {
+            try {
+              await playAssistantMedia(resp);
+            } catch (e) {
+              console.warn("assistant playback error (routed)", e);
+            }
           }
           loadChatSessions();
         } catch (e) {
@@ -701,28 +774,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         <div className="chat-input-container">
           <div className="input-wrapper">
-            {/* Guidance source filter - small horizontal buttons inside input area */}
-            <div
-              className="filter-row"
-              role="toolbar"
-              aria-label="Guidance source filters"
-            >
-              {SOURCE_OPTIONS.map((opt) => {
-                const selected =
-                  guidanceFilters.includes(opt.key) ||
-                  (opt.key === "all" && guidanceFilters.length === 0);
-                return (
+            {/* Guidance source filter - toggle + chips grouped together */}
+            <div className="filters-toggle-container">
+              {!isUndergrad && (
+                <div className="toggle-row">
                   <button
-                    key={opt.key}
-                    className={`filter-btn ${selected ? "selected" : ""}`}
-                    onClick={() => toggleFilter(opt.key)}
-                    aria-pressed={selected}
                     type="button"
+                    className={`toggle-btn ${useUniversityDocs ? "active" : ""}`}
+                    onClick={() => handleDocsToggle(true)}
                   >
-                    {opt.label}
+                    University docs
                   </button>
-                );
-              })}
+                  <button
+                    type="button"
+                    className={`toggle-btn ${!useUniversityDocs ? "active" : ""}`}
+                    onClick={() => handleDocsToggle(false)}
+                  >
+                    Governance docs
+                  </button>
+                </div>
+              )}
+
+              <div
+                className="filter-row"
+                role="toolbar"
+                aria-label="Guidance source filters"
+              >
+                {availableSources.map((opt) => {
+                  const selected = guidanceFilters.includes(opt.key);
+                  return (
+                    <button
+                      key={opt.key}
+                      className={`filter-btn ${selected ? "selected" : ""}`}
+                      onClick={() => toggleFilter(opt.key)}
+                      aria-pressed={selected}
+                      type="button"
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <textarea
@@ -737,7 +829,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div className="input-buttons">
               <button
                 onClick={sendMessage}
-                disabled={isLoading || !inputValue.trim()}
+                disabled={
+                  isLoading ||
+                  !inputValue.trim() ||
+                  (!isUndergrad &&
+                    (!guidanceFilters || guidanceFilters.length === 0))
+                }
                 className="input-btn send-btn"
                 title="Send message"
               >
@@ -755,8 +852,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </button>
 
               <button
-                onClick={() => setVoicePopupVisible(true)}
-                disabled={isLoading || !currentUser}
+                onClick={() => {
+                  // Prevent opening voice popup if non-undergrad and no chips selected
+                  if (
+                    !isUndergrad &&
+                    (!guidanceFilters || guidanceFilters.length === 0)
+                  ) {
+                    setError(
+                      "Please select at least one guidance source before using voice input."
+                    );
+                    return;
+                  }
+                  setVoicePopupVisible(true);
+                }}
+                disabled={
+                  isLoading ||
+                  !currentUser ||
+                  (!isUndergrad &&
+                    (!guidanceFilters || guidanceFilters.length === 0))
+                }
                 className="input-btn mic-btn"
                 title="Voice input"
                 aria-label="Open voice input"

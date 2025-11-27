@@ -5,6 +5,12 @@ export const SOURCE_OPTIONS = [
   { key: "by_law", label: "By-law" },
 ];
 
+export const SOURCE_OPTIONS_LECTURER = [
+  { key: "ugc", label: "UGC" },
+  { key: "procurement", label: "Procurement" },
+  { key: "established_code", label: "Established Code" },
+];
+
 export const EMAIL_DOMAINS = [
   "", // Placeholder for select
   "@engug.ruh.ac.lk",

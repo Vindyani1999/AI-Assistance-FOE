@@ -494,20 +494,8 @@ export default function VoiceChatPopupImpl({
     }
 
     onClose();
-    // Refresh the page after closing the popup to ensure app state is fully reset.
-    // A short timeout lets the popup closing animation complete and ensures
-    // MediaStream tracks have been stopped before reload.
-    try {
-      setTimeout(() => {
-        try {
-          window.location.reload();
-        } catch (e) {
-          console.warn("Page reload failed", e);
-        }
-      }, 150);
-    } catch (e) {
-      console.warn("scheduling reload failed", e);
-    }
+    // Do NOT refresh the page on close. We just release microphone and
+    // stop any playback/speech so the app continues without a full reload.
   }
 
   return open ? (

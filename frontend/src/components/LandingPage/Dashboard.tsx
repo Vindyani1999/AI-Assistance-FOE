@@ -264,6 +264,15 @@ const Dashboard: React.FC<DashboardProps> = () => {
                     variant="outlined"
                     onClick={() => navigate("/documentation")}
                     size="small"
+                    sx={{
+                      color: "#8B5E3C",
+                      borderColor: "#8B5E3C",
+                      textTransform: "none",
+                      "&:hover": {
+                        borderColor: "#8B5E3C",
+                        backgroundColor: "rgba(139,94,60,0.04)",
+                      },
+                    }}
                   >
                     Open Documentation
                   </Button>

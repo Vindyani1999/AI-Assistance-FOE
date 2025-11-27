@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # One vector DB for all PDFs
     creator = PrepareVectorDBOCR(
-        name="UGC Circulars 2024-2025",
+        name="ugc_circulars_vectordb",
         doc_dir=base_folder,  # base folder
         vectordb_dir="data/vectordb/ugc_circulars_vectordb",
         collection_name="ugc_circulars_rag",

@@ -397,7 +397,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const response = await apiService.sendMessage(
         outgoingMessage,
         userSpecificSessionId,
-        guidanceToSend
+        guidanceToSend,
+        useUniversityDocs
       );
       const assistantMessage: ChatMessage = {
         role: "assistant",

@@ -63,7 +63,10 @@ class ApiService {
   async sendMessage(
     message: string,
     sessionId: string = "default",
-    guidanceFilter?: string
+    guidanceFilter?: string,
+    // When set for non-undergrads: true => only RUH (university docs),
+    // false => only UGC (governance docs). If omitted, legacy behaviour (both) applies.
+    onlyUseRuh?: boolean
   ): Promise<ChatResponse> {
     const userEmail = await fetchUserEmailFromProfile();
     const postBodyBase: any = {
@@ -93,50 +96,108 @@ class ApiService {
         return await response.json();
       }
 
-      // Non-undergrads: call BOTH ruh and ugc and combine results so the UI can show both
-      const ruhPromise = fetch(`${Guidance_Base_URL}/ruh/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        body: JSON.stringify(postBodyBase),
-      });
+      // Non-undergrads: behaviour depends on the `onlyUseRuh` flag.
+      // - If onlyUseRuh === true  => call only RUH endpoint (university docs)
+      // - If onlyUseRuh === false => call only UGC endpoint (governance docs)
+      // - If onlyUseRuh === undefined => legacy behaviour: call both and combine
+      let ruhPromise: Promise<Response> | null = null;
+      let ugcPromise: Promise<Response> | null = null;
 
-      const ugcPromise = fetch(`${Guidance_Base_URL}/ugc/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        body: JSON.stringify(postBodyBase),
-      });
+      if (onlyUseRuh === undefined) {
+        // legacy: call both
+        ruhPromise = fetch(`${Guidance_Base_URL}/ruh/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+
+        ugcPromise = fetch(`${Guidance_Base_URL}/ugc/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+      } else if (onlyUseRuh === true) {
+        ruhPromise = fetch(`${Guidance_Base_URL}/ruh/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+      } else {
+        // onlyUseRuh === false => only UGC
+        ugcPromise = fetch(`${Guidance_Base_URL}/ugc/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+      }
 
       // run sequentially to ensure auth headers/tokens are refreshed per response if backend rotates tokens
       let ruhRespJson: any = null;
       let ugcRespJson: any = null;
 
-      try {
-        const ruhResp = await ruhPromise;
-        updateAccessTokenFromResponse(ruhResp);
-        handleAuthError(ruhResp);
-        if (ruhResp.ok) ruhRespJson = await ruhResp.json();
-        else ruhRespJson = { response: `RUH request failed: ${ruhResp.status}`, conversation_history: [], session_id: sessionId };
-      } catch (e) {
-        ruhRespJson = { response: `RUH request error: ${String(e)}`, conversation_history: [], session_id: sessionId };
+      // Await each promise that was created and build response parts
+      if (ruhPromise) {
+        try {
+          const ruhResp = await ruhPromise;
+          updateAccessTokenFromResponse(ruhResp);
+          handleAuthError(ruhResp);
+          if (ruhResp.ok) ruhRespJson = await ruhResp.json();
+          else
+            ruhRespJson = {
+              response: `RUH request failed: ${ruhResp.status}`,
+              conversation_history: [],
+              session_id: sessionId,
+            };
+        } catch (e) {
+          ruhRespJson = {
+            response: `RUH request error: ${String(e)}`,
+            conversation_history: [],
+            session_id: sessionId,
+          };
+        }
       }
 
-      try {
-        const ugcResp = await ugcPromise;
-        updateAccessTokenFromResponse(ugcResp);
-        handleAuthError(ugcResp);
-        if (ugcResp.ok) ugcRespJson = await ugcResp.json();
-        else ugcRespJson = { response: `UGC request failed: ${ugcResp.status}`, conversation_history: [], session_id: sessionId };
-      } catch (e) {
-        ugcRespJson = { response: `UGC request error: ${String(e)}`, conversation_history: [], session_id: sessionId };
+      if (ugcPromise) {
+        try {
+          const ugcResp = await ugcPromise;
+          updateAccessTokenFromResponse(ugcResp);
+          handleAuthError(ugcResp);
+          if (ugcResp.ok) ugcRespJson = await ugcResp.json();
+          else
+            ugcRespJson = {
+              response: `UGC request failed: ${ugcResp.status}`,
+              conversation_history: [],
+              session_id: sessionId,
+            };
+        } catch (e) {
+          ugcRespJson = {
+            response: `UGC request error: ${String(e)}`,
+            conversation_history: [],
+            session_id: sessionId,
+          };
+        }
       }
 
-      // Compose a single ChatResponse-shaped object
+      // Build combined/selected response. If only one side was requested, return that side.
+      if (ruhRespJson && !ugcRespJson) {
+        return ruhRespJson;
+      }
+      if (ugcRespJson && !ruhRespJson) {
+        return ugcRespJson;
+      }
+      // both present (legacy) -> combine
       const combinedResponse: ChatResponse = {
         response: `[RUH]\n${ruhRespJson?.response || "(no response)"}\n\n[UGC]\n${ugcRespJson?.response || "(no response)"}`,
         conversation_history: [

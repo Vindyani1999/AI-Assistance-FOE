@@ -1,0 +1,89 @@
+thread_id,timestamp,user_query,response
+1,00:58:33,How GPA calculate?,"
+Based on the student handbook, here's how GPA is calculated:
+
+## GPA Calculation Formula
+
+The Grade Point Average (GPA) is calculated using the following formula:
+
+**GPA = Σ(Ci × Wi × GPVi) / Σ(Ci × Wi)**
+
+Where:
+- **n** = number of modules with earned GPA up to the calculation point
+- **Ci** = number of credits allocated to the ith module
+- **Wi** = weight factor for the semester:
+  - **0.05** for modules in semesters 1, 2
+  - **0.15** for modules in semesters 3, 4, 5, 6, 7, 8
+- **GPVi** = Grade Point value earned for the ith module
+
+## Grade Point Scale
+
+| Marks Range | Grade | Grade Point Value (GPV) |
+|-------------|-------|-------------------------|
+| 85 - 100    | A+    | 4.0                     |
+| 75 - 84     | A     | 4.0                     |
+| 70 - 74     | A-    | 3.7                     |
+| 65 - 69     | B+    | 3.3                     |
+| 60 - 64     | B     | 3.0                     |
+| 55 - 59     | B-    | 2.7                     |
+| 50 - 54     | C+    | 2.3                     |
+| 45 - 49     | C     | 2.0                     |
+| 40 - 44     | C-    | 1.7                     |
+| 0 - 39      | E     | 0.0                     |
+
+## Important Rules
+
+1. **Excluded Grades**: GPA is not calculated if grades MC (Academic Concession for medical reasons), AC (Academic Concession other reasons), or WH (Results Withheld) are received.
+
+2. **Elective Module Optimization**: If you complete more Technical Elective (TE) or General Elective (GE) modules than required, the excessive modules are removed from the calculation to maximize your GPA.
+
+3. **Rounding**: The final GPA is rounded up to the nearest second decimal place.
+
+4. **C- Grade Rules**: 
+   - C- is a conditional pass grade counted in SGPA calculation
+   - Credits for C- can only be earned if SGPA ≥ 2.00 and no more than three grades at C or below in that semester
+   - C- grades cannot be earned in repeat attempts
+   - C- can be improved to C by repeating the module
+
+The GPA is calculated at the end of your study program considering all core modules, Technical Elective modules, and General Elective modules that count toward your GPA."
+1,01:08:52,How GPA calculate?,"**GPA Calculation at Faculty of Engineering, University of Ruhuna**
+
+### Key Concepts:
+- **Grade Point Value (GPV)**: Assigned based on letter grades (e.g., A=4.0, B+=3.3, etc., on a 4.0 scale). Exact grade-to-GPV mapping is in the student handbook/by-laws (typically standard: A=4.0, A-=3.7, B+=3.3, B=3.0, etc.).
+- **Modules Counted**: Core modules + required Technical Elective (TE) and General Elective (GE) modules. Excess TE/GE modules beyond requirements are **excluded selectively to maximize GPA**.
+- **Exclusions**: Grades MC (Medical Concession), AC (Academic Concession), or WH (Withheld) are **not included** in GPA. Some GE modules (e.g., non-4-point scale like Industrial Training) may not count.
+- **Rounding**: GPA/CGPA/SGPA rounded **up to the nearest second decimal place** (e.g., 3.456 → 3.46).
+
+### Types of GPA:
+1. **Semester Grade Point Average (SGPA)** (per semester):
+   ```
+   SGPA_j = [∑ (C_i × GPV_i)] / [∑ C_i]
+   ```
+   - For modules in semester **j**.
+   - `n` = number of registered GPA modules in that semester.
+   - `C_i` = credits for i-th module.
+   - `GPV_i` = Grade Point Value for i-th module.
+   - Reported on transcripts.
+
+2. **Cumulative Grade Point Average (CGPA)** (ongoing, up to calculation point):
+   ```
+   CGPA = [∑ (w_i × C_i × GPV_i)] / [∑ (w_i × C_i)]
+   ```
+   - `n` = all modules with earned GPA up to now.
+   - `w_i` (module weight by semester):
+     | Semester | Weight (w_i) |
+     |----------|--------------|
+     | 1, 2     | 0.05        |
+     | 3–8      | 0.15        |
+
+3. **Final GPA** (for degree award, at end of program after all requirements):
+   - Same as CGPA formula above, but only for **all core + required TE/GE modules** (excess electives dropped to max GPA).
+   - Must meet graduation requirements within 8 years.
+
+### Example:
+Suppose 2 modules:
+- Sem 1: 3 credits, GPV=3.0 → contrib = 0.05 × 3 × 3.0 = 0.45 (num), 0.05 × 3 = 0.15 (denom)
+- Sem 3: 4 credits, GPV=3.5 → contrib = 0.15 × 4 × 3.5 = 2.10 (num), 0.15 × 4 = 0.60 (denom)
+- GPA = (0.45 + 2.10) / (0.15 + 0.60) = 2.55 / 0.75 = **3.40**
+
+For full details, refer to **Student Handbook** (Sections 12.3, 6.6) or **By-Laws** (Equations 12.3, 6.6). Contact faculty for grade tables or personal calculations."

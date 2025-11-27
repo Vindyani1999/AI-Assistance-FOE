@@ -1,5 +1,5 @@
 primary_agent:
-  llm: z-ai/glm-4.5-air:free #google/gemini-2.0-flash-exp:free #z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
+  llm: x-ai/grok-4.1-fast:free #z-ai/glm-4.5-air:free #google/gemini-2.0-flash-exp:free #z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
   llm_temperature: 0.0
 
 
@@ -62,7 +62,7 @@ establishment_code_rag:
   unstructured_docs: "data/documents/establishments_code_volume"   # Folder containing both Vol I & II PDFs
   vectordb: "data/vectordb/establishment_code_vectordb"   # Single combined vector DB
   collection_name: establishment_code-rag-chroma
-  llm: microsoft/phi-2
+  llm: x-ai/grok-4.1-fast:free
   llm_temperature: 0.0
   embedding_model: intfloat/e5-base-v2
   chunk_size: 400

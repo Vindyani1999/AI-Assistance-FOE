@@ -1,0 +1,119 @@
+<mjml>
+  <mj-head>
+    <mj-title>Booking Confirmation</mj-title>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" />
+      <mj-text font-size="14px" color="#555555" line-height="1.6" />
+      <mj-button background-color="#4CAF50" color="white" border-radius="4px" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      .booking-card {
+        background-color: #f8f9fa;
+        border-left: 4px solid #4CAF50;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .detail-row {
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .detail-label {
+        font-weight: 600;
+        color: #333333;
+        display: inline-block;
+        width: 140px;
+      }
+      .detail-value {
+        color: #555555;
+      }
+    </mj-style>
+  </mj-head>
+  
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section background-color="#4CAF50" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="28px" font-weight="bold">
+          ✓ Booking Confirmed
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Main Content -->
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          Hi {% if user_name %}{{ user_name }}{% else %}there{% endif %},
+        </mj-text>
+        
+        <mj-text font-size="16px" color="#333333" padding-top="10px">
+          Great news! Your booking has been successfully confirmed. Here are the details:
+        </mj-text>
+        
+        <!-- Booking Details Card -->
+        <mj-wrapper css-class="booking-card" padding="0">
+          <mj-section background-color="transparent" padding="0">
+            <mj-column>
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Booking ID:</span>
+                <span class="detail-value">#{{ booking_id }}</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Room:</span>
+                <span class="detail-value">{{ room_name }}</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Module Code:</span>
+                <span class="detail-value">{{ module_code }}</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Date:</span>
+                <span class="detail-value">{{ date }}</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Time:</span>
+                <span class="detail-value">{{ start_time }} - {{ end_time }}</span>
+              </mj-text>
+              
+              {% if room_capacity %}
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Room Capacity:</span>
+                <span class="detail-value">{{ room_capacity }} people</span>
+              </mj-text>
+              {% endif %}
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+        
+        <!-- Action Button -->
+        <mj-button href="{{ booking_url }}" padding-top="30px">
+          View Booking Details
+        </mj-button>
+        
+        <!-- Additional Info -->
+        <mj-text font-size="14px" color="#666666" padding-top="20px">
+          <strong>Important:</strong> Please arrive at least 5 minutes before your scheduled time. If you need to make any changes or cancel this booking, you can do so through the booking system.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Footer -->
+    <mj-section background-color="#f8f9fa" padding="30px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#999999">
+          This is an automated notification from {{ system_name }}.
+          <br/>
+          If you have any questions, please contact your system administrator.
+        </mj-text>
+        
+        <mj-text align="center" font-size="11px" color="#cccccc" padding-top="10px">
+          © {{ current_year }} {{ system_name }}. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

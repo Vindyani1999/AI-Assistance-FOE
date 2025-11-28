@@ -1,0 +1,164 @@
+<mjml>
+  <mj-head>
+    <mj-title>Booking Updated</mj-title>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" />
+      <mj-text font-size="14px" color="#555555" line-height="1.6" />
+      <mj-button background-color="#2196F3" color="white" border-radius="4px" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      .booking-card {
+        background-color: #f8f9fa;
+        border-left: 4px solid #2196F3;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .old-booking-card {
+        background-color: #fff3e0;
+        border-left: 4px solid #ff9800;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .detail-row {
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .detail-row:last-child {
+        border-bottom: none;
+      }
+      .detail-label {
+        font-weight: 600;
+        color: #333333;
+        display: inline-block;
+        width: 150px;
+      }
+      .detail-value {
+        color: #555555;
+      }
+      .changes-section {
+        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+        border-left: 4px solid #2196F3;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 4px;
+      }
+    </mj-style>
+  </mj-head>
+  
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#2196F3" padding="30px 20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="32px" font-weight="bold">
+          📝 Booking Updated
+        </mj-text>
+        <mj-text align="center" color="#ffffff" font-size="16px" padding-top="10px">
+          Your booking has been successfully modified
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <mj-text font-size="18px" color="#333333">
+          Hi <strong>{% if user_name %}{{ user_name }}{% else %}there{% endif %}</strong>,
+        </mj-text>
+        
+        <mj-text font-size="16px" color="#555555" padding-top="10px">
+          Your booking <strong>#{{ booking_id }}</strong> has been updated.
+        </mj-text>
+        
+        {% if has_changes %}
+        <mj-text font-size="18px" font-weight="bold" color="#2196F3" padding-top="30px">
+          🔄 What Changed
+        </mj-text>
+        
+        <mj-wrapper css-class="changes-section" padding="0">
+          <mj-section background-color="transparent" padding="15px">
+            <mj-column>
+              <mj-text font-size="15px" line-height="2">
+                {{ changes_text | safe }}
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+        {% endif %}
+        
+        <mj-text font-size="18px" font-weight="bold" color="#333333" padding-top="30px">
+          ✅ Updated Booking Details
+        </mj-text>
+        
+        <mj-wrapper css-class="booking-card" padding="0">
+          <mj-section background-color="transparent" padding="15px">
+            <mj-column>
+              <mj-text css-class="detail-row">
+                <span class="detail-label">🆔 Booking ID:</span>
+                <span class="detail-value"><strong>#{{ booking_id }}</strong></span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">🏢 Room:</span>
+                <span class="detail-value"><strong>{{ room_name }}</strong></span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">📚 Module:</span>
+                <span class="detail-value"><strong>{{ module_code }}</strong></span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">📅 Date:</span>
+                <span class="detail-value"><strong>{{ date }}</strong></span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">🕐 Time:</span>
+                <span class="detail-value"><strong>{{ start_time }} - {{ end_time }}</strong></span>
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+        
+        {% if old_room_name %}
+        <mj-text font-size="18px" font-weight="bold" color="#ff9800" padding-top="30px">
+          📋 Original Booking
+        </mj-text>
+        
+        <mj-wrapper css-class="old-booking-card" padding="0">
+          <mj-section background-color="transparent" padding="15px">
+            <mj-column>
+              <mj-text css-class="detail-row">
+                <span class="detail-label">🏢 Room:</span>
+                <span class="detail-value">{{ old_room_name }}</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">📅 Date:</span>
+                <span class="detail-value">{{ old_date }}</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">🕐 Time:</span>
+                <span class="detail-value">{{ old_start_time }} - {{ old_end_time }}</span>
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+        {% endif %}
+        
+        <mj-button href="{{ booking_url }}" padding-top="30px">
+          View Full Details
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    
+    <mj-section background-color="#263238" padding="30px">
+      <mj-column>
+        <mj-text align="center" font-size="13px" color="#B0BEC5">
+          © {{ current_year }} {{ system_name }}. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

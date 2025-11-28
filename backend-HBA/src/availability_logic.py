@@ -9,12 +9,216 @@ from recommendtion.config.recommendation_config import RecommendationConfig
 from recommendtion.recommendations.core.recommendation_engine import RecommendationEngine
 from recommendtion.recommendations.core.hybridRecommendations import hybridRecommendationsEngine
 from typing import Dict, Any
+import json
+import re
 
 config = RecommendationConfig()
 recommendation_engine = RecommendationEngine(config=config)
-
 enhanced_engine = hybridRecommendationsEngine(config=config)  
 
+def validate_future_datetime(date_str: str, time_str: str, context: str = "booking", llm=None) -> None:
+    """
+    Validates that the provided date and time are in the future.
+    Uses LLM for natural language date parsing if needed.
+    
+    Args:
+        date_str: Date in format YYYY-MM-DD or natural language
+        time_str: Time in format HH:MM or natural language
+        context: Context for error message (e.g., 'booking', 'checking availability')
+        llm: Optional LLM instance for natural language parsing
+    
+    Raises:
+        HTTPException: If the datetime is in the past
+    """
+    try:
+        # Try standard format first
+        booking_datetime = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        # If standard format fails and LLM is provided, try natural language parsing
+        if llm:
+            try:
+                normalized = _parse_natural_datetime_with_llm(date_str, time_str, llm)
+                booking_datetime = datetime.strptime(
+                    f"{normalized['date']} {normalized['time']}", 
+                    "%Y-%m-%d %H:%M"
+                )
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid date/time format. Please use YYYY-MM-DD and HH:MM, or clear natural language: {e}"
+                )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid date/time format. Please use YYYY-MM-DD for date and HH:MM for time."
+            )
+    
+    current_datetime = datetime.now()
+    
+    if booking_datetime <= current_datetime:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Past datetime not allowed",
+                "message": f"Cannot {context} for past date/time. Please select a future date and time.",
+                "requested_datetime": booking_datetime.strftime("%Y-%m-%d %H:%M"),
+                "current_datetime": current_datetime.strftime("%Y-%m-%d %H:%M")
+            }
+        )
+
+
+def _parse_natural_datetime_with_llm(date_str: str, time_str: str, llm) -> Dict[str, str]:
+    """
+    Uses LLM to parse natural language date/time into standard format.
+    
+    Args:
+        date_str: Natural language date (e.g., "tomorrow", "next Monday")
+        time_str: Natural language time (e.g., "morning", "3pm")
+        llm: LLM instance for parsing
+    
+    Returns:
+        Dict with 'date' (YYYY-MM-DD) and 'time' (HH:MM)
+    """
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_time = datetime.now().strftime("%H:%M")
+    
+    prompt = f"""
+You are a datetime parser. Convert natural language date and time to standard format.
+
+Current date: {current_date}
+Current time: {current_time}
+
+User provided:
+- Date: "{date_str}"
+- Time: "{time_str}"
+
+Convert to standard format. Respond ONLY in JSON:
+{{
+  "date": "YYYY-MM-DD",
+  "time": "HH:MM",
+  "is_valid": true/false
+}}
+
+Examples:
+- "tomorrow" at "morning" → {{"date": "2025-11-16", "time": "09:00", "is_valid": true}}
+- "next Monday" at "3pm" → {{"date": "2025-11-18", "time": "15:00", "is_valid": true}}
+- "yesterday" at "10am" → {{"date": "2025-11-14", "time": "10:00", "is_valid": false}}
+
+Rules:
+- Parse relative dates (tomorrow, next week, etc.) based on current date
+- Convert time expressions (morning=09:00, afternoon=14:00, evening=18:00)
+- Set is_valid=false for past dates/times
+- If cannot parse, use current date/time and set is_valid=false
+
+Respond in JSON only:
+"""
+    
+    try:
+        raw_response = llm._call(prompt)
+        cleaned = re.sub(r"^```json|```$", "", raw_response.strip(), flags=re.MULTILINE).strip()
+        parsed = json.loads(cleaned)
+        
+        if not parsed.get("is_valid", False):
+            raise ValueError("LLM detected invalid or past date/time")
+        
+        return {
+            "date": parsed["date"],
+            "time": parsed["time"]
+        }
+    except Exception as e:
+        raise ValueError(f"Failed to parse natural language datetime: {e}")
+
+
+def validate_datetime_logic_with_llm(date_str: str, time_str: str, llm) -> Dict[str, Any]:
+    """
+    Uses LLM to validate booking logic and provide intelligent feedback.
+    
+    Args:
+        date_str: Date string (YYYY-MM-DD or natural language)
+        time_str: Time string (HH:MM or natural language)
+        llm: LLM instance
+    
+    Returns:
+        Dict with validation results and suggestions
+    """
+    current_datetime = datetime.now()
+    
+    # Try to parse the datetime
+    try:
+        if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str) and re.match(r'^\d{2}:\d{2}$', time_str):
+            # Standard format
+            booking_datetime = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+            parsed_date = date_str
+            parsed_time = time_str
+        else:
+            # Natural language - use LLM
+            normalized = _parse_natural_datetime_with_llm(date_str, time_str, llm)
+            parsed_date = normalized["date"]
+            parsed_time = normalized["time"]
+            booking_datetime = datetime.strptime(f"{parsed_date} {parsed_time}", "%Y-%m-%d %H:%M")
+    except Exception as e:
+        return {
+            "is_valid": False,
+            "error": "invalid_format",
+            "message": f"Could not parse date/time: {e}",
+            "parsed_date": None,
+            "parsed_time": None
+        }
+    
+    # Check if it's in the future
+    if booking_datetime <= current_datetime:
+        # Use LLM to generate helpful suggestion
+        prompt = f"""
+You are a helpful booking assistant. A user tried to book for a past date/time.
+
+Current date/time: {current_datetime.strftime("%Y-%m-%d %H:%M")}
+User requested: {booking_datetime.strftime("%Y-%m-%d %H:%M")}
+
+Generate a helpful, concise message suggesting future alternatives. Respond ONLY in JSON:
+{{
+  "suggestion_message": "friendly suggestion with specific future date/time options",
+  "alternative_dates": ["YYYY-MM-DD", "YYYY-MM-DD"],
+  "alternative_times": ["HH:MM", "HH:MM"]
+}}
+
+Keep the message professional, helpful, and concise (max 2 sentences).
+"""
+        
+        try:
+            raw_response = llm._call(prompt)
+            cleaned = re.sub(r"^```json|```$", "", raw_response.strip(), flags=re.MULTILINE).strip()
+            llm_suggestion = json.loads(cleaned)
+        except:
+            llm_suggestion = {
+                "suggestion_message": "Please select a future date and time for your booking.",
+                "alternative_dates": [
+                    (current_datetime + timedelta(days=1)).strftime("%Y-%m-%d"),
+                    (current_datetime + timedelta(days=7)).strftime("%Y-%m-%d")
+                ],
+                "alternative_times": ["09:00", "14:00"]
+            }
+        
+        return {
+            "is_valid": False,
+            "error": "past_datetime",
+            "message": llm_suggestion["suggestion_message"],
+            "parsed_date": parsed_date,
+            "parsed_time": parsed_time,
+            "requested_datetime": booking_datetime.strftime("%Y-%m-%d %H:%M"),
+            "current_datetime": current_datetime.strftime("%Y-%m-%d %H:%M"),
+            "suggestions": {
+                "dates": llm_suggestion.get("alternative_dates", []),
+                "times": llm_suggestion.get("alternative_times", [])
+            }
+        }
+    
+    return {
+        "is_valid": True,
+        "parsed_date": parsed_date,
+        "parsed_time": parsed_time,
+        "message": f"Valid future booking: {booking_datetime.strftime('%Y-%m-%d %H:%M')}"
+    }
+    
 def get_room_recommendations(room_name: str, date: str, start_time: str, end_time: str, db: Session):
     try:
         start_dt = datetime.strptime(f"{date} {start_time}", "%Y-%m-%d %H:%M")
@@ -98,6 +302,13 @@ def fetch_booking_by_id(booking_id: int, db: Session):
 
 def update_booking_general(booking_id: int, room_id: int, name: str, date: str, start_timestamp: int, end_timestamp: int, modified_by: str, db: Session):
     try:
+        start_datetime = datetime.fromtimestamp(start_timestamp)
+        validate_future_datetime(
+            start_datetime.strftime("%Y-%m-%d"),
+            start_datetime.strftime("%H:%M"),
+            "update booking"
+        )
+        
         booking = db.query(models.MRBSEntry).filter(models.MRBSEntry.id == booking_id).first()
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
@@ -140,6 +351,7 @@ def delete_booking(booking_id: int, db: Session):
 def add_booking(room_name: str,name: str, date: str, start_time: str, end_time: str, created_by: str, db: Session):
     
     try:
+        validate_future_datetime(date, start_time, "book")
         room = db.query(models.MRBSRoom).filter(models.MRBSRoom.room_name == room_name).first()
         
         if not room:
@@ -248,6 +460,9 @@ def add_booking(room_name: str,name: str, date: str, start_time: str, end_time: 
     
 def check_available_slotes(room_name: str, date: str, start_time: str, end_time: str, db: Session):
     # alternative slotes
+    
+    validate_future_datetime(date, "00:00", "check available slots")
+    
     print(f"Checking availability for room: {room_name}")
     print(f"Date: {date}, Start time: {start_time}, End time: {end_time}")
 
@@ -280,7 +495,16 @@ def check_available_slotes(room_name: str, date: str, start_time: str, end_time:
 
     # Step 4: Filter available slots
     available_slots = []
+    current_time = datetime.now()
+    
     for slot_start, slot_end in all_slots:
+        
+        slot_datetime = datetime.fromtimestamp(slot_start)
+        
+        # Skip past slots
+        if slot_datetime <= current_time:
+            continue
+        
         conflict = any(
             booking.start_time < slot_end and booking.end_time > slot_start
             for booking in bookings
@@ -398,9 +622,6 @@ def fetch_halls_by_module_code(module_code: str, db: Session):
     halls = db.query(models.MRBSRoom).filter(models.MRBSRoom.capacity >= module.number_of_students).all()
     
     return [hall.room_name for hall in halls]
-
-
- 
 
 
 

@@ -30,6 +30,19 @@ async def handle_recurring_booking(params: dict, db):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid date format: {str(e)}")
 
+
+    current_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    if start_date_dt < current_date:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Past date not allowed",
+                "message": f"Cannot create recurring booking starting from a past date. Please select a future start date.",
+                "requested_start_date": start_date,
+                "current_date": current_date.strftime("%Y-%m-%d")
+            }
+        )
+        
     # Parse recurrence rule — for demo, support simple weekly by day
     # Example: "every Monday" → RRULE:FREQ=WEEKLY;BYDAY=MO
     # For simplicity, you could pre-parse or map natural language to RRULE string.
@@ -41,8 +54,17 @@ async def handle_recurring_booking(params: dict, db):
         raise HTTPException(status_code=400, detail=f"Invalid recurrence rule: {str(e)}")
 
     bookings_created = []
+    
+    current_datetime = datetime.now()
+    
     for occurrence in rule.between(start_date_dt, end_date_dt, inc=True):
         date_str = occurrence.strftime("%Y-%m-%d")
+
+        booking_datetime = datetime.strptime(f"{date_str} {start_time}", "%Y-%m-%d %H:%M")
+        if booking_datetime <= current_datetime:
+            skipped_past_dates.append(date_str)
+            continue
+
 
         # Check availability for this occurrence
         availability = check_availability(

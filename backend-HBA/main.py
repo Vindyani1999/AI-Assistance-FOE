@@ -1,37 +1,38 @@
 from datetime import datetime, date, time
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from src.models import MRBSEntry, MRBSRoom
-from src.database import get_db
+from models.booking import MRBSEntry
+from models.room import MRBSRoom
+from utils.database import get_db
 import logging
 import os
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import LLMResult, Generation
 import requests
 from pydantic import BaseModel
+from config.app_config import settings
 
 from typing import Optional, List, Any
-from src.api import router 
-from src.deepseek_llm import DeepSeekLLM
+from api.routes.chat_routes import router 
 from fastapi.middleware.cors import CORSMiddleware
-from src.availability_logic import fetch_user_profile_by_email as fetch_profile_logic
-from src.swap.swapMain import router as swap_router
-from dotenv import load_dotenv
-import os
-load_dotenv()
+from core.booking_service import fetch_user_profile_by_email as fetch_profile_logic
+from api.routes.swap_routes import router as swap_router
+from middleware.auth import get_current_user_email
 app = FastAPI()
 
 # 👇 Allow frontend on localhost:3000
-origins_env = os.getenv("ALLOWED_ORIGINS", "")
-origins: List[str] = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
-
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,            # 🌐 allow React frontend
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],              # 🟢 Allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],              # 🟢 Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["x-access-token"],
 )
 
 app.include_router(router)
@@ -132,7 +133,7 @@ class BookingRequest(BaseModel):
 
 @app.post("/booking/add")
 def add_booking_endpoint(request: BookingRequest, db: Session = Depends(get_db)):
-    from src.availability_logic import add_booking
+    from core.booking_service import add_booking
     return add_booking(
         request.room_name,
         request.name,
@@ -145,7 +146,7 @@ def add_booking_endpoint(request: BookingRequest, db: Session = Depends(get_db))
 
 @app.get("/booking/fetch_booking_by_id")
 def fetch_booking_by_id(booking_id: int, db: Session = Depends(get_db)):
-    from src.availability_logic import fetch_booking_by_id as fetch_booking_logic
+    from core.booking_service import fetch_booking_by_id as fetch_booking_logic
 
     booking = fetch_booking_logic(booking_id, db)
     if not booking:
@@ -181,12 +182,16 @@ def available_slots_endpoint(
     date: str,
     db: Session = Depends(get_db)
 ):
-    from src.availability_logic import check_available_slotes
+    from core.booking_service import check_available_slotes
     return check_available_slotes(room_name, date, "00:00", "23:59", db)
 
 @app.delete("/booking/delete")
-def delete_booking(booking_id: int, db: Session = Depends(get_db)):
-    from src.availability_logic import delete_booking
+def delete_booking(booking_id: int, db: Session = Depends(get_db),user_email: str = Depends(get_current_user_email)):
+    from core.booking_service import delete_booking
+    booking = db.query(MRBSEntry).filter(MRBSEntry.id == booking_id).first()
+   
+    if booking.create_by != user_email:
+        raise HTTPException(status_code=403, detail="Access denied")
     return delete_booking(booking_id, db)
 
 
@@ -201,7 +206,7 @@ class UpdateBookingRequest(BaseModel):
 
 @app.put("/booking/update_booking")
 def update_booking(request: UpdateBookingRequest, db: Session = Depends(get_db)):
-    from src.availability_logic import update_booking_general as update_booking_logic
+    from core.booking_service import update_booking as update_booking_logic
 
     # Convert times -> UNIX timestamps
     try:
@@ -231,28 +236,26 @@ def update_booking(request: UpdateBookingRequest, db: Session = Depends(get_db))
     
 @app.get("/booking/fetch_moduleCodes_by_user_email")
 def fetch_moduleCodes_by_user_email(email: str, db: Session = Depends(get_db)):
-    from src.availability_logic import fetch_moduleCodes_by_user_email as fetch_modules_logic
+    from core.booking_service import fetch_moduleCodes_by_user_email as fetch_modules_logic
 
     return fetch_modules_logic(email, db)
 
 @app.get("/booking/all_halls")
 def fetch_all_halls(db: Session = Depends(get_db)):
-    from src.availability_logic import fetch_all_halls as fetch_halls_logic
+    from core.booking_service import fetch_all_halls as fetch_halls_logic
 
     return fetch_halls_logic(db)
 
 @app.get("/booking/fetch_halls_by_moduleCode")
 def fetch_halls_by_moduleCode(module_code: str, db: Session = Depends(get_db)):
-    from src.availability_logic import fetch_halls_by_module_code as fetch_halls_logic
+    from core.booking_service import fetch_halls_by_module_code as fetch_halls_logic
 
     return fetch_halls_logic(module_code, db)
 
 @app.get("/bookings/by-date/{date}/{room_id}")
 def get_bookings_by_date_endpoint(date: str, room_id: int, db: Session = Depends(get_db)):
-    """
-    Fetch all bookings for a given date (YYYY-MM-DD) and room.
-    """
-    from src.availability_logic import get_bookings_by_date_and_room
+    
+    from core.booking_service import get_bookings_by_date_and_room
     return get_bookings_by_date_and_room(date, room_id, db)
 
 

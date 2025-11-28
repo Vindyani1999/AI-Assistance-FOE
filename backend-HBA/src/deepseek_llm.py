@@ -1,4 +1,3 @@
-from langchain.llms.base import LLM
 from pydantic import BaseModel, Field  # Use Pydantic directly
 import requests
 import os

@@ -11,7 +11,7 @@ from middleware.auth import get_current_user_email
 import json
 import re
 from datetime import datetime
-from src.availability_logic import check_availability, add_booking, check_available_slotes,book_recommendation_directly, cancel_booking,update_booking
+from src.availability_logic import check_availability, add_booking, check_available_slotes,book_recommendation_directly, cancel_booking,update_booking,validate_datetime_logic_with_llm
 from typing import Dict, Any, Optional, List
 
 
@@ -82,6 +82,7 @@ async def ask_llm(request: QuestionRequest, db=Depends(get_db), user_email: str 
     # Update session with current user email
     session["user_email"] = user_email
 
+    llm = DeepSeekLLM()
     # If waiting for missing param answer
     if session["last_asked"]:
         last_param = session["last_asked"]
@@ -237,6 +238,31 @@ Respond in **only JSON format**, without explanations.
     # All parameters collected, process action
     action = session["action"]
     params = session["params"]
+    
+    if action in ["add_booking", "check_availability", "add_recurring_booking"]:
+        date_field = "date" if action != "add_recurring_booking" else "start_date"
+        if date_field in params and "start_time" in params:
+            validation_result = validate_datetime_logic_with_llm(
+                params[date_field], 
+                params["start_time"], 
+                llm
+            )
+            
+            if not validation_result["is_valid"]:
+                # Return friendly LLM-generated error message with suggestions
+                return {
+                    "status": "invalid_datetime",
+                    "error": validation_result["error"],
+                    "message": validation_result["message"],
+                    "suggestions": validation_result.get("suggestions", {}),
+                    "requested_datetime": validation_result.get("requested_datetime"),
+                    "current_datetime": validation_result.get("current_datetime")
+                }
+            
+            # Update params with normalized date/time
+            params[date_field] = validation_result["parsed_date"]
+            params["start_time"] = validation_result["parsed_time"]
+
 
     if action == "check_availability":
         return check_availability(
@@ -282,6 +308,26 @@ Respond in **only JSON format**, without explanations.
         )
         
     elif action == "update_booking":
+        
+        if params.get("new_date") and params.get("new_start_time"):
+            validation_result = validate_datetime_logic_with_llm(
+                params["new_date"],
+                params["new_start_time"],
+                llm
+            )
+            
+            if not validation_result["is_valid"]:
+                return {
+                    "status": "invalid_datetime",
+                    "error": validation_result["error"],
+                    "message": validation_result["message"],
+                    "suggestions": validation_result.get("suggestions", {}),
+                }
+            
+            params["new_date"] = validation_result["parsed_date"]
+            params["new_start_time"] = validation_result["parsed_time"]
+        
+        
         return update_booking(
             original_room_name=params["original_room_name"],
             original_date=params["original_date"],

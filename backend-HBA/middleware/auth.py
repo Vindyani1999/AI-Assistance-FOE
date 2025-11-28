@@ -3,7 +3,10 @@ import os
 from fastapi import HTTPException, Header, Response  
 from typing import Optional
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import logging
+
+load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -11,10 +14,13 @@ logger = logging.getLogger(__name__)
 # Environment variables with validation
 JWT_SECRET = os.getenv("JWT_SECRET")
 if not JWT_SECRET:
-    raise ValueError("JWT_SECRET environment variable is required")
+        logger.error("JWT_SECRET not found in environment variables")
+        raise ValueError("JWT_SECRET environment variable is required")
 
-JWT_ALGORITHM = "HS256"
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "1"))
+
+logger.info(f"JWT Configuration loaded - Algorithm: {JWT_ALGORITHM}, Expiry: {JWT_EXPIRY_HOURS}h")
 
 def authenticate_token(authorization: Optional[str] = Header(None)):
     
@@ -79,6 +85,7 @@ def authenticate_token(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Token verification failed")
 
 def get_current_user_email(authorization: Optional[str] = Header(None)) -> str:
+    
     user_data = authenticate_token(authorization)
     return user_data["email"]
 

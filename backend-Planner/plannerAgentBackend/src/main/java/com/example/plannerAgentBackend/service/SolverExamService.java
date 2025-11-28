@@ -26,7 +26,7 @@ public class SolverExamService {
             // Run Python script
             ProcessBuilder pb = new ProcessBuilder(
                     "python",
-                    "D:\\7th\\FinalYearProject\\development\\AllSections\\AI-Assistance-FOE\\backend-Planner\\solver\\exam_timetable_csp2.py"
+                    "solver/exam_timetable_csp2.py"
             );
 
 // Merge stderr into stdout so you can catch errors

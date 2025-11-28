@@ -1,36 +1,37 @@
-# 1️⃣ Build stage using Maven + Java 21
+# 1️⃣ Build stage: Maven + Java 21
 FROM maven:3.9.5-eclipse-temurin-21 AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy pom.xml and source code
+# Copy pom and source code
 COPY pom.xml .
 COPY src ./src
 
-# Build the Spring Boot application (skip tests for faster build)
+# Build the Spring Boot app
 RUN mvn clean package -DskipTests
 
-# 2️⃣ Runtime stage using JDK 21
+# 2️⃣ Runtime stage: JDK 21
 FROM eclipse-temurin:21-jdk-jammy
 
-# Set working directory
 WORKDIR /app
 
-# 🧠 Install netcat (nc) to allow wait-for.sh to work
-RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+# Install Python and netcat
+RUN apt-get update && \
+    apt-get install -y netcat-openbsd python3 python3-pip && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy the jar from the build stage
+# Copy Spring Boot jar
 COPY --from=build /app/target/*.jar app.jar
 
-# Copy the wait-for script into the container
+# Copy wait-for script
 COPY wait-for.sh /wait-for.sh
-
-# Make the script executable
 RUN chmod +x /wait-for.sh
 
-# Expose the default Spring Boot port
+# Copy solver folder (Python scripts)
+COPY solver /app/solver
+
+# Expose Spring Boot port
 EXPOSE 8080
 
-# Wait for MySQL before running the app
+# Wait for MySQL before starting
 ENTRYPOINT ["/wait-for.sh", "mysql", "java", "-jar", "app.jar"]

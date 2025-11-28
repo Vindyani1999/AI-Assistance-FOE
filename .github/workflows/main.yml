@@ -13,29 +13,60 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Create .env file inside frontend folder
+        run: echo "${{ secrets.ENV_FILE }}" > ./frontend/.env
+
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build and push frontend image
         run: |
           cd frontend
-          docker build -t nushan2000/apwas-frontend:latest .
+          docker build -t nushan2000/apwas-frontend:latest \
+            --build-arg REACT_APP_AUTH_URL="http://10.50.227.182:5000" \
+            --build-arg REACT_APP_GUIDENCE_URL="http://10.50.227.182:8000" \
+            --build-arg REACT_APP_PLANNER_URL="http://10.50.227.182:8080" \
+            --build-arg REACT_APP_HBA_URL="http://10.50.227.182:7000" \
+            --build-arg REACT_APP_API_URL="http://10.50.227.182:8000" \
+            --build-arg REACT_APP_URL="http://10.50.227.182:3000" \
+            .
           docker push nushan2000/apwas-frontend:latest
 
       - name: Build and push backend-authentication image 
         run: | 
           cd backend-Authentication 
-          docker build -t nushan2000/auth-backend:latest . 
+          docker build -t nushan2000/auth-backend:latest \
+          --build-arg PORT=5000 \
+          --build-arg GMAIL_USER=agenticsystem63@gmail.com \
+          --build-arg GMAIL_PASS="gavn afab xbvi nimo" \
+          --build-arg JWT_SECRET="f78fhchc99id90ie9wu8r974932ehbdbdnw2$behdhbciuew2h2odq2kosw2qldjcndw02e3hfn" \
+          --build-arg REDIS_HOST=redis-19002.c330.asia-south1-1.gce.redns.redis-cloud.com \
+          --build-arg REDIS_PORT=19002 \
+          --build-arg REDIS_USERNAME=default \
+          --build-arg REDIS_PASSWORD=G8r0TgulYokFJOvJD8cPhG1vaUZrWg9T \
+          --build-arg MONGODB_URI="mongodb://mongodb:27017/AI-Assistance-FOE" \
+          --build-arg BACKEND_AUTH_CORS_ORIGIN="http://10.50.227.182:3000" \
+          . 
           docker push nushan2000/auth-backend:latest
 
-      - name: Deploy to Local Network VPS (10.50.227.121)
+      - name: Build and push backend-planner image 
+        run: | 
+          cd backend-Planner/plannerAgentBackend
+          docker build -t nushan2000/backend-planner:latest . 
+          docker push nushan2000/backend-planner:latest
+
+      - name: Deploy to Local Network VPS
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: 10.50.227.182
           username: deieprj
           key: ${{ secrets.VPS_KEY }}
           script: |
+            cd ~/ai/frontend
+            rm -f .env
+            echo "${{ secrets.ENV_FILE }}" > .env
+
             cd ~/ai
             docker-compose pull frontend
             docker-compose pull auth-backend
-            docker-compose up -d
+            docker-compose up -d --force-recreate

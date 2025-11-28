@@ -14,6 +14,7 @@ import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import axios from 'axios';
 import { fetchUserEmailFromProfile } from "../../services/api";
+import { getAccessToken } from '../../services/authAPI';
 import { log } from 'console';
 import { useTheme } from "../../context/ThemeContext";
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -37,26 +38,53 @@ export default function RightDrawer(openProp:any) {
   const [email, setEmail] = React.useState<string | null>(null);
   const [numberOfReceviedRequests, setNumberOfReceviedRequests] = React.useState(0);
   const { notify } = useNotification();
+  const [requests, setRequests] = React.useState<SwapRequest[]>([]);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   React.useEffect(() => {
     const getEmail = async () => {
-      const userEmail = await fetchUserEmailFromProfile();
-      console.log("userEmail",userEmail);
-      fetchSwapRequests();
-      setEmail(userEmail);
+      try {
+        const userEmail = await fetchUserEmailFromProfile();
+        console.log("userEmail", userEmail);
+        setEmail(userEmail);
+      } catch (error) {
+        console.error("Error fetching user email:", error);
+        notify('error', "❌ Failed to fetch user email");
+      }
     };
     getEmail();
-   
-    
-  }, [open,openProp]);
-  // Example data
-  const [requests, setRequests] = React.useState<SwapRequest[]>([ 
-  ]);
+  }, []);
+
+  React.useEffect(() => {
+    if (email) {
+      fetchSwapRequests();
+    }
+  }, [email, open, openProp]);
 
 
   const fetchSwapRequests = async () => {
+    if (!email) {
+      console.log("Email not available yet, skipping fetch");
+      return;
+    }
     try {
-      const response=await axios.get(`${process.env.REACT_APP_HBA_URL}/swap/get_all_requests`);
+
+      const token = getAccessToken();
+      if (!token) {
+        notify('error', "❌ No authentication token found");
+        return;
+      }
+
+       const response = await axios.get(
+        `${process.env.REACT_APP_HBA_URL}/swap/get_all_requests`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
       const filteredRequests = response.data.filter((req: SwapRequest) => req.requester_email === email || req.offerer_email === email);
       setRequests(filteredRequests);
 
@@ -83,8 +111,7 @@ export default function RightDrawer(openProp:any) {
     setOpen(open);
   };
 
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  
 
   const handleCancel = (id: number) => {
     setRequests(requests.filter((req) => req.id !== id));
@@ -92,11 +119,19 @@ export default function RightDrawer(openProp:any) {
 
   const handleSwap = async (id: number) => {
     try {
+      const token = getAccessToken();
 
     alert(`Swapped request ID: ${id}`);
     const response = await axios.post(
-      `${process.env.REACT_APP_HBA_URL}/swap/respond?swap_id=${id}&response=approved`
-    )
+       `${process.env.REACT_APP_HBA_URL}/swap/respond?swap_id=${id}&response=approved`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
     if (response.status === 200) {
         notify('success', "✅ Swap request approved successfully!");
@@ -108,7 +143,7 @@ export default function RightDrawer(openProp:any) {
       }
     } catch (error) {
       notify('error', "❌ Failed to approve swap request.");
-      // console.error('Error approving swap request:', error);
+      console.error('Error approving swap request:', error);
       // alert('Failed to approve swap request');
     }
     // setRequests(requests.filter((req) => req.id !== id));
@@ -116,12 +151,17 @@ export default function RightDrawer(openProp:any) {
 
   const handleReject = async (id: number) => {
     try {
-console.log("id",id);
-
-      // Call the swap respond API with 'rejected' status
+      const token = getAccessToken();
       const response = await axios.post(
-  `${process.env.REACT_APP_HBA_URL}/swap/respond?swap_id=${id}&response=rejected`
-);
+        `${process.env.REACT_APP_HBA_URL}/swap/respond?swap_id=${id}&response=rejected`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
 
       if (response.status === 200) {
@@ -134,7 +174,7 @@ console.log("id",id);
       }
     } catch (error) {
       notify('error', "❌ Failed to reject swap request.");
-      // console.error('Error rejecting swap request:', error);
+      console.error('Error rejecting swap request:', error);
       // alert('Failed to reject swap request');
     }
   };

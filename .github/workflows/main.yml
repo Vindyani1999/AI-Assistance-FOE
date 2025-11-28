@@ -28,6 +28,13 @@ jobs:
           docker build -t nushan2000/auth-backend:latest . 
           docker push nushan2000/auth-backend:latest
 
+      - name: Build and push backend-planner image 
+        run: | 
+          cd backend-Planner
+          cd plannerAgentBackend
+          docker build -t nushan2000/backend-planner:latest . 
+          docker push nushan2000/backend-planner:latest
+
       - name: Deploy to Local Network VPS (10.50.227.121)
         uses: appleboy/ssh-action@v0.1.7
         with:

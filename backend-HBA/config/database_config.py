@@ -43,11 +43,8 @@ def create_db_engine():
         echo_pool=DatabaseConfig.ECHO_POOL,
     )
     
-    # Add event listeners for connection management
     @event.listens_for(engine, "connect")
     def receive_connect(dbapi_conn, connection_record):
-        """Set connection parameters on new connections"""
-        # For MySQL: set charset and timezone
         cursor = dbapi_conn.cursor()
         cursor.execute("SET NAMES utf8mb4")
         cursor.execute("SET time_zone = '+00:00'")

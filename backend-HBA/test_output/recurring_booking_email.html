@@ -1,0 +1,287 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: #4CAF50; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background: white; }
+            </style>
+        </head>
+        <body>
+            <div class="content"><mjml>
+  <mj-head>
+    <mj-title>Recurring Booking Confirmation</mj-title>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" />
+      <mj-text font-size="14px" color="#555555" line-height="1.6" />
+      <mj-button background-color="#4CAF50" color="white" border-radius="4px" font-weight="600" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      .booking-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #4CAF50;
+        border-radius: 8px;
+        padding: 24px;
+        margin: 24px 0;
+      }
+      .summary-section {
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .detail-row {
+        padding: 12px 0;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+      }
+      .detail-row:last-child {
+        border-bottom: none;
+      }
+      .detail-label {
+        font-weight: 600;
+        color: #333333;
+        min-width: 140px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .detail-value {
+        color: #555555;
+        font-size: 15px;
+        font-weight: 500;
+      }
+      .highlight-badge {
+        display: inline-block;
+        background-color: #4CAF50;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .info-badge {
+        background-color: #2196F3;
+      }
+      .dates-list {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        padding: 16px;
+        margin: 12px 0;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .date-item {
+        padding: 8px 0;
+        color: #555;
+        font-size: 14px;
+        border-bottom: 1px solid #e9ecef;
+      }
+      .date-item:last-child {
+        border-bottom: none;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .stat-box {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+      }
+      .stat-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: #4CAF50;
+        line-height: 1;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        margin-top: 8px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      .important-note {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 16px;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+      .checkmark {
+        color: #4CAF50;
+        font-size: 48px;
+        font-weight: bold;
+      }
+    </mj-style>
+  </mj-head>
+  
+  <mj-body background-color="#f4f4f4">
+    <!-- Header with Success Checkmark -->
+    <mj-section background-color="#4CAF50" padding="30px 20px">
+      <mj:column>
+        <mj-text align="center" color="#ffffff" font-size="48px" padding-bottom="10px">
+          ✓
+        </mj-text>
+        <mj-text align="center" color="#ffffff" font-size="28px" font-weight="bold" line-height="1.2">
+          Recurring Booking Confirmed
+        </mj-text>
+        <mj-text align="center" color="#ffffff" font-size="16px" padding-top="8px" font-weight="300">
+          Your series has been successfully scheduled
+        </mj-text>
+      </mj:column>
+    </mj-section>
+    
+    <!-- Main Content -->
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <!-- Greeting -->
+        <mj-text font-size="18px" color="#333333" font-weight="600">
+          Hi John Doe,
+        </mj-text>
+        
+        <mj-text font-size="15px" color="#555555" padding-top="12px" line-height="1.6">
+          Great news! Your recurring booking request has been successfully processed. Below are the complete details of your scheduled bookings.
+        </mj-text>
+        
+        <!-- Statistics Summary -->
+        <mj-wrapper css-class="booking-card" padding="0">
+          <mj-section background-color="transparent" padding="0">
+            <mj-column>
+              <mj-text align="center" font-size="16px" font-weight="600" color="#333" padding-bottom="16px">
+                <span class="highlight-badge">Booking Summary</span>
+              </mj-text>
+              
+              <mj-text css-class="stats-grid" padding="0">
+                <div class="stats-grid">
+                  <div class="stat-box">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">Total Bookings</div>
+                  </div>
+                </div>
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+        
+        <!-- Booking Details Card -->
+        <mj-wrapper css-class="summary-section" padding="0">
+          <mj-section background-color="transparent" padding="0">
+            <mj-column>
+              <mj-text font-size="16px" font-weight="700" color="#333" padding-bottom="12px">
+                📋 Booking Details
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Room:</span>
+                <span class="detail-value">Hall A</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Module Code:</span>
+                <span class="detail-value">CS101</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Time Slot:</span>
+                <span class="detail-value">09:00 - 11:00</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Date Range:</span>
+                <span class="detail-value">2025-12-01 to 2025-12-31</span>
+              </mj-text>
+              
+              <mj-text css-class="detail-row">
+                <span class="detail-label">Pattern:</span>
+                <span class="detail-value">
+                  <span class="highlight-badge info-badge">Every Monday</span>
+                </span>
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+        
+        <!-- Scheduled Dates -->
+        <mj-wrapper css-class="summary-section" padding="0">
+          <mj-section background-color="transparent" padding="0">
+            <mj-column>
+              <mj-text font-size="16px" font-weight="700" color="#333" padding-bottom="12px">
+                📅 Scheduled Dates
+              </mj-text>
+              
+              <mj-text font-size="13px" color="#666" padding-bottom="8px">
+                Your Hall A has been reserved for the following dates:
+              </mj-text>
+              
+              <mj-text css-class="dates-list" padding="0">
+                <div class="dates-list">
+                  • Monday, December 01, 2025&lt;br/&gt;
+• Monday, December 08, 2025&lt;br/&gt;
+• Monday, December 15, 2025&lt;br/&gt;
+• Monday, December 22, 2025
+                </div>
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+        
+        <!-- Important Notice -->
+        <mj-text css-class="important-note" padding="0">
+          <div class="important-note">
+            <strong style="color: #856404;">⚠️ Important Reminders:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #856404;">
+              <li>Please arrive at least <strong>5 minutes before</strong> each scheduled session</li>
+              <li>All 4 bookings are confirmed and active</li>
+              <li>You can view or modify individual bookings through the system</li>
+            </ul>
+          </div>
+        </mj-text>
+        
+        <!-- Action Buttons -->
+        <mj-button href="http://localhost:3000/bookings" padding-top="24px" padding-bottom="12px">
+          View All Bookings
+        </mj-button>
+        
+        <!-- Need Changes Section -->
+        <mj-text font-size="13px" color="#666666" padding-top="20px" line-height="1.6">
+          <strong>Need to make changes?</strong><br/>
+          You can modify or cancel individual bookings anytime through the booking system. Each booking can be managed independently.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Footer -->
+    <mj-section background-color="#2c3e50" padding="30px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="13px" color="#ecf0f1" line-height="1.6">
+          This is an automated confirmation from <strong>HBA Booking System</strong>
+          <br/>
+          For assistance, please contact your system administrator
+        </mj-text>
+        
+        <mj-divider border-color="#34495e" border-width="1px" padding="20px 0"></mj-divider>
+        
+        <mj-text align="center" font-size="11px" color="#95a5a6" padding-top="8px">
+          © 2024 HBA Booking System. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml></div>
+        </body>
+        </html>
+        

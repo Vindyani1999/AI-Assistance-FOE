@@ -4,7 +4,6 @@ from datetime import date
 
 
 class BookingCreate(BaseModel):
-    """Schema for creating a booking"""
     
     room_name: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=100)
@@ -14,7 +13,6 @@ class BookingCreate(BaseModel):
     
     @validator('date')
     def validate_date_format(cls, v):
-        """Validate date format"""
         try:
             from datetime import datetime
             datetime.strptime(v, '%Y-%m-%d')
@@ -24,7 +22,6 @@ class BookingCreate(BaseModel):
     
     @validator('start_time', 'end_time')
     def validate_time_format(cls, v):
-        """Validate time format"""
         try:
             from datetime import datetime
             datetime.strptime(v, '%H:%M')
@@ -34,7 +31,6 @@ class BookingCreate(BaseModel):
 
 
 class BookingUpdate(BaseModel):
-    """Schema for updating a booking"""
     
     room_id: int
     name: str = Field(..., min_length=1, max_length=100)
@@ -44,7 +40,6 @@ class BookingUpdate(BaseModel):
 
 
 class BookingResponse(BaseModel):
-    """Schema for booking response"""
     
     status: str
     message: str
@@ -57,7 +52,6 @@ class BookingResponse(BaseModel):
 
 
 class AvailabilityCheck(BaseModel):
-    """Schema for availability check"""
     
     room_name: str
     date: str
@@ -66,14 +60,12 @@ class AvailabilityCheck(BaseModel):
 
 
 class TimeSlot(BaseModel):
-    """Schema for time slot"""
     
     start_time: str
     end_time: str
 
 
 class AvailableSlotsResponse(BaseModel):
-    """Schema for available slots response"""
     
     room: str
     date: str

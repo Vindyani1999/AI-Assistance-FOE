@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
+import asyncio
 
 from config.database_config import get_db
 from models.booking import MRBSEntry, MRBSSwapRequest
@@ -138,7 +139,6 @@ def pending_swaps(
     db: Session = Depends(get_db),
     user_email: str = Depends(get_current_user_email)
 ):
-    """Get all pending swap requests for a user"""
     logger.info(f"Fetching pending swaps for user {user_id}")
     
     swaps = (
@@ -168,7 +168,6 @@ def get_all_swaps(
     db: Session = Depends(get_db),
     user_email: str = Depends(get_current_user_email)
 ):
-    """Get all swap requests for a user"""
     logger.info(f"Fetching all swaps for user {user_email}")
     
     try:
@@ -193,7 +192,6 @@ def get_all_swaps(
 
         result = []
         for swap in swaps:
-                # 🧩 Requested booking’s module code
                 requested_module = (
                     db.query(MRBSModule)
                     .filter(MRBSModule.module_code == swap.requested_booking.name)
@@ -201,7 +199,6 @@ def get_all_swaps(
                     if swap.requested_booking else None
                 )
 
-                # 🧩 Offered booking’s module code
                 offered_module = (
                     db.query(MRBSModule)
                     .filter(MRBSModule.module_code == swap.offered_booking.name)
@@ -209,7 +206,6 @@ def get_all_swaps(
                     if swap.offered_booking else None
                 )
 
-                # 🕒 Convert Unix timestamps
                 requested_start = format_time(swap.requested_booking.start_time) if swap.requested_booking else None
                 requested_end = format_time(swap.requested_booking.end_time) if swap.requested_booking else None
                 offered_start = format_time(swap.offered_booking.start_time) if swap.offered_booking else None
@@ -220,7 +216,6 @@ def get_all_swaps(
                     "status": swap.status,
                     "created_at": swap.timestamp,
 
-                    # 👥 Requester & Offerer Info
                     "requested_by": swap.requested_by,
                     "offered_by": swap.offered_by,
                     "requester_name": swap.requester.name if swap.requester else None,
@@ -228,19 +223,15 @@ def get_all_swaps(
                     "requester_email": swap.requester.email if swap.requester else None,
                     "offerer_email": swap.offerer.email if swap.offerer else None,
 
-                    # 📘 Module Info
                     "requested_module_code": requested_module.module_code if requested_module else None,
                     "offered_module_code": offered_module.module_code if offered_module else None,
 
-                    # 🕒 Time Slot Info
                     "requested_time_slot": f"{requested_start} - {requested_end}" if requested_start and requested_end else None,
                     "offered_time_slot": f"{offered_start} - {offered_end}" if offered_start and offered_end else None,
 
-                    # 🏫 Room Info
                     "requested_room_name": swap.requested_booking.room.room_name if swap.requested_booking and swap.requested_booking.room else None,
                     "offered_room_name": swap.offered_booking.room.room_name if swap.offered_booking and swap.offered_booking.room else None,
 
-                    # 📨 Readable Summary Message
                     "message": (
                         f"Swap request from {swap.requester.name if swap.requester else 'Unknown'} "
                         f"({swap.requester.email if swap.requester else 'N/A'}) "
@@ -271,8 +262,6 @@ def get_all_requests(
     db: Session = Depends(get_db),
     user_email: str = Depends(get_current_user_email)
 ):
-    """Get all pending swap requests with detailed information"""
-    logger.info("Fetching all pending swap requests")
     
     swaps = (
         db.query(MRBSSwapRequest)

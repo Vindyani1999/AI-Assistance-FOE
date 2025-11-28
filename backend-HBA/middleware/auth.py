@@ -11,7 +11,6 @@ load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Environment variables with validation
 JWT_SECRET = os.getenv("JWT_SECRET")
 if not JWT_SECRET:
         logger.error("JWT_SECRET not found in environment variables")
@@ -34,7 +33,6 @@ def authenticate_token(authorization: Optional[str] = Header(None)):
         )
     
     try:
-        # Extract token from "Bearer <token>"
         if not authorization.startswith("Bearer "):
             logger.error(f"Invalid auth header format: {authorization}")
             raise HTTPException(
@@ -45,16 +43,13 @@ def authenticate_token(authorization: Optional[str] = Header(None)):
         token = authorization.split(" ", 1)[1]  
         logger.debug(f"Extracted token: {token[:20]}...")
         
-        # Verify token
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         logger.debug(f"Token payload: {payload}")
         
-        # Handle both Node.js and FastAPI token formats
         user_id = payload.get("userId") or payload.get("user_id")
         email = payload.get("email")
         role = payload.get("role", "user")
         
-        # Validate required fields
         if not user_id or not email:
             logger.error(f"Token missing required fields - userId: {user_id}, email: {email}")
             raise HTTPException(

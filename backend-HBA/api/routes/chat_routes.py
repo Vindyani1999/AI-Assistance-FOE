@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Dict, Any
@@ -30,7 +30,7 @@ class RecommendationBookingRequest(BaseModel):
 
 
 REQUIRED_FIELDS = {
-     "check_availability": ["room_name", "date", "start_time", "end_time"],
+    "check_availability": ["room_name", "date", "start_time", "end_time"],
     "add_booking": ["room_name", "date", "module_code", "start_time", "end_time"],
     "add_recurring_booking": ["room_name", "start_date", "end_date", "start_time", "end_time", "module_code", "recurrence_rule"],
     "alternatives": ["date", "start_time", "end_time"],
@@ -39,7 +39,7 @@ REQUIRED_FIELDS = {
 }
 
 FALLBACK_QUESTIONS = {
-   "room_name": "Which room would you like to book?",
+    "room_name": "Which room would you like to book?",
     "module_code": "What is the module code?",
     "date": "What date would you like to book it for? Please use YYYY-MM-DD format.",
     "start_date": "What is the start date? Please use YYYY-MM-DD format.",
@@ -70,6 +70,7 @@ def validate_time_format(time_str: str) -> bool:
 @router.post("/ask_llm/")
 async def ask_llm(
     request: QuestionRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user_email: str = Depends(get_current_user_email)
 ):
@@ -106,22 +107,22 @@ async def ask_llm(
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Error building recurrence rule: {str(e)}")
             
+            extracted = extract_entities(question)
+            
             params = {
                 "action": "add_recurring_booking",
                 "parameters": {
-                    "room_name": recurrence_data.get("room_name"),
-                    "module_code": recurrence_data.get("module_code"),
-                    "start_date": recurrence_data.get("start_date"),
+                    "room_name": recurrence_data.get("room_name") or extracted.get("room_name"),
+                    "module_code": recurrence_data.get("module_code") or extracted.get("module_code"),
+                    "start_date": recurrence_data.get("start_date")  or extracted.get("date"),
                     "end_date": recurrence_data.get("end_date"),
-                    "start_time": recurrence_data.get("start_time"),
-                    "end_time": recurrence_data.get("end_time"),
+                    "start_time": recurrence_data.get("start_time") or extracted.get("start_time"),
+                    "end_time": recurrence_data.get("end_time") or extracted.get("end_time"),
                     "recurrence_rule": recurrence_rule,
                     "created_by": user_email,
                 }
             }
             
-            # Pass db session to extract_entities
-            extracted = extract_entities(question)
             if "room_name" in extracted:
                 params["parameters"]["room_name"] = extracted["room_name"]
             
@@ -181,7 +182,9 @@ Respond in **only JSON format**, without explanations.
 """
             try:
                 llm_response = llm._call(prompt)
-                cleaned_response = re.sub(r"^```json|```$", "", llm_response.strip(), flags=re.MULTILINE).strip()
+                cleaned_response = re.sub(r'^```(?:json)?\s*', '', llm_response.strip(), flags=re.MULTILINE)
+                cleaned_response = re.sub(r'\s*```$', '', cleaned_response, flags=re.MULTILINE)
+                cleaned_response = cleaned_response.strip()
                 parsed = json.loads(cleaned_response)
             except Exception as e:
                 logger.error(f"LLM parsing failed: {e}")
@@ -205,7 +208,6 @@ Respond in **only JSON format**, without explanations.
                     "message": "I'm here to help with room bookings only."
                 }
             
-            # Pass db session to extract_entities
             extracted = extract_entities(question)
             for key, value in extracted.items():
                 if key not in params or not params[key]:
@@ -273,7 +275,6 @@ Respond in **only JSON format**, without explanations.
             date=params["date"],
             start_time=params["start_time"],
             end_time=params["end_time"],
-            
         )
     elif action == "add_booking":
         return booking_service.add_booking(
@@ -282,27 +283,32 @@ Respond in **only JSON format**, without explanations.
             name=params["module_code"],
             start_time=params["start_time"],
             end_time=params["end_time"],
-            created_by=user_email, 
+            created_by=user_email,
+            background_tasks=background_tasks
         )
     elif action == "add_recurring_booking":
         recurrence_service = RecurrenceService(llm)
         params["created_by"] = user_email
-        return await recurrence_service.handle_recurring_booking(params, db)
+        return await recurrence_service.handle_recurring_booking(params, db,background_tasks=background_tasks)
     elif action == "alternatives":
-        return booking_service.check_available_slotes(
-            date=params["date"],
-            start_time=params["start_time"],
-            end_time=params["end_time"],
-            
+        # FIXED: Use get_available_slots instead of non-existent check_available_slotes
+        if "room_name" not in params:
+            return {
+                "status": "error",
+                "message": "Room name is required for checking available slots"
+            }
+        return booking_service.get_available_slots(
+            room_name=params["room_name"],
+            date=params["date"]
         )
     elif action == "cancel_booking":
         return booking_service.cancel_booking(
-           room_name=params["room_name"],
+            room_name=params["room_name"],
             date=params["date"],
             start_time=params["start_time"],
             end_time=params["end_time"],
-            user_email=user_email,  
-           
+            user_email=user_email,
+            background_tasks=background_tasks
         )
     elif action == "update_booking":
         if params.get("new_date") and params.get("new_start_time"):
@@ -332,8 +338,8 @@ Respond in **only JSON format**, without explanations.
             new_date=params.get("new_date"),
             new_start_time=params.get("new_start_time"),
             new_end_time=params.get("new_end_time"),
-            modified_by=user_email, 
-            
+            modified_by=user_email,
+            background_tasks=background_tasks
         )
     return {"status": "error", "message": "Unhandled action."}
 
@@ -346,7 +352,6 @@ async def book_recommendation(
 ):
     
     try:
-         
         return BookingService.book_recommendation_directly(
             recommendation=request.recommendation,
             created_by=user_email, 

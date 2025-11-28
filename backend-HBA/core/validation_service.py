@@ -12,7 +12,6 @@ class ValidationService:
     
     @staticmethod
     def validate_time_format(time_str: str) -> bool:
-        """Validate time string format (HH:MM)"""
         try:
             datetime.strptime(time_str, "%H:%M")
             return True
@@ -21,7 +20,6 @@ class ValidationService:
     
     @staticmethod
     def validate_date_format(date_str: str) -> bool:
-        """Validate date string format (YYYY-MM-DD)"""
         try:
             datetime.strptime(date_str, "%Y-%m-%d")
             return True

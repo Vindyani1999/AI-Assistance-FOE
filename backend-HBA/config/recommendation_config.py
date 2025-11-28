@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RecommendationConfig:
-    """Configuration class for the recommendation system"""
     
     # Database Configuration
     database_url: str = field(default_factory=lambda: os.getenv('DATABASE_URL'))
@@ -166,14 +165,12 @@ class RecommendationConfig:
     
     # Environment-specific overrides
     def __post_init__(self):
-        """Post-initialization to handle environment-specific configurations"""
         env = os.getenv('ENVIRONMENT', 'development').lower()
         if env == 'testing': self._apply_testing_config()
         elif env == 'production': self._apply_production_config()
         elif env == 'development': self._apply_development_config()
     
     def _apply_development_config(self):
-        """Apply development-specific settings"""
         self.cache_ttl_default = 300
         self.cache_ttl_recommendations = 60
         self.sqlite_memory_limit_mb = 50
@@ -185,7 +182,6 @@ class RecommendationConfig:
         logger.info("Applied development configuration")
     
     def _apply_testing_config(self):
-        """Apply testing-specific settings"""
         self.cache_ttl_default = 10
         self.cache_ttl_recommendations = 5
         self.sqlite_memory_limit_mb = 10
@@ -202,7 +198,6 @@ class RecommendationConfig:
         logger.info("Applied testing configuration")
     
     def _apply_production_config(self):
-        """Apply production-specific settings"""
         self.cache_ttl_default = 1800
         self.sqlite_memory_limit_mb = 200
         self.max_cache_size_mb = 1000
@@ -219,26 +214,21 @@ class RecommendationConfig:
         logger.info("Applied production configuration")
     
     def get_database_urls(self) -> Dict[str, str]:
-        """Get database URLs for different purposes"""
         return {"main": self.database_url, "cache": f"sqlite:///{self.cache_db_path}",
                 "analytics": f"sqlite:///{self.analytics_db_path}", "vector": f"sqlite:///{self.vector_db_path}"}
     
     def get_mysql_engine_kwargs(self) -> Dict[str, Any]:
-        """Get MySQL engine configuration parameters"""
         return {"pool_size": self.mysql_pool_size, "max_overflow": self.mysql_max_overflow,
                 "pool_timeout": self.mysql_pool_timeout, "pool_recycle": self.mysql_pool_recycle,
                 "echo": self.mysql_echo, "pool_pre_ping": True}
     
     def get_table_names(self) -> Dict[str, str]:
-        """Get table names for database queries"""
         return {"rooms": self.room_table_name, "entries": self.entry_table_name, "repeats": self.repeat_table_name}
     
     def get_business_hours_config(self) -> Dict[str, Any]:
-        """Get business hours configuration"""
         return {"start_hour": self.business_start_hour, "end_hour": self.business_end_hour, "time_slot_minutes": self.time_slot_minutes}
     
     def validate_mysql_connection(self) -> bool:
-        """Validate MySQL connection parameters"""
         try:
             from sqlalchemy import create_engine
             engine = create_engine(self.database_url, **self.get_mysql_engine_kwargs())
@@ -250,7 +240,6 @@ class RecommendationConfig:
             return False
     
     def ensure_directories(self):
-        """Create necessary directories if they don't exist."""
         paths = [Path(p).parent if p.endswith('.db') or p.endswith('.pkl') else Path(p) for p in [
             self.cache_db_path, self.analytics_db_path, self.vector_db_path, self.vector_db_path_env,
             self.user_embedding_path, self.room_embedding_path, self.clustering_model_path,
@@ -263,7 +252,6 @@ class RecommendationConfig:
         logger.info("Ensured all necessary directories exist")
 
     def get_cache_config(self) -> Dict[str, Any]:
-        """Get cache-specific configuration as a dictionary."""
         return {"base_path": self.cache_base_path, "sqlite_memory_limit_mb": self.sqlite_memory_limit_mb,
                 "use_file_fallback": self.use_file_fallback, "sqlite_cache_size_kb": self.sqlite_cache_size_kb,
                 "sqlite_timeout": self.sqlite_timeout, "enable_wal_mode": self.enable_wal_mode,
@@ -273,39 +261,33 @@ class RecommendationConfig:
                 "cache_ttl_default": self.cache_ttl_default, "max_size": self.cache_max_size}
     
     def get_ttl_config(self) -> Dict[str, int]:
-        """Get TTL configuration for different cache types."""
         return {"default": self.cache_ttl_default, "recommendations": self.cache_ttl_recommendations,
                 "user_preferences": self.cache_ttl_user_preferences, "room_features": self.cache_ttl_room_features,
                 "recommendation_hours": self.recommendation_cache_ttl_hours, "user_profile_hours": self.user_profile_cache_ttl_hours,
                 "room_similarity_hours": self.room_similarity_cache_ttl_hours, "analytics_hours": self.analytics_cache_ttl_hours}
     
     def get_db_paths(self) -> Dict[str, Path]:
-        """Get all database file paths."""
         return {"main_db": Path(self.main_db_path), "cache_db": Path(self.cache_db_path),
                 "analytics_db": Path(self.analytics_db_path), "vector_db": Path(self.vector_db_path),
                 "chroma_db": Path(self.chroma_persist_directory) if self.chroma_persist_directory else None}
     
     def get_feature_config(self) -> Dict[str, Any]:
-        """Get feature extraction configuration."""
         return {"user_feature_dimension": self.user_feature_dimension, "room_feature_dimension": self.room_feature_dimension,
                 "equipment_types": self.equipment_types, "amenity_types": self.amenity_types,
                 "time_slot_config": {"start_hour": self.time_slot_start_hour, "end_hour": self.time_slot_end_hour,
                                    "interval_minutes": self.time_slot_interval_minutes}}
     
     def get_vector_config(self) -> Dict[str, Any]:
-        """Get vector store configuration."""
         return {"db_path": self.vector_db_path, "embedding_model": self.embedding_model_name,
                 "embedding_dimension": self.embedding_dimension, "similarity_threshold": self.similarity_threshold,
                 "max_search_results": self.max_search_results, "index_refresh_interval": self.vector_index_refresh_interval}
     
     def get_strategy_config(self, strategy_name: str) -> Dict[str, Any]:
-        """Get configuration for a specific recommendation strategy."""
         configs = {'alternative_room': self.alt_room_config, 'alternative_time': self.alt_time_config,
                   'collaborative_filtering': self.collaborative_config, 'content_based': self.content_based_config}
         return configs.get(strategy_name, {})
     
     def validate_config(self) -> List[str]:
-        """Validate configuration and return list of warnings/errors."""
         warnings = []
         if self.sqlite_memory_limit_mb > self.max_cache_size_mb:
             warnings.append(f"sqlite_memory_limit_mb ({self.sqlite_memory_limit_mb}) exceeds max_cache_size_mb ({self.max_cache_size_mb})")
@@ -334,20 +316,17 @@ class RecommendationConfig:
     
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> 'RecommendationConfig':
-        """Create configuration from dictionary."""
         valid_fields = {field.name for field in cls.__dataclass_fields__.values()}
         filtered_dict = {k: v for k, v in config_dict.items() if k in valid_fields}
         return cls(**filtered_dict)
     
     def __repr__(self) -> str:
-        """String representation of the configuration."""
         return (f"RecommendationConfig(max_recommendations={self.max_recommendations}, "
                 f"cache_ttl_default={self.cache_ttl_default}, embedding_model={self.embedding_model_name}, "
                 f"vector_dimension={self.vector_dimension})")
 
 
 class DatabaseManager:
-    """Manager for handling multiple database connections"""
     
     def __init__(self, config: RecommendationConfig):
         self.config = config
@@ -355,14 +334,12 @@ class DatabaseManager:
         self._sessions = {}
     
     def get_main_engine(self):
-        """Get MySQL engine for main data"""
         if "main" not in self._engines:
             from sqlalchemy import create_engine
             self._engines["main"] = create_engine(self.config.database_url, **self.config.get_mysql_engine_kwargs())
         return self._engines["main"]
     
     def get_cache_engine(self):
-        """Get SQLite engine for caching"""
         if "cache" not in self._engines:
             from sqlalchemy import create_engine
             cache_url = f"sqlite:///{self.config.cache_db_path}"
@@ -370,7 +347,6 @@ class DatabaseManager:
         return self._engines["cache"]
     
     def get_main_session(self):
-        """Get session for main MySQL database"""
         from sqlalchemy.orm import sessionmaker
         if "main" not in self._sessions:
             Session = sessionmaker(bind=self.get_main_engine())
@@ -378,7 +354,6 @@ class DatabaseManager:
         return self._sessions["main"]
     
     def close_all(self):
-        """Close all database connections"""
         for session in self._sessions.values(): session.close()
         for engine in self._engines.values(): engine.dispose()
         self._sessions.clear()
@@ -389,7 +364,6 @@ class ConfigFactory:
     
     @staticmethod
     def create_config(environment: str = None) -> RecommendationConfig:
-        """Create configuration for specified environment."""
         if environment is None: environment = os.getenv('ENVIRONMENT', 'development')
         
         original_env = os.getenv('ENVIRONMENT')

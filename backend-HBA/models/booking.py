@@ -68,7 +68,6 @@ class MRBSSwapRequest(Base):
     timestamp = Column("created_at", TIMESTAMP, nullable=False, server_default=func.now())
     offered_by = Column(Integer, ForeignKey("mrbs_users.id", onupdate="CASCADE", ondelete="SET NULL"), nullable=True)
 
-    # Relationships
     requester = relationship("MRBSUser", foreign_keys=[requested_by])
     offerer = relationship("MRBSUser", foreign_keys=[offered_by])
     requested_booking = relationship("MRBSEntry", foreign_keys=[requested_booking_id])

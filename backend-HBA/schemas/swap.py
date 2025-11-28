@@ -4,14 +4,12 @@ from datetime import datetime
 
 
 class SwapRequestCreate(BaseModel):
-    """Schema for creating a swap request"""
     
     requested_booking_id: int = Field(..., gt=0)
     offered_booking_id: Optional[int] = Field(None, gt=0)
 
 
 class SwapResponse(BaseModel):
-    """Schema for swap request response"""
     
     message: str
     swap_id: int
@@ -23,7 +21,6 @@ class SwapResponse(BaseModel):
 
 
 class SwapResponseFull(BaseModel):
-    """Schema for detailed swap request"""
     
     id: int
     status: str

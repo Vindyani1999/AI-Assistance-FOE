@@ -1,0 +1,37 @@
+Subject: Recurring Booking Confirmed - Hall A (4 bookings)
+======================================================================
+
+Recurring Booking Confirmation
+
+Your recurring booking series has been confirmed!
+
+BOOKING DETAILS:
+- Room: Hall A
+- Module Code: CS101
+- Time: 09:00 - 11:00
+- Duration: 2h 0m per session
+- Recurrence: Every Monday
+- Period: 2025-12-01 to 2025-12-31
+
+SUMMARY:
+- Total Bookings Created: 4
+- Total Duration: 8.0 hours
+
+SCHEDULED DATES:
+• Monday, December 01, 2025
+
+• Monday, December 08, 2025
+
+• Monday, December 15, 2025
+
+• Monday, December 22, 2025
+
+IMPORTANT REMINDERS:
+• Arrive at least 5 minutes before each scheduled session
+• Each booking can be modified or cancelled individually
+• You will receive reminder notifications before each session
+• Changes to one booking do not affect others in the series
+
+Need to make changes? Visit: http://localhost:3000/bookings
+
+Thank you for using HBA Booking System.

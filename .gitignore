@@ -310,3 +310,6 @@ backend-HBA/.env
 .github\instructions\codacy.instructions.md
 
 
+
+# Ignore backend data folder
+backend/data/

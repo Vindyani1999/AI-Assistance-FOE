@@ -1,57 +1,47 @@
-# # Use official Python image
-# FROM python:3.10-slim
-
-# # Set working directory
-# WORKDIR /app
-
-# # Install system dependencies (optional but recommended)
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#     build-essential \
-#     && rm -rf /var/lib/apt/lists/*
-
-# # Copy requirements first (better caching)
-# COPY requirements.txt /app/requirements.txt
-
-# # Install dependencies
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# # Copy entire backend folder
-# COPY . /app
-
-# # Expose backend port
-# EXPOSE 9000
-
-# # Run FastAPI app using uvicorn
-# CMD ["python", "main.py", "--host", "0.0.0.0", "--port", "9000", "--no-reload"]
-
-
-# Use official Python image
+# Use a lightweight Python base image
 FROM python:3.10-slim
+
+# Set environment variables
+# PYTHONDONTWRITEBYTECODE: Prevents Python from writing pyc files to disc
+# PYTHONUNBUFFERED: Prevents Python from buffering stdout and stderr
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies required by Python packages
+# Install system dependencies
+# gcc and python3-dev might be needed for building some python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
-    ffmpeg \
-    libsndfile1 \
+    gcc \
+    python3-dev \
+    poppler-utils \
+    tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (for better caching)
-COPY requirements.txt /app/requirements.txt
+# Install PyTorch CPU-only version first to avoid downloading huge CUDA binaries
+# This significantly reduces the image size
+RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# Upgrade pip and install dependencies with longer timeout
-RUN pip install --upgrade pip
-RUN pip install --default-timeout=120 --no-cache-dir -r requirements.txt
+# Copy requirements file
+COPY requirements.txt .
 
-# Copy entire backend folder
-COPY . /app
+# Install other Python dependencies
+RUN pip install -r requirements.txt
 
-# Expose backend port
+# Create a non-root user for security
+RUN adduser --disabled-password --gecos "" appuser && \
+    chown -R appuser:appuser /app
+
+# Copy the rest of the application code
+COPY . .
+
+# Switch to non-root user
+USER appuser
+
+# Expose the port the app runs on
 EXPOSE 9000
 
-# Run FastAPI app using uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000", "--reload"]
-
+# Command to run the application
+CMD ["uvicorn", "apps.fastapi_app:app", "--host", "0.0.0.0", "--port", "9000"]

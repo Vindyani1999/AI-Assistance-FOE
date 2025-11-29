@@ -1,6 +1,8 @@
 ####################### we want to next enhancement --- three results with correct matrics -----------------------------
 
 import datetime
+import shutil
+
 import os
 import time  
 import yaml
@@ -49,7 +51,6 @@ def clean_text(text: str) -> str:
 
     return text
 
-
 # ===============================
 # Main VectorDB Class
 # ===============================
@@ -77,6 +78,13 @@ class PrepareVectorDB:
 
     def run(self, test_queries, k=3):
         print(f"\n=== Running for {self.name} [{self.embedding_model}] ===")
+        
+        # Clean up existing DB to prevent corruption/version issues
+        db_path = here(self.vectordb_dir)
+        if os.path.exists(db_path):
+             print(f"Removing existing database at {db_path}")
+             shutil.rmtree(db_path)
+
         if not os.path.exists(here(self.vectordb_dir)):
             os.makedirs(here(self.vectordb_dir))
             print(f"Directory '{self.vectordb_dir}' was created.")

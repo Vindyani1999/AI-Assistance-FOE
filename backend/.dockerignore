@@ -1,6 +1,28 @@
-__pycache__/
-*.pyc
-.venv/
-.env
+# Git
 .git
 .gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+.venv
+venv
+env
+
+# Environment variables (secrets should be passed at runtime)
+.env
+.env.local
+
+# Data (if large local files exist)
+data/
+memory/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# IDE
+.vscode
+.idea

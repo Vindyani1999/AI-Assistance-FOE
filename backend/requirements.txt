@@ -31,3 +31,7 @@ motor
 assemblyai
 pyprojroot
 langgraph
+tabulate
+langsmith
+pdf2image
+pytesseract

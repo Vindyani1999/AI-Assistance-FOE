@@ -31,11 +31,14 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Create a non-root user for security
-RUN adduser --disabled-password --gecos "" appuser && \
-    chown -R appuser:appuser /app
+# Create a non-root user for security
+RUN adduser --disabled-password --gecos "" appuser
 
 # Copy the rest of the application code
 COPY . .
+
+# Change ownership of the application code to the non-root user
+RUN chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser

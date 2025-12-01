@@ -30,6 +30,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ai-agent")
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+
+# Fix for running locally on Windows with Docker config
+if os.name == 'nt' and "host.docker.internal" in MONGO_URI:
+    logger.info("Detected 'host.docker.internal' on Windows. Switching to 'localhost' for local MongoDB connection.")
+    MONGO_URI = MONGO_URI.replace("host.docker.internal", "localhost")
+
 mongo_client = AsyncIOMotorClient(MONGO_URI)
 mongo_db = mongo_client[os.getenv("MONGO_DB", "ai_chat_db")]
 

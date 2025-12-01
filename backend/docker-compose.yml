@@ -17,5 +17,12 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - .:/app
+      # Use a named volume for the vector database to ensure persistence and avoid OS conflicts
+      - vectordb_data:/app/data/vectordb
+      # If you need to persist other data (like logs), add them here
+      # - .:/app  <-- DISABLED: Do not mount the whole code folder in production/VPS
+
     command: ["uvicorn", "apps.fastapi_app:app", "--host", "0.0.0.0", "--port", "9000"]
+
+volumes:
+  vectordb_data:

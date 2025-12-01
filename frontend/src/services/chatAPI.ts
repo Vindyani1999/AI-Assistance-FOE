@@ -1,10 +1,18 @@
-// Utility to fetch user email from profile API
+import { Auth_Base_URL, Guidance_Base_URL } from "../App";
+import {
+  ChatMessage,
+  ChatResponse,
+  ChatSessionsResponse,
+} from "../utils/types";
+
+import userRoleUtils from "../utils/userRole";
+
 import { getAccessToken } from "./authAPI";
 export async function fetchUserEmailFromProfile(): Promise<string | null> {
   const token = getAccessToken();
   if (!token) return null;
   try {
-    const response = await fetch("http://localhost:5000/auth/me", {
+    const response = await fetch(`${Auth_Base_URL}/auth/me`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -21,7 +29,6 @@ export async function fetchUserEmailFromProfile(): Promise<string | null> {
   }
 }
 
-// Helper to update access token from response headers (if present)
 function updateAccessTokenFromResponse(response: Response) {
   const newToken = response.headers.get("x-access-token");
   if (newToken) {
@@ -29,8 +36,6 @@ function updateAccessTokenFromResponse(response: Response) {
   }
 }
 
-// Centralized handler for auth errors. If the backend returns 401 or 403
-// dispatch a global event so the app can react (show login, clear state).
 function handleAuthError(response: Response) {
   if (response.status === 401 || response.status === 403) {
     try {
@@ -45,7 +50,6 @@ function handleAuthError(response: Response) {
       });
       window.dispatchEvent(ev);
     } catch (e) {
-      // older browsers may not support CustomEvent constructor in some contexts
       const event = document.createEvent("CustomEvent");
       event.initCustomEvent("auth:logout", true, true, {
         status: response.status,
@@ -55,75 +59,158 @@ function handleAuthError(response: Response) {
   }
 }
 
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
-export interface ChatRequest {
-  message: string;
-  session_id?: string;
-  user_id?: string;
-}
-
-export interface ChatResponse {
-  response: string;
-  conversation_history: ChatMessage[];
-  session_id: string;
-}
-
-export interface FeedbackRequest {
-  session_id: string;
-  message_index: number;
-  feedback_type: "like" | "dislike";
-  user_id?: string;
-}
-
-export interface ChatSession {
-  session_id: string;
-  topic: string;
-  message_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ChatSessionsResponse {
-  sessions: ChatSession[];
-  total_count: number;
-}
-
 class ApiService {
-  // Example: include user email in chat requests automatically
   async sendMessage(
     message: string,
     sessionId: string = "default",
-    guidanceFilter?: string
+    guidanceFilter?: string,
+    // When set for non-undergrads: true => only RUH (university docs),
+    // false => only UGC (governance docs). If omitted, legacy behaviour (both) applies.
+    onlyUseRuh?: boolean
   ): Promise<ChatResponse> {
     const userEmail = await fetchUserEmailFromProfile();
-    const postBody: any = {
+    const postBodyBase: any = {
       message,
       session_id: sessionId,
       user_id: userEmail,
     };
     if (guidanceFilter) {
-      postBody.guidance_filter = guidanceFilter;
+      postBodyBase.guidance_filter = guidanceFilter;
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/ruh/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        body: JSON.stringify(postBody),
-      });
-      updateAccessTokenFromResponse(response);
-      handleAuthError(response);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const isUG = userRoleUtils.isUndergraduate(userEmail as any);
+      // Undergraduates: single ruh endpoint (existing behaviour)
+      if (isUG) {
+        const response = await fetch(`${Guidance_Base_URL}/ruh/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+        updateAccessTokenFromResponse(response);
+        handleAuthError(response);
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
       }
-      return await response.json();
+
+      // Non-undergrads: behaviour depends on the `onlyUseRuh` flag.
+      // - If onlyUseRuh === true  => call only RUH endpoint (university docs)
+      // - If onlyUseRuh === false => call only UGC endpoint (governance docs)
+      // - If onlyUseRuh === undefined => legacy behaviour: call both and combine
+      let ruhPromise: Promise<Response> | null = null;
+      let ugcPromise: Promise<Response> | null = null;
+
+      if (onlyUseRuh === undefined) {
+        // legacy: call both
+        ruhPromise = fetch(`${Guidance_Base_URL}/ruh/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+
+        ugcPromise = fetch(`${Guidance_Base_URL}/ugc/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+      } else if (onlyUseRuh === true) {
+        ruhPromise = fetch(`${Guidance_Base_URL}/ruh/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+      } else {
+        // onlyUseRuh === false => only UGC
+        ugcPromise = fetch(`${Guidance_Base_URL}/ugc/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify(postBodyBase),
+        });
+      }
+
+      // run sequentially to ensure auth headers/tokens are refreshed per response if backend rotates tokens
+      let ruhRespJson: any = null;
+      let ugcRespJson: any = null;
+
+      // Await each promise that was created and build response parts
+      if (ruhPromise) {
+        try {
+          const ruhResp = await ruhPromise;
+          updateAccessTokenFromResponse(ruhResp);
+          handleAuthError(ruhResp);
+          if (ruhResp.ok) ruhRespJson = await ruhResp.json();
+          else
+            ruhRespJson = {
+              response: `RUH request failed: ${ruhResp.status}`,
+              conversation_history: [],
+              session_id: sessionId,
+            };
+        } catch (e) {
+          ruhRespJson = {
+            response: `RUH request error: ${String(e)}`,
+            conversation_history: [],
+            session_id: sessionId,
+          };
+        }
+      }
+
+      if (ugcPromise) {
+        try {
+          const ugcResp = await ugcPromise;
+          updateAccessTokenFromResponse(ugcResp);
+          handleAuthError(ugcResp);
+          if (ugcResp.ok) ugcRespJson = await ugcResp.json();
+          else
+            ugcRespJson = {
+              response: `UGC request failed: ${ugcResp.status}`,
+              conversation_history: [],
+              session_id: sessionId,
+            };
+        } catch (e) {
+          ugcRespJson = {
+            response: `UGC request error: ${String(e)}`,
+            conversation_history: [],
+            session_id: sessionId,
+          };
+        }
+      }
+
+      // Build combined/selected response. If only one side was requested, return that side.
+      if (ruhRespJson && !ugcRespJson) {
+        return ruhRespJson;
+      }
+      if (ugcRespJson && !ruhRespJson) {
+        return ugcRespJson;
+      }
+      // both present (legacy) -> combine
+      const combinedResponse: ChatResponse = {
+        response: `[RUH]\n${
+          ruhRespJson?.response || "(no response)"
+        }\n\n[UGC]\n${ugcRespJson?.response || "(no response)"}`,
+        conversation_history: [
+          ...(ruhRespJson?.conversation_history || []),
+          ...(ugcRespJson?.conversation_history || []),
+        ],
+        session_id:
+          ruhRespJson?.session_id || ugcRespJson?.session_id || sessionId,
+      };
+      return combinedResponse;
     } catch (error) {
       console.error("Error sending message:", error);
       throw error;
@@ -163,13 +250,14 @@ class ApiService {
     userId?: string
   ): Promise<{ session_id: string; topic?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/chat/session`, {
+      const resolvedUser = userId || (await fetchUserEmailFromProfile());
+      const response = await fetch(`${Guidance_Base_URL}/chat/session`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getAccessToken()}`,
         },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify({ user_id: resolvedUser }),
       });
       updateAccessTokenFromResponse(response);
       handleAuthError(response);
@@ -182,15 +270,6 @@ class ApiService {
       throw error;
     }
   }
-  private baseUrl: string;
-
-  constructor() {
-    // Prefer `REACT_APP_API_BASE` (used elsewhere) but fall back to older name or localhost
-    this.baseUrl =
-      (process.env.REACT_APP_API_BASE as string) ||
-      (process.env.REACT_APP_API_URL as string) ||
-      "http://localhost:9000";
-  }
 
   // Send feedback for a message
   async sendFeedback(
@@ -200,7 +279,7 @@ class ApiService {
     userId?: string
   ): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/feedback`, {
+      const response = await fetch(`${Guidance_Base_URL}/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -254,9 +333,10 @@ class ApiService {
     userId?: string
   ): Promise<{ conversation_history: ChatMessage[]; session_id: string }> {
     try {
-      const url = new URL(`${this.baseUrl}/chat/${sessionId}/history`);
-      if (userId) {
-        url.searchParams.append("user_id", userId);
+      const resolvedUser = userId || (await fetchUserEmailFromProfile());
+      const url = new URL(`${Guidance_Base_URL}/chat/${sessionId}/history`);
+      if (resolvedUser) {
+        url.searchParams.append("user_id", resolvedUser);
       }
 
       const response = await fetch(url.toString(), {
@@ -276,14 +356,13 @@ class ApiService {
     }
   }
 
-  // Health check
   async healthCheck(): Promise<{
     status: string;
     message: string;
     active_sessions: number;
   }> {
     try {
-      const response = await fetch(`${this.baseUrl}/health`, {
+      const response = await fetch(`${Guidance_Base_URL}/health`, {
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
         },
@@ -303,9 +382,10 @@ class ApiService {
   // Get all chat sessions
   async getChatSessions(userId?: string): Promise<ChatSessionsResponse> {
     try {
-      const url = new URL(`${this.baseUrl}/chat/sessions`);
-      if (userId) {
-        url.searchParams.append("user_id", userId);
+      const resolvedUser = userId || (await fetchUserEmailFromProfile());
+      const url = new URL(`${Guidance_Base_URL}/chat/sessions`);
+      if (resolvedUser) {
+        url.searchParams.append("user_id", resolvedUser);
       }
 
       const response = await fetch(url.toString(), {
@@ -325,16 +405,18 @@ class ApiService {
     }
   }
 
-  // Route the latest persisted user message for a session through the agent
-  // (Used for voice uploads that already saved the transcript)
   async routeLatest(
     sessionId: string = "default",
     userId?: string
   ): Promise<ChatResponse> {
     try {
-      const url = new URL(`${this.baseUrl}/chat/route`);
+      const resolvedUser = userId || (await fetchUserEmailFromProfile());
+      const prefix = userRoleUtils.isUndergraduate(resolvedUser as any)
+        ? "ruh"
+        : "ugc";
+      const url = new URL(`${Guidance_Base_URL}/${prefix}/chat/route`);
       if (sessionId) url.searchParams.append("session_id", sessionId);
-      if (userId) url.searchParams.append("user_id", userId);
+      if (resolvedUser) url.searchParams.append("user_id", resolvedUser);
 
       const response = await fetch(url.toString(), {
         method: "POST",

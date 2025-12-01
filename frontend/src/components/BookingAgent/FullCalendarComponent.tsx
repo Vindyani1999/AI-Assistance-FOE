@@ -446,17 +446,13 @@ import {
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
-import { fetchUserEmailFromProfile } from "../../services/api";
+import { fetchUserEmailFromProfile } from "../../services/chatAPI";
 import { toast } from "react-toastify";
 import RightDrawer from "./RightDrawer";
 // import AddBoxIcon from "@mui/icons-material/AddBox";
+import { CalendarProps } from "../../utils/types";
 
-interface Props {
-  refreshKey?: any;
-  onCellClick?: (cell: any) => void;
-}
-
-const FullCalendarComponent: React.FC<Props> = ({
+const FullCalendarComponent: React.FC<CalendarProps> = ({
   refreshKey,
   onCellClick,
 }) => {

@@ -10,13 +10,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
 import SyncIcon from "@mui/icons-material/Sync";
 import { useNotification } from "../../context/NotificationContext";
-
-type Props = {
-  open: boolean;
-  onClose: () => void;
-  sessionId: string;
-  userEmail?: string | null;
-};
+import { GuidanceVoiceProps } from "../../utils/types";
 
 // Popup is voice-only; no message type required here
 
@@ -25,7 +19,7 @@ export default function VoiceChatPopupImpl({
   onClose,
   sessionId,
   userEmail,
-}: Props) {
+}: GuidanceVoiceProps) {
   const recorderRef = useRef<any>(null);
   const [state, setState] = useState<
     "idle" | "recording" | "thinking" | "speaking"
@@ -500,20 +494,8 @@ export default function VoiceChatPopupImpl({
     }
 
     onClose();
-    // Refresh the page after closing the popup to ensure app state is fully reset.
-    // A short timeout lets the popup closing animation complete and ensures
-    // MediaStream tracks have been stopped before reload.
-    try {
-      setTimeout(() => {
-        try {
-          window.location.reload();
-        } catch (e) {
-          console.warn("Page reload failed", e);
-        }
-      }, 150);
-    } catch (e) {
-      console.warn("scheduling reload failed", e);
-    }
+    // Do NOT refresh the page on close. We just release microphone and
+    // stop any playback/speech so the app continues without a full reload.
   }
 
   return open ? (

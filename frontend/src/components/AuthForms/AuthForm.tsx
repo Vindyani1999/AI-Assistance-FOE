@@ -19,19 +19,16 @@ import "./AuthForm.mui.css";
 import { signup, verifyOtp, requestOtp, login } from "../../services/authAPI";
 import OTPPopup from "./OTPPopup";
 import { useNotification } from "../../context/NotificationContext";
-import { AuthFormValues, AuthFormProps } from "../../utils/authFormValus";
+import { AuthFormValues, AuthFormProps } from "../../utils/types";
 import {
   EMAIL_DOMAINS,
-  DEPARTMENT_MAP,
   ALL_DEPARTMENTS,
   TITLE_OPTIONS,
-} from "../../utils/signupData";
+} from "../../utils/CONSTANTS";
 
 const AuthForm = (props: AuthFormProps) => {
   const { notify } = useNotification();
   const { mode, onSubmit, buttonText, theme, onSwitchToLogin } = props;
-
-  // Password requirements
   const passwordRequirements = [
     {
       label: "Lowercase letter",
@@ -66,7 +63,6 @@ const AuthForm = (props: AuthFormProps) => {
   const [emailForOtp, setEmailForOtp] = React.useState("");
   const [signupPayload, setSignupPayload] = React.useState<any>(null); // Store signup data until OTP is verified
 
-  // Helper to extract domain from email
   const getDomain = (emailFront: string, emailDomain: string) => {
     let domain = emailDomain.startsWith("@")
       ? emailDomain.slice(1)

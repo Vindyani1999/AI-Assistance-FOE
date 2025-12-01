@@ -18,40 +18,14 @@ import {
   TextField,
 } from "@mui/material";
 import { useNotification } from "../../context/NotificationContext";
-import { fetchUserEmailFromProfile } from "../../services/api";
-import { fetchUserProfile } from "../../services/userAPI";
+import { fetchUserEmailFromProfile } from "../../services/chatAPI";
+// import { fetchUserProfile } from "../../services/userAPI";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { SelectChangeEvent } from "@mui/material/Select";
-interface Message {
-  role: "user" | "assistant";
-  content: string | JSX.Element;
-  recommendations?: Recommendation[];
-  showRecommendations?: boolean;
-}
-
-interface Recommendation {
-  type?: string;
-  score?: number;
-  reason?: string;
-  suggestion?: {
-    room_id?: string;
-    room_name?: string;
-    capacity?: number;
-    description?: string;
-    start_time?: string;
-    end_time?: string;
-    confidence?: number;
-  };
-  data_source?: string;
-}
-
-const RECOMMENDATION_TYPES = {
-  alternative_room: "🏢 Alternative Room",
-  proactive: "🎯 Proactive Suggestion",
-  smart_scheduling: "🧠 Smart Scheduling",
-  default: "💡 Recommendation",
-} as const;
+import { Message, Recommendation } from "../../utils/types";
+import { RECOMMENDATION_TYPES } from "../../utils/CONSTANTS";
+import { Booking_Base_URL } from "../../App";
 
 const BookingChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -60,13 +34,13 @@ const BookingChatInterface: React.FC = () => {
   const [error, setError] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isSwap, setIsSwap] = useState(false);
-  const [roomOptions, setRoomOptions] = useState<string[]>([]);
+  // const [roomOptions, setRoomOptions] = useState<string[]>([]);
   // const roomOptions = ["LT1", "LT2", "Lab1", "Lab2"]; // Add as needed
   // const moduleOptions = ["CE001", "CE002", "CS101", "ME202"];
-  const [bookingId, setBookingId] = useState<number | null>(null);
+  // const [bookingId, setBookingId] = useState<number | null>(null);
   const [moduleOptions, setModuleOptions] = useState<string[]>([]);
   const [selectedRoomOptions, setSelectedRoomOptions] = useState<string[]>([]);
-  const [moduleCode, setModuleCode] = useState<string | null>(null);
+  // const [moduleCode, setModuleCode] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     room_name: "LT1",
     name: "",
@@ -172,7 +146,7 @@ const BookingChatInterface: React.FC = () => {
       };
       setMessages((prev) => [...prev, bookingMessage]);
 
-      const response = await axios.post("http://127.0.0.1:8000/ask_llm/", {
+      const response = await axios.post(`${Booking_Base_URL}/ask_llm/`, {
         question: `Book ${room_name} on ${date} from ${startTimeStr} to ${endTimeStr}`,
         session_id: sessionId,
       });
@@ -437,7 +411,7 @@ const BookingChatInterface: React.FC = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/ask_llm/", {
+      const response = await axios.post(`${Booking_Base_URL}/ask_llm/`, {
         question: inputValue,
         session_id: sessionId,
       });
@@ -592,7 +566,7 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.post(
-        `http://127.0.0.1:8000/booking/add`,
+        `${Booking_Base_URL}/booking/add`,
         formData
       );
 
@@ -605,7 +579,7 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.delete(
-        `http://127.0.0.1:8000/booking/delete`,
+        `${Booking_Base_URL}/booking/delete`,
         {
           data: { booking_id: bookingId },
         }
@@ -625,7 +599,7 @@ const BookingChatInterface: React.FC = () => {
       }
 
       const response = await axios.put(
-        `http://127.0.0.1:8000/booking/update_booking`,
+        `${Booking_Base_URL}/booking/update_booking`,
         {
           booking_id: bookingId,
           ...updatedData,
@@ -651,7 +625,7 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_booking_by_id`,
+        `${Booking_Base_URL}/booking/fetch_booking_by_id`,
         {
           params: { booking_id: calendarCellInfo.id },
         }
@@ -682,7 +656,7 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_moduleCodes_by_user_email?email=${email}`
+        `${Booking_Base_URL}/booking/fetch_moduleCodes_by_user_email?email=${email}`
       );
       setModuleOptions(response.data);
       return response.data;
@@ -700,7 +674,7 @@ const BookingChatInterface: React.FC = () => {
 
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`
+        `${Booking_Base_URL}/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`
       );
       setSelectedRoomOptions(response.data);
       return response.data;
@@ -749,7 +723,7 @@ const BookingChatInterface: React.FC = () => {
     // console.log("userID:", userID);
 
     try {
-      const response = await axios.post(`http://127.0.0.1:8000/swap/request`, {
+      const response = await axios.post(`${Booking_Base_URL}/swap/request`, {
         requested_by_email: email,
         requested_booking_id: swapData.id,
         offered_booking_id: Number(calendarCellInfo.id),
@@ -768,7 +742,7 @@ const BookingChatInterface: React.FC = () => {
   ) => {
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/bookings/by-date/${date}/${roomId}`
+        `${Booking_Base_URL}/bookings/by-date/${date}/${roomId}`
       );
       return response.data;
     } catch (error) {

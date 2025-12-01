@@ -5,24 +5,12 @@ import React, {
   useImperativeHandle,
 } from "react";
 import { useNotification } from "../../context/NotificationContext";
-import { uploadVoice } from "../../services/voice";
+import { uploadVoice } from "../../services/voiceAPI";
 import MicIcon from "@mui/icons-material/Mic";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import { VoiceRecorderProps } from "../../utils/types";
 
-interface VoiceRecorderProps {
-  sessionId: string;
-  userEmail?: string | null;
-  onTranscription?: (text: string) => void;
-  onVoiceSend?: () => void; // called when upload starts
-  onVoiceResponse?: (resp: any) => void; // full backend response for voice
-  showControls?: boolean;
-  showTimer?: boolean;
-  showUploading?: boolean;
-  onRecordingChange?: (isRecording: boolean) => void;
-}
-
-// Simple MediaRecorder-based recorder that auto-uploads on stop (no preview/accept)
 const VoiceRecorder = forwardRef<any, VoiceRecorderProps>(
   function VoiceRecorder(
     {

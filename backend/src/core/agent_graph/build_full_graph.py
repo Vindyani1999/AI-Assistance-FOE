@@ -55,7 +55,7 @@ def build_graph(agent_type="ruhuna"):
             lookup_procurement_guidelines,
             lookup_establishment_code,
             lookup_ugc_circulars,
-            # search_tool
+            
         ]
     else:
         raise ValueError(f"Unknown agent_type: {agent_type}")

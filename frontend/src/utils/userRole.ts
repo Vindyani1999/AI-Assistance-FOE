@@ -21,7 +21,6 @@ function safeEmail(email?: string | null): string | null {
 export function ensureValidRuhEmail(email?: string | null): boolean {
   const e = safeEmail(email);
   if (!e) return false;
-  // simple check: must have a single '@' and domain ends with ruh.ac.lk
   const parts = e.split("@");
   if (parts.length !== 2) return false;
   const domain = parts[1];
@@ -39,13 +38,10 @@ export function getUserRole(email?: string | null): UserRole {
 
   if (!domain.endsWith("ruh.ac.lk")) return "invalid";
 
-  // undergraduate: contains 'engug' anywhere (local or full email)
   if (e.includes("engug") || local.includes("engug")) return "undergraduate";
 
-  // lecturer by exact domain match
   if (LECTURER_DOMAINS.has(domain)) return "lecturer";
 
-  // otherwise administration
   return "administration";
 }
 

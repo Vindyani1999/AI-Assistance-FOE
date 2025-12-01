@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
+// import ListItemText from "@mui/material/ListItemText";
 import CloseIcon from "@mui/icons-material/Close";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 // import CancelIcon from "@mui/icons-material/Cancel";
@@ -12,14 +12,7 @@ import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import { useTheme } from "../../context/ThemeContext";
-
-type SwapRequest = {
-  id: number;
-  from: string;
-  to: string;
-  message: string;
-  isSender: boolean;
-};
+import { SwapRequest } from "../../utils/types";
 
 export default function RightDrawer() {
   const [open, setOpen] = React.useState(false);

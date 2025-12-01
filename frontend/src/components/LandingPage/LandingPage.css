@@ -45,6 +45,113 @@
   z-index: 50;
   background: #fff;
 }
+
+/* Dashboard banner styles */
+.dashboard-banner {
+  position: relative;
+  width: calc(100%);
+  height: 100px;
+  margin: 0 0 0.2rem 0;
+  /* border-radius: 0 0 12px 12px; */
+  overflow: hidden;
+  /* refined left/right/bottom shadows for a professional lift */
+  box-shadow: 0 5px 5px rgba(12, 22, 29, 0.1),
+    -10px 0 28px rgba(12, 22, 29, 0.06), 10px 0 28px rgba(12, 22, 29, 0.06);
+  background-color: #fff;
+}
+.dashboard-banner-image {
+  position: absolute;
+  inset: 0; /* top:0 right:0 bottom:0 left:0 */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  object-position: center right;
+  z-index: 1;
+}
+
+/* Inner wrapper to align banner content with page cards */
+.dashboard-banner-inner {
+  max-width: 1200px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem; /* slightly larger inner padding to align with cards */
+  position: relative;
+  box-sizing: border-box;
+  z-index: 3; /* above the image and overlay pseudo elements */
+}
+
+/* layered overlay to give a subtle gradient and vignette
+.dashboard-banner::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 55%;
+  background: linear-gradient(
+    90deg,
+    rgba(12, 18, 24, 0.42),
+    rgba(12, 18, 24, 0.08)
+  );
+  pointer-events: none;
+  z-index: 2;
+} */
+/* .dashboard-banner::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 28px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  pointer-events: none;
+  z-index: 4;
+} */
+
+.dashboard-banner-overlay {
+  position: absolute;
+  left: 40px;
+  top: 55%;
+  transform: translateY(-55%);
+  z-index: 4;
+  /* color: var(--tab-text); */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 65%;
+}
+.dashboard-banner .banner-hello {
+  margin: 0;
+  /* color: var(--tab-text); */
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  text-shadow: 0 6px 20px rgba(12, 22, 29, 0.16);
+}
+.dashboard-banner .banner-greeting {
+  margin: 0;
+  font-weight: 400;
+  font-size: 16px;
+  /* color: var(--tab-text); */
+}
+
+.dashboard-banner .banner-subtle {
+  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--tab-text);
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(12, 22, 29, 0.06) inset;
+}
 .dark-theme .dashboard-tabs,
 [data-theme="dark"] .dashboard-tabs {
   background: #23272f;
@@ -139,7 +246,7 @@
   display: flex;
   gap: 0.1rem; /* slightly tighter gap between Quick Access and Usage */
   align-items: flex-start; /* align both children to top */
-  margin-top: 1.5rem;
+  /* margin-top: 1.5rem; */
   padding-right: 1.25rem; /* add a little breathing room from the right edge */
 }
 .quick-access-wrapper {

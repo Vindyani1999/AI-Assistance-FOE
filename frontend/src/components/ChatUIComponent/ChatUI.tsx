@@ -1,29 +1,6 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import VoiceChatPopup from "./VoiceChatPopup";
-
-export interface Message {
-  role: "user" | "assistant";
-  content: string | JSX.Element;
-  recommendations?: any[];
-  showRecommendations?: boolean;
-}
-
-interface ChatUIProps {
-  messages: Message[];
-  inputValue: string;
-  setInputValue: (val: string) => void;
-  isLoading: boolean;
-  error: string;
-  onSend: () => void;
-  onClear: () => void;
-  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  formatMessage?: (text: string) => string;
-  agentName?: string; // Optional prop for agent name
-  onAppendMessages?: (
-    msgs: { role: "user" | "assistant"; content: string }[]
-  ) => void; // optional handler to append messages from popup
-}
+import { ChatUIProps } from "../../utils/types";
 
 const ChatUI: React.FC<ChatUIProps> = ({
   messages,
@@ -45,14 +22,13 @@ const ChatUI: React.FC<ChatUIProps> = ({
   }, [messages]);
 
   const { theme } = useTheme();
-  const [voiceVisible, setVoiceVisible] = useState(false);
   return (
     <div className={`chat-container${theme === "dark" ? " dark-theme" : ""}`}>
       <div className="chat-messages">
         {messages.length === 0 && (
-          <div className="welcome-message">
-            Welcome! I'm your {agentName}. How can I assist you today?
-          </div>
+            <div className="welcome-message">
+              Welcome! I'm your {agentName}.
+            </div>
         )}
         {messages.map((message, index) => (
           <div key={index} className={`message ${message.role}`}>
@@ -211,44 +187,9 @@ const ChatUI: React.FC<ChatUIProps> = ({
                 <line x1="14" y1="11" x2="14" y2="17" />
               </svg>
             </button>
-            {agentName.toLowerCase().includes("guidance") && (
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setVoiceVisible(true);
-                }}
-                onClick={(e) => {
-                  // stop propagation in case other global listeners are present
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setVoiceVisible(true);
-                }}
-                className="input-btn voice-btn"
-                title="Voice chat"
-              >
-                🎤
-              </button>
-            )}
           </div>
         </div>
       </div>
-      <VoiceChatPopup
-        visible={voiceVisible}
-        onClose={(collected) => {
-          setVoiceVisible(false);
-          if (!collected || collected.length === 0) return;
-          // convert collected to ChatUI Message shape and call parent's append handler if provided
-          const toAppend = collected.map((m) => ({
-            role: m.role === "agent" ? "assistant" : "user",
-            content: m.text,
-          }));
-          if (onAppendMessages) {
-            onAppendMessages(toAppend as any);
-          }
-        }}
-      />
     </div>
   );
 };

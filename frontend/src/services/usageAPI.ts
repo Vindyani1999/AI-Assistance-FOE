@@ -1,18 +1,12 @@
 import { getAccessToken } from "./authAPI";
-
-const DEFAULT_AUTH_BASE = "http://localhost:5000";
+import { Auth_Base_URL } from "../App";
 
 export async function getMonthlyLoginDates(
   year: number,
   month: number
 ): Promise<{ [date: string]: boolean }> {
-  const AUTH_BASE =
-    (process.env.REACT_APP_AUTH_API as string) || DEFAULT_AUTH_BASE;
   const token = getAccessToken();
-  const url = `${AUTH_BASE.replace(
-    /\/$/,
-    ""
-  )}/auth/analytics/usage?year=${year}&month=${month}`;
+  const url = `${Auth_Base_URL}/auth/analytics/usage?year=${year}&month=${month}`;
 
   const res = await fetch(url, {
     headers: {

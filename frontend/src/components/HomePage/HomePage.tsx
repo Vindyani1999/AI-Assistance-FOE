@@ -3,12 +3,8 @@ import AuthPage from "../AuthForms/AuthPage";
 import { agentCardData } from "../../utils/AgentCardData";
 // @ts-ignore: allow side-effect CSS import without type declarations
 import "./HomePage.css";
-
+import { HomePageProps } from "../../utils/types";
 const agents = agentCardData;
-
-interface HomePageProps {
-  onAuthSuccess: () => void;
-}
 
 const HomePage: React.FC<HomePageProps> = ({ onAuthSuccess }) => (
   <div className="home-page">

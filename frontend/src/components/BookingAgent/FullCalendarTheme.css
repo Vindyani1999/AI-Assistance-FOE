@@ -1,11 +1,9 @@
 :root {
-  --brand-500: #6b4b3a; /* warm brown */
+  --brand-500: #6b4b3a;
   --brand-700: #54392d;
   --muted-100: #f6f7f9;
   --muted-200: #e9ecef;
   --text-900: #0f1720;
-
-  /* Drawer / swap panel tokens (light mode defaults) */
   --drawer-bg: rgba(255, 255, 255, 0.72);
   --drawer-border: var(--muted-200);
   --drawer-text: var(--text-900);
@@ -18,12 +16,7 @@
   --action-primary-end: #059669;
   --action-danger-start: #ef4444;
   --action-danger-end: #dc2626;
-  /* Dialog tokens (light) */
-  --dialog-content-bg: linear-gradient(
-    180deg,
-    rgba(246, 247, 249, 0.95),
-    #ffffff
-  );
+  --dialog-content-bg: linear-gradient(180deg, rgba(246, 247, 249, 0.95), #ffffff);
   --dialog-input-bg: #ffffff;
   --dialog-border: var(--muted-200);
   --dialog-shadow: 0 6px 18px rgba(84, 57, 45, 0.06);
@@ -32,7 +25,29 @@
   --dialog-muted-text: #6b6b6b;
 }
 
-/* Grid lines */
+.dark-theme {
+  --drawer-bg: rgba(6, 10, 14, 0.6);
+  --drawer-border: rgba(255, 255, 255, 0.06);
+  --drawer-text: #eaf3ff;
+  --muted-text: rgba(234, 243, 255, 0.7);
+  --tag-bg: rgba(234, 243, 255, 0.04);
+  --tag-text: #eaf3ff;
+  --item-bg: rgba(18, 24, 32, 0.6);
+  --item-shadow: none;
+  --action-primary-start: #10b981;
+  --action-primary-end: #047857;
+  --action-danger-start: #ef4444;
+  --action-danger-end: #b91c1c;
+  --dialog-content-bg: linear-gradient(180deg, rgba(12, 14, 18, 0.75), rgba(18, 24, 32, 0.75));
+  --dialog-input-bg: rgba(18, 24, 32, 0.6);
+  --dialog-border: rgba(255, 255, 255, 0.06);
+  --dialog-shadow: none;
+  --dialog-title-color: #eaf3ff;
+  --dialog-text: #eaf3ff;
+  --dialog-muted-text: rgba(234, 243, 255, 0.7);
+}
+
+/* ==================== FullCalendar Core ==================== */
 .fc .fc-timegrid-col {
   border-right: 1px solid var(--muted-200);
 }
@@ -43,7 +58,6 @@
   border-right: none;
 }
 
-/* Headers & typography */
 .fc .fc-col-header-cell,
 .fc .fc-timegrid-axis {
   font-size: 0.85rem !important;
@@ -54,11 +68,11 @@
 .dark-theme .fc .fc-timegrid-axis {
   color: #e7eef8;
 }
+
 .fc .fc-col-header-cell .fc-col-header-cell-cushion {
   font-weight: 700 !important;
 }
 
-/* Toolbar */
 .fc .fc-toolbar-title {
   font-size: 1.06rem !important;
   font-weight: 700;
@@ -67,6 +81,7 @@
 .dark-theme .fc .fc-toolbar-title {
   color: #eaf3ff;
 }
+
 .fc .fc-toolbar {
   min-height: 44px;
   padding: 0.45rem 0.5rem;
@@ -75,10 +90,9 @@
   align-items: center;
 }
 
-/* Buttons: subtle rounded pills */
 .fc .fc-button {
   font-size: 0.86rem !important;
-  padding: 6px 6px !important; /* reduced horizontal padding for compact toolbar */
+  padding: 6px 12px !important;
   border-radius: 999px !important;
   background: transparent;
   border: 1px solid transparent;
@@ -93,7 +107,7 @@
   border: none !important;
 }
 
-/* Light theme specifics */
+/* Light Theme */
 .light-theme .fc {
   background: #fff;
   color: #111;
@@ -121,37 +135,10 @@
   transform: translateY(-2px);
 }
 
-/* Dark theme specifics */
+/* Dark Theme */
 .dark-theme .fc {
   background: #0f1720;
   color: #eaf3ff;
-}
-.dark-theme {
-  /* Dark mode token overrides for drawer */
-  --drawer-bg: rgba(6, 10, 14, 0.6);
-  --drawer-border: rgba(255, 255, 255, 0.06);
-  --drawer-text: #eaf3ff;
-  --muted-text: rgba(234, 243, 255, 0.7);
-  --tag-bg: rgba(234, 243, 255, 0.04);
-  --tag-text: #eaf3ff;
-  --item-bg: rgba(18, 24, 32, 0.6);
-  --item-shadow: none;
-  --action-primary-start: #10b981;
-  --action-primary-end: #047857;
-  --action-danger-start: #ef4444;
-  --action-danger-end: #b91c1c;
-  /* Dialog tokens (dark) */
-  --dialog-content-bg: linear-gradient(
-    180deg,
-    rgba(12, 14, 18, 0.75),
-    rgba(18, 24, 32, 0.75)
-  );
-  --dialog-input-bg: rgba(18, 24, 32, 0.6);
-  --dialog-border: rgba(255, 255, 255, 0.06);
-  --dialog-shadow: none;
-  --dialog-title-color: #eaf3ff;
-  --dialog-text: #eaf3ff;
-  --dialog-muted-text: rgba(234, 243, 255, 0.7);
 }
 .dark-theme .fc-toolbar {
   background: #0b1220;
@@ -169,6 +156,32 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
+/* Event States */
+.fc .fc-event.fc-event-booking {
+  background: linear-gradient(180deg, #a8a8a8, #b5a79c) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(107, 75, 58, 0.12) !important;
+}
+
+.fc .fc-event.fc-event-today {
+  background: linear-gradient(180deg, #34d399, #059669) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.2) !important;
+}
+
+.fc .fc-event.fc-event-future {
+  background: linear-gradient(180deg, #d5a46e, #c48752) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 18px rgba(196, 135, 82, 0.2) !important;
+}
+
+/* ==================== Room Select Row ==================== */
 .room-select-row {
   display: flex;
   gap: 0.8rem;
@@ -176,7 +189,6 @@
   margin-bottom: 1rem;
 }
 
-/* Ensure the floating InputLabel for the room select stays left-aligned */
 .room-select-row .MuiFormControl-root {
   position: relative;
 }
@@ -192,54 +204,12 @@
   justify-content: flex-start !important;
 }
 
-/* Remove borders/shadows in compact mode */
-.dark-theme .fc-event,
-.dark-theme .fc-timegrid-event,
-.dark-theme .fc-daygrid-event {
-  border: none !important;
-}
-
-/* Responsive tweak */
-@media (max-width: 720px) {
-  .fc .fc-toolbar-title {
-    font-size: 0.96rem !important;
-  }
-  .fc .fc-button {
-    padding: 6px 6px !important;
-  }
-}
-
-/* Blue pill button design (reusable) */
-.btn-blue {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, #3b82f6, #2563eb); /* blue gradient */
-  color: #fff !important;
-  padding: 10px 22px;
-  border-radius: 999px;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
-  border: none;
-  font-weight: 600;
-  text-transform: none;
-  cursor: pointer;
-}
-.btn-blue:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.2);
-}
-.btn-blue:active {
-  transform: translateY(0);
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
-}
-
-/* Apply inside booking-analysis card to standard MUI primary buttons */
-/* Green and brown pill button designs (reusable) */
+/* ==================== Button Styles ==================== */
 .btn-green {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #34d399, #059669); /* green gradient */
+  background: linear-gradient(180deg, #34d399, #059669);
   color: #fff !important;
   padding: 10px 22px;
   border-radius: 999px;
@@ -281,123 +251,96 @@
   box-shadow: 0 6px 14px rgba(84, 57, 45, 0.08);
 }
 
-/* Small variants */
-.btn-green--small,
-.btn-brown--small {
-  padding: 6px 12px;
-  font-size: 0.92rem;
+.btn-cancel {
+  color: var(--text-900);
+  background: transparent;
+  text-transform: none;
+  font-weight: 700;
 }
 
-/* small variant for toolbar buttons to remain compact */
-.btn-blue--small {
-  padding: 6px 12px;
-  font-size: 0.92rem;
-}
-
-/* Dialog / popup styling for booking modal */
-.input-with-icon {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.input-with-icon .input-icon {
-  color: var(--brand-700);
-  background: rgba(107, 75, 58, 0.06);
-  padding: 8px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
-}
+/* ==================== Dialog Styles ==================== */
 .MuiDialog-container {
-  align-items: center; /* vertically center */
-}
-.MuiDialog-paper {
-  border-radius: 12px;
-}
-.booking-dialog-actions .MuiButton-root {
-  min-width: 110px;
+  align-items: center;
 }
 
-/* Larger dialog title style */
+.MuiDialog-paper {
+  padding: 0;
+  max-width: 560px;
+  min-width: 500px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%) !important;
+}
+
+.dark-theme .MuiDialog-paper,
+.dark .MuiDialog-paper,
+body.dark .MuiDialog-paper {
+  background: linear-gradient(180deg, #1a1f2e 0%, #0f1419 100%) !important;
+}
+
 .MuiDialogTitle-root {
   font-weight: 700;
   color: var(--text-900);
 }
 
-/* Polished booking dialog styles (theme-matching, professional) */
-/* Scope these to dialog paper to avoid affecting unrelated components */
-.MuiDialog-paper {
-  padding: 0; /* content & actions control spacing */
-  max-width: 740px;
-  min-width: 520px;
-  min-height: 480px;
-  overflow: hidden;
-}
 .MuiDialogContent-root {
   padding: 20px 24px 8px 24px;
   background: var(--dialog-content-bg);
 }
+
 .MuiDialogContent-root p {
   margin: 0 0 8px 0;
   color: var(--dialog-title-color);
   font-weight: 600;
   font-size: 0.95rem;
 }
+
 .MuiDialog-paper .MuiFormControl-root {
   margin-top: 6px;
   margin-bottom: 12px;
 }
+
 .MuiDialog-paper .MuiOutlinedInput-root,
 .MuiDialog-paper .MuiSelect-select {
-  background: var(--dialog-input-bg);
-  border-radius: 10px;
-  padding: 6px 10px;
+  background: var(--dialog-input-bg) !important;
+  border-radius: 10px !important;
+  padding: 6px 10px !important;
   min-height: 44px;
 }
+
 .MuiDialog-paper .MuiOutlinedInput-root fieldset {
-  border-color: var(--dialog-border);
+  border-color: var(--dialog-border) !important;
 }
+
 .MuiDialog-paper .MuiOutlinedInput-root.Mui-focused fieldset {
   border-color: var(--brand-700) !important;
-  box-shadow: var(--dialog-shadow);
+  box-shadow: 0 6px 18px rgba(84, 57, 45, 0.06);
 }
+
 .MuiDialog-paper .MuiInputLabel-root {
   color: var(--dialog-muted-text);
   font-weight: 600;
 }
 
-/* Left icon groups inside inputs (if `.input-with-icon` used) */
-.MuiDialog-paper .input-with-icon {
-  display: flex;
-  align-items: center;
-}
-.MuiDialog-paper .input-with-icon .input-icon {
-  margin-right: 12px;
-  background: rgba(107, 75, 58, 0.06);
-  color: var(--brand-700);
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.MuiDialog-paper .MuiInputLabel-root.Mui-focused {
+  color: var(--brand-700) !important;
 }
 
-/* Date & time fields: group look consistent */
-.MuiDialog-paper .MuiTextField-root .MuiInputBase-root {
-  border-radius: 10px;
+.MuiDialog-paper .MuiOutlinedInput-input[type="time"],
+.MuiDialog-paper .MuiOutlinedInput-input[type="date"] {
+  cursor: pointer;
+  padding: 12px 10px;
+  font-size: 0.95rem;
 }
 
-/* Dialog actions (buttons) */
 .MuiDialogActions-root {
   padding: 14px 20px 18px 20px;
   background: transparent;
   justify-content: flex-end;
   gap: 12px;
 }
+
 .MuiDialogActions-root .MuiButton-root {
   min-width: 96px;
   padding: 8px 14px;
@@ -405,45 +348,26 @@
   text-transform: none;
   font-weight: 700;
 }
-/* Cancel (text/outlined) */
-.MuiDialogActions-root .MuiButton-root.MuiButton-text {
-  color: var(--text-900);
-  background: transparent;
-}
-/* Primary/contained - Create */
+
 .MuiDialogActions-root .MuiButton-contained {
   background: linear-gradient(180deg, #34d399, #059669);
   color: #fff;
   box-shadow: 0 10px 26px rgba(37, 99, 235, 0.12);
 }
+
 .MuiDialogActions-root .MuiButton-contained:hover {
   transform: translateY(-2px);
 }
 
-/* Make selects and textfields inside the dialog visually consistent on mobile */
-@media (max-width: 640px) {
-  .MuiDialog-paper {
-    min-width: initial;
-    width: calc(100% - 32px);
-    min-height: auto;
-  }
-  .MuiDialogContent-root {
-    padding: 16px;
-  }
+.booking-dialog-paper {
+  padding: 0;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 28px 80px rgba(9, 10, 10, 0.22) !important;
+  min-width: 520px;
+  max-width: 680px;
 }
 
-/* Small visual polish for input placeholders & helper text */
-.MuiDialog-paper .MuiFormHelperText-root {
-  color: var(--dialog-muted-text);
-  font-size: 0.82rem;
-}
-
-/* Ensure the create button stands out without being overly large */
-.MuiDialogActions-root .MuiButton-contained.Mui-disabled {
-  opacity: 0.6;
-}
-
-/* Booking dialog centered title + icon */
 .booking-dialog-title {
   display: flex;
   flex-direction: column;
@@ -453,366 +377,423 @@
   padding-top: 6px;
   text-align: center;
 }
-.booking-dialog-title .title-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, var(--brand-500), var(--brand-700));
-  color: #fff;
-  box-shadow: 0 8px 20px rgba(84, 57, 45, 0.12);
-}
+
 .booking-dialog-title .title-text {
   font-size: 1.02rem;
   font-weight: 800;
   color: var(--dialog-text);
 }
 
-/* Swap / Right Drawer styles */
-.right-drawer-paper {
-  width: 380px !important;
-  /* border-left: 1px solid var(--drawer-border); */
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-  padding: 0;
-  /* Glassy background with reduced brightness */
-  /* background: var(--drawer-bg); */
-  background: transparent !important;
-  -webkit-backdrop-filter: blur(50px) saturate(80%);
-  backdrop-filter: blur(70px) saturate(80%);
-  filter: brightness(0.94);
-  box-shadow: var(--item-shadow);
-  /* Remove slide transition so drawer appears instantly */
-  transition: none !important;
-  transform: none !important;
-  overflow-x: hidden;
+/* ==================== Professional Drawer ==================== */
+.professional-drawer-paper {
+  width: 480px !important;
+  height: 100vh;
+  background: white !important;
+  box-shadow: -4px 0 30px rgba(0, 0, 0, 0.2) !important;
 }
-.right-drawer-paper .MuiBox-root[role="presentation"] {
-  padding: 18px 18px 24px 18px;
-  overflow-x: hidden;
+
+.professional-drawer-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-.right-drawer-header {
+
+.professional-drawer-header {
+  padding: 24px;
+  background: linear-gradient(135deg, #6b4b3a 0%, #54392d 100%);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--drawer-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-.right-drawer-header .MuiTypography-root {
-  font-weight: 800;
-  color: var(--drawer-text);
-}
-.swap-list {
-  margin-top: 12px;
+
+.professional-header-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: calc(100vh - 240px);
-  overflow: auto;
-  padding-right: 6px;
-}
-.swap-list,
-.swap-item {
-  overflow-x: hidden;
-}
-.swap-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  /* background: var(--item-bg); */
-  background: transparent;
-  border-radius: 10px;
-  box-shadow: var(--item-shadow);
-}
-.swap-item .meta {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto; /* allow meta to grow so actions stay pinned to the right */
-  align-items: flex-start; /* ensure children (name-tag) do not stretch full width */
-}
-.swap-item .meta .primary {
-  font-weight: 400;
-  color: var(--text-900);
-}
-.swap-item .meta .secondary {
-  font-size: 0.84rem;
-  color: var(--muted-text);
-}
-.swap-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end; /* keep actions aligned to the right */
-}
-.swap-icon-btn {
-  width: 25px;
-  height: 25px;
-  min-width: 25px;
-  border-radius: 999px;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.04);
-  transition: transform 120ms ease, box-shadow 120ms ease;
-  padding: 0;
 }
-.swap-icon-btn.primary {
-  background: linear-gradient(
-    180deg,
-    var(--action-primary-start),
-    var(--action-primary-end)
-  );
-  color: #fff;
+
+.professional-header-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: white;
 }
-.swap-icon-btn.danger {
-  background: linear-gradient(
-    180deg,
-    var(--action-danger-start),
-    var(--action-danger-end)
-  );
-  color: #fff;
+
+.professional-header-subtitle {
+  font-size: 13px;
+  opacity: 0.9;
+  margin: 0;
+  color: white;
 }
-.swap-icon-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--item-shadow);
+
+.professional-close-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  color: white !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.swap-icon-btn svg {
+
+.professional-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: rotate(90deg);
+}
+
+.professional-filter-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.professional-filter-tab {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 16px !important;
+  background: white !important;
+  border: 2px solid #e9ecef !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #6b6b6b !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none !important;
+  min-width: auto !important;
+}
+
+.professional-filter-tab:hover {
+  border-color: #6b4b3a !important;
+  color: #6b4b3a !important;
+}
+
+.professional-filter-tab.active {
+  background: linear-gradient(135deg, #6b4b3a 0%, #54392d 100%) !important;
+  border-color: #6b4b3a !important;
+  color: white !important;
+}
+
+.professional-tab-count {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.professional-filter-tab.active .professional-tab-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.professional-requests-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+  background: #fafbfc;
+}
+
+.professional-requests-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.professional-requests-list::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+.professional-requests-list::-webkit-scrollbar-thumb {
+  background: #6b4b3a;
+  border-radius: 4px;
+}
+
+.professional-request-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.professional-request-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-color: #6b4b3a;
+  transform: translateY(-2px);
+}
+
+.professional-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.professional-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.professional-avatar {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #6b4b3a 0%, #54392d 100%);
+  color: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(107, 75, 58, 0.3);
 }
 
-.from-name {
-  font-size: 0.82rem;
-  font-weight: 400;
-  color: var(--brand-700);
-  margin-bottom: 6px;
+.professional-user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* Name tag inside swap card */
-.name-tag {
+.professional-user-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f1720;
+}
+
+.professional-request-type-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--tag-bg);
-  color: var(--tag-text);
-  font-weight: 400;
-  font-size: 0.78rem;
-  /* margin-bottom: 8px; */
-  white-space: nowrap; /* keep label and name on one line */
+  padding: 3px 10px;
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
 }
 
-/* Prevent the name-tag from stretching to full width inside the flex column */
-.name-tag {
-  align-self: flex-start;
-}
-.swap-item .primary {
-  margin-top: 4px;
+.professional-time-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b6b6b;
+  font-size: 13px;
 }
 
-/* Dark theme name tag */
-.dark-theme .name-tag {
-  background: rgba(234, 243, 255, 0.04);
+.professional-swap-details {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border-left: 4px solid #6b4b3a;
+}
+
+.professional-swap-details svg {
+  color: #6b4b3a;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.professional-swap-details p {
+  font-size: 14px;
+  color: #0f1720;
+  line-height: 1.6;
+  font-weight: 500;
+  margin: 0;
+}
+
+.professional-action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.professional-action-buttons button {
+  flex: 1;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 12px 20px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none !important;
+  min-width: auto !important;
+}
+
+.professional-btn-approve {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3) !important;
+}
+
+.professional-btn-approve:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4) !important;
+}
+
+.professional-btn-reject,
+.professional-btn-cancel {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+.professional-btn-reject:hover,
+.professional-btn-cancel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4) !important;
+}
+
+.professional-btn-cancel {
+  background: linear-gradient(135deg, #6b4b3a 0%, #54392d 100%) !important;
+  box-shadow: 0 4px 12px rgba(107, 75, 58, 0.3) !important;
+}
+
+.professional-btn-cancel:hover {
+  box-shadow: 0 6px 16px rgba(107, 75, 58, 0.4) !important;
+}
+
+.professional-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.professional-empty-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f1720;
+  margin: 20px 0 8px 0;
+}
+
+.professional-empty-text {
+  font-size: 14px;
+  color: #6b6b6b;
+  max-width: 280px;
+  margin: 0;
+}
+
+/* ==================== Dark Theme Overrides ==================== */
+.professional-drawer-paper[data-theme="dark"] {
+  background: #0f1720 !important;
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-requests-list {
+  background: #0b1220;
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-filter-tabs {
+  background: #0b1220;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-filter-tab {
+  background: #121820 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(234, 243, 255, 0.7) !important;
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-filter-tab.active {
+  background: linear-gradient(135deg, #6b4b3a 0%, #54392d 100%) !important;
+  color: white !important;
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-request-card {
+  background: rgba(18, 24, 32, 0.6);
+  box-shadow: none;
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-user-name {
   color: #eaf3ff;
 }
-.swap-empty {
-  text-align: center;
-  color: #6b6b6b;
-  padding: 22px 12px;
+
+.professional-drawer-paper[data-theme="dark"] .professional-swap-details {
+  background: rgba(12, 14, 18, 0.6);
 }
 
+.professional-drawer-paper[data-theme="dark"] .professional-swap-details p {
+  color: #eaf3ff;
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-time-info {
+  color: rgba(234, 243, 255, 0.7);
+}
+
+.professional-drawer-paper[data-theme="dark"] .professional-empty-title {
+  color: #eaf3ff;
+}
+
+/* ==================== Responsive Design ==================== */
 @media (max-width: 720px) {
-  .right-drawer-paper {
-    width: 92% !important;
+  .fc .fc-toolbar-title {
+    font-size: 0.96rem !important;
+  }
+  .fc .fc-button {
+    padding: 6px 6px !important;
   }
 }
 
-/* Support multiple dark-mode classes/attributes so the drawer shows correctly
-   whether the app uses `.dark-theme`, `.dark`, `body.dark`, `.theme-dark`,
-   or `html[data-theme="dark"]`. These mirror the `.dark-theme` overrides. */
-.dark-theme .right-drawer-paper,
-.dark .right-drawer-paper,
-body.dark .right-drawer-paper,
-.theme-dark .right-drawer-paper,
-html[data-theme="dark"] .right-drawer-paper {
-  background: rgba(6, 10, 14, 0.6);
-  -webkit-backdrop-filter: blur(50px) saturate(70%);
-  backdrop-filter: blur(50px) saturate(70%);
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  color: #eaf3ff;
-  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.6);
-}
-.dark-theme .right-drawer-paper .right-drawer-header,
-.dark .right-drawer-paper .right-drawer-header,
-body.dark .right-drawer-paper .right-drawer-header,
-.theme-dark .right-drawer-paper .right-drawer-header,
-html[data-theme="dark"] .right-drawer-paper .right-drawer-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-.dark-theme .right-drawer-paper .MuiTypography-root,
-.dark .right-drawer-paper .MuiTypography-root,
-body.dark .right-drawer-paper .MuiTypography-root,
-.theme-dark .right-drawer-paper .MuiTypography-root,
-html[data-theme="dark"] .right-drawer-paper .MuiTypography-root {
-  color: #eaf3ff;
-}
-.dark-theme .swap-item,
-.dark .swap-item,
-body.dark .swap-item,
-.theme-dark .swap-item,
-html[data-theme="dark"] .swap-item {
-  background: rgba(18, 24, 32, 0.6);
-  box-shadow: none;
-}
-.dark-theme .swap-item .primary,
-.dark .swap-item .primary,
-body.dark .swap-item .primary,
-.theme-dark .swap-item .primary,
-html[data-theme="dark"] .swap-item .primary {
-  color: #eaf3ff;
-}
-.dark-theme .swap-item .secondary,
-.dark .swap-item .secondary,
-body.dark .swap-item .secondary,
-.theme-dark .swap-item .secondary,
-html[data-theme="dark"] .swap-item .secondary {
-  color: rgba(234, 243, 255, 0.7);
+@media (max-width: 768px) {
+  .professional-drawer-paper {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  .professional-drawer-header {
+    padding: 20px;
+  }
+
+  .professional-header-title {
+    font-size: 18px;
+  }
+
+  .professional-filter-tabs {
+    padding: 12px 20px;
+  }
+
+  .professional-requests-list {
+    padding: 12px 20px;
+  }
+
+  .professional-request-card {
+    padding: 16px;
+  }
 }
 
-/* Also support the case where the drawer element itself is marked as dark via
-   a data attribute or an extra class (e.g. `data-theme="dark"` or
-   `.right-drawer-paper.dark`). This ensures the drawer adapts even if the
-   rest of the page doesn't use the ancestor dark class convention. */
-.right-drawer-paper.dark,
-.right-drawer-paper[data-theme="dark"],
-.right-drawer-paper.theme-dark {
-  background: rgba(6, 10, 14, 0.6);
-  -webkit-backdrop-filter: blur(50px) saturate(70%);
-  backdrop-filter: blur(50px) saturate(70%);
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  color: #eaf3ff;
-  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.6);
-}
-.right-drawer-paper.dark .right-drawer-header,
-.right-drawer-paper[data-theme="dark"] .right-drawer-header,
-.right-drawer-paper.theme-dark .right-drawer-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-.right-drawer-paper.dark .MuiTypography-root,
-.right-drawer-paper[data-theme="dark"] .MuiTypography-root,
-.right-drawer-paper.theme-dark .MuiTypography-root {
-  color: #eaf3ff;
-}
-.right-drawer-paper.dark .swap-item,
-.right-drawer-paper[data-theme="dark"] .swap-item,
-.right-drawer-paper.theme-dark .swap-item {
-  background: rgba(18, 24, 32, 0.6);
-  box-shadow: none;
-}
-.right-drawer-paper.dark .swap-item .primary,
-.right-drawer-paper[data-theme="dark"] .swap-item .primary,
-.right-drawer-paper.theme-dark .swap-item .primary {
-  color: #eaf3ff;
-}
-.right-drawer-paper.dark .swap-item .secondary,
-.right-drawer-paper[data-theme="dark"] .swap-item .secondary,
-.right-drawer-paper.theme-dark .swap-item .secondary {
-  color: rgba(234, 243, 255, 0.7);
-}
-.right-drawer-paper.dark .swap-icon-btn.primary,
-.right-drawer-paper[data-theme="dark"] .swap-icon-btn.primary,
-.right-drawer-paper.theme-dark .swap-icon-btn.primary {
-  background: linear-gradient(180deg, #10b981, #047857);
-  color: #fff;
-}
-.right-drawer-paper.dark .swap-icon-btn.danger,
-.right-drawer-paper[data-theme="dark"] .swap-icon-btn.danger,
-.right-drawer-paper.theme-dark .swap-icon-btn.danger {
-  background: linear-gradient(180deg, #ef4444, #b91c1c);
-  color: #fff;
-}
-.right-drawer-paper.dark .swap-icon-btn,
-.right-drawer-paper[data-theme="dark"] .swap-icon-btn,
-.right-drawer-paper.theme-dark .swap-icon-btn {
-  box-shadow: none;
-}
-.dark-theme .swap-icon-btn.primary,
-.dark .swap-icon-btn.primary,
-body.dark .swap-icon-btn.primary,
-.theme-dark .swap-icon-btn.primary,
-html[data-theme="dark"] .swap-icon-btn.primary {
-  background: linear-gradient(180deg, #10b981, #047857);
-  color: #fff;
-}
-.dark-theme .swap-icon-btn.danger,
-.dark .swap-icon-btn.danger,
-body.dark .swap-icon-btn.danger,
-.theme-dark .swap-icon-btn.danger,
-html[data-theme="dark"] .swap-icon-btn.danger {
-  background: linear-gradient(180deg, #ef4444, #b91c1c);
-  color: #fff;
-}
-.dark-theme .swap-icon-btn,
-.dark .swap-icon-btn,
-body.dark .swap-icon-btn,
-.theme-dark .swap-icon-btn,
-html[data-theme="dark"] .swap-icon-btn {
-  box-shadow: none;
-}
+@media (max-width: 640px) {
+  .MuiDialog-paper {
+    min-width: initial;
+    width: calc(100% - 32px);
+    min-height: auto;
+  }
 
-/* Also apply dialog variable overrides when other dark-mode selectors are used */
-.dark .MuiDialog-paper,
-body.dark .MuiDialog-paper,
-.theme-dark .MuiDialog-paper,
-html[data-theme="dark"] .MuiDialog-paper {
-  --dialog-content-bg: linear-gradient(
-    180deg,
-    rgba(12, 14, 18, 0.75),
-    rgba(18, 24, 32, 0.75)
-  );
-  --dialog-input-bg: rgba(18, 24, 32, 0.6);
-  --dialog-border: rgba(255, 255, 255, 0.06);
-  --dialog-shadow: none;
-  --dialog-title-color: #eaf3ff;
-  --dialog-text: #eaf3ff;
-  --dialog-muted-text: rgba(234, 243, 255, 0.7);
-}
-
-/* Support dialog paper marked with data-theme or local class */
-.MuiDialog-paper[data-theme="dark"],
-.booking-dialog-paper[data-theme="dark"],
-.booking-dialog-paper.dark {
-  --dialog-content-bg: linear-gradient(
-    180deg,
-    rgba(12, 14, 18, 0.75),
-    rgba(18, 24, 32, 0.75)
-  );
-  --dialog-input-bg: rgba(18, 24, 32, 0.6);
-  --dialog-border: rgba(255, 255, 255, 0.06);
-  --dialog-shadow: none;
-  --dialog-title-color: #eaf3ff;
-  --dialog-text: #eaf3ff;
-  --dialog-muted-text: rgba(234, 243, 255, 0.7);
-  background: transparent; /* let .MuiDialogContent-root show gradient */
-}
-
-.MuiDialog-paper[data-theme="light"],
-.booking-dialog-paper[data-theme="light"],
-.booking-dialog-paper.light {
-  --dialog-content-bg: linear-gradient(
-    180deg,
-    rgba(246, 247, 249, 0.95),
-    #ffffff
-  );
-  --dialog-input-bg: #ffffff;
-  --dialog-border: var(--muted-200);
-  --dialog-shadow: 0 6px 18px rgba(84, 57, 45, 0.06);
-  --dialog-title-color: var(--brand-700);
-  --dialog-text: var(--text-900);
-  --dialog-muted-text: #6b6b6b;
-  background: transparent;
+  .MuiDialogContent-root {
+    padding: 16px;
+  }
 }

@@ -1,4 +1,4 @@
-name: Deploy Guidance Backend to Local Network VPS
+name: Deploy Backend to Local Network VPS
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Deploy Guidance Backend
+name: Deploy Guidance Backend to Local Network VPS
 
 on:
   push:
@@ -13,12 +13,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Create .env file
-        run: echo "${{ secrets.GUIDANCE_ENV_FILE }}" > ./backend/.env
+      - name: Create .env file inside frontend folder
+        run: echo "${{ secrets.ENV_FILE_C }}" > ./backend/.env
 
       - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD_c }}" |
-          docker login -u "${{ secrets.DOCKER_USERNAME_C }}" --password-stdin
+        run: echo "${{ secrets.DOCKER_PASSWORD_C }}" | docker login -u "${{ secrets.DOCKER_USERNAME_C }}" --password-stdin
 
       - name: Build & push backend image
         run: |
@@ -26,16 +25,13 @@ jobs:
           docker build -t chamindunipun99/guidance-backend:latest .
           docker push chamindunipun99/guidance-backend:latest
 
-      - name: Deploy to VPS
+      - name: Deploy to Local Network VPS (10.50.227.121)
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: 10.50.227.182
           username: deieprj
           key: ${{ secrets.VPS_KEY }}
           script: |
-            cd ~/ai/guidance-backend
-            rm -f .env
-            echo "${{ secrets.GUIDANCE_ENV_FILE }}" > .env
-
+            cd ~/ai
             docker-compose pull backend
-            docker-compose up -d --force-recreate
+            docker-compose up -d backend

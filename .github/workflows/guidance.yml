@@ -1,0 +1,41 @@
+name: Deploy Guidance Backend
+
+on:
+  push:
+    branches:
+      - guidance-deploy
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: echo "${{ secrets.GUIDANCE_ENV_FILE }}" > ./backend/.env
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD_c }}" |
+          docker login -u "${{ secrets.DOCKER_USERNAME_C }}" --password-stdin
+
+      - name: Build & push backend image
+        run: |
+          cd backend
+          docker build -t chamindunipun99/guidance-backend:latest .
+          docker push chamindunipun99/guidance-backend:latest
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: 10.50.227.182
+          username: deieprj
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            cd ~/ai/guidance-backend
+            rm -f .env
+            echo "${{ secrets.GUIDANCE_ENV_FILE }}" > .env
+
+            docker-compose pull backend
+            docker-compose up -d --force-recreate

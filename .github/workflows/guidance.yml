@@ -3,7 +3,7 @@ name: Deploy Backend to Local Network VPS
 on:
   push:
     branches:
-      - guidance-deploy
+      - "*"
   workflow_dispatch:
 
 jobs:

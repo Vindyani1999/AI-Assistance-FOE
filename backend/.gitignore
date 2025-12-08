@@ -12,9 +12,9 @@ data/vectordb
 
 data/memory
 
-data/data/documents
+# data/data/documents
 
-/data/data/documents
+# /data/data/documents
 
 =======
 #dfgh

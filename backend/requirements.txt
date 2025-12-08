@@ -37,5 +37,5 @@ pdf2image
 pytesseract
 
 # docker-compose run --rm backend python scripts/prepare_vector_db.py
-# docker-compose run --rm backend python scripts/prepare_establishment_code_vectordb.py
+# docker-compose run --rm backend python scripts/run_establishment_code_ingest.py
 # docker-compose run --rm backend python scripts/run_ugc_circulars_ingest.py

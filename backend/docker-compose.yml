@@ -19,6 +19,7 @@ services:
     volumes:
       # Use a named volume for the vector database to ensure persistence and avoid OS conflicts
       - vectordb_data:/app/data/vectordb
+      - ./data/documents:/app/data/documents
       # If you need to persist other data (like logs), add them here
       # - .:/app  <-- DISABLED: Do not mount the whole code folder in production/VPS
 

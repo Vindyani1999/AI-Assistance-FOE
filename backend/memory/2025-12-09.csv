@@ -1,0 +1,43 @@
+thread_id,timestamp,user_query,response
+1,23:50:01,How GPA calculate?,"
+Based on the student handbook, GPA is calculated using a weighted credit system. Here's how it works:
+
+## GPA Calculation Formula
+
+The GPA is calculated using the following formula:
+
+**GPA = Σ(Ci × Wi × GPVi) / Σ(Ci × Wi)**
+
+Where:
+- **Ci** = Number of credits allocated to the ith module
+- **Wi** = Weight factor (0.05 for semesters 1-2, 0.15 for semesters 3-8)
+- **GPVi** = Grade Point value earned for the ith module
+
+## Grade Point Values
+
+| Marks Range | Grade | Grade Point Value (GPV) |
+|-------------|-------|-------------------------|
+| 85 - 100    | A+    | 4.0                     |
+| 75 - 84     | A     | 4.0                     |
+| 70 - 74     | A-    | 3.7                     |
+| 65 - 69     | B+    | 3.3                     |
+| 60 - 64     | B     | 3.0                     |
+| 55 - 59     | B-    | 2.7                     |
+| 50 - 54     | C+    | 2.3                     |
+| 45 - 49     | C     | 2.0                     |
+| 40 - 44     | C-    | 1.7                     |
+| 0 - 39      | E     | 0.0                     |
+
+## Key Features
+
+1. **Weighted Semesters**: Early semesters (1-2) have lower weight (0.05) while later semesters (3-8) have higher weight (0.15)
+
+2. **Special Grades**: Grades MC, AC, and WH are excluded from GPA calculation
+
+3. **Final GPA Optimization**: When calculating the final GPA, excessive elective modules are removed to maximize the GPA value
+
+4. **Rounding**: GPA is rounded up to the nearest second decimal place
+
+5. **Pass Requirement**: Grade C or above is normally required to pass a module, though C- is a conditional pass
+
+The calculation considers both the credit value of each module and the semester in which it was taken, giving more weight to courses completed in later years of the program."

@@ -259,11 +259,11 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-memory/*.csv
-data/*/chroma.sqlite3
-*.db
-*.sqlite
-*.sqlite3
+# memory/*.csv
+# data/*/chroma.sqlite3
+# *.db
+# *.sqlite
+# *.sqlite3
 
 # API Keys and sensitive data
 config.json
@@ -277,7 +277,7 @@ secrets.json
 *.old
 
 # ChromaDB vector databases
-data/*_vectordb/
+# data/*_vectordb/
 
 # Model files (large files)
 *.model
@@ -312,4 +312,4 @@ backend-HBA/.env
 
 
 # Ignore backend data folder
-backend/data/
+backend/data/documents

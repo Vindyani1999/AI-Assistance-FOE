@@ -1,12 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import LandingPage from "./LandingPage/LandingPage";
-
-interface MainLayoutProps {
-  userProfile?: any;
-  agents?: any[];
-  onLogout?: () => void;
-}
+import { MainLayoutProps } from "../utils/types";
 
 const MainLayout: React.FC<MainLayoutProps> = ({
   userProfile,

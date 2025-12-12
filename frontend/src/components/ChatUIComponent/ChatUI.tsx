@@ -1,25 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import "./ChatUI.css";
-export interface Message {
-  role: "user" | "assistant";
-  content: string | JSX.Element; 
-  recommendations?: any[]; 
-  showRecommendations?: boolean; 
-}
-
-interface ChatUIProps {
-  messages: Message[];
-  inputValue: string;
-  setInputValue: (val: string) => void;
-  isLoading: boolean;
-  error: string;
-  onSend: () => void;
-  onClear: () => void;
-  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  formatMessage?: (text: string) => string;
-  agentName?: string; // Optional prop for agent name
-}
+import { ChatUIProps } from "../../utils/types";
 
 const ChatUI: React.FC<ChatUIProps> = ({
   messages,
@@ -31,7 +12,8 @@ const ChatUI: React.FC<ChatUIProps> = ({
   onClear,
   onKeyPress,
   formatMessage = (text) => text,
-  agentName = "Guidance Agent", 
+  agentName = "Guidance Agent",
+  onAppendMessages,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -41,12 +23,12 @@ const ChatUI: React.FC<ChatUIProps> = ({
 
   const { theme } = useTheme();
   return (
-    <div className={`chat-container${theme === 'dark' ? ' dark-theme' : ''}`}> 
+    <div className={`chat-container${theme === "dark" ? " dark-theme" : ""}`}>
       <div className="chat-messages">
         {messages.length === 0 && (
-          <div className="welcome-message">
-            Welcome! I'm your {agentName}. How can I assist you today?
-          </div>
+            <div className="welcome-message">
+              Welcome! I'm your {agentName}.
+            </div>
         )}
         {messages.map((message, index) => (
           <div key={index} className={`message ${message.role}`}>
@@ -59,7 +41,8 @@ const ChatUI: React.FC<ChatUIProps> = ({
                     className="avatar-image"
                     onError={(e) => {
                       console.error("Failed to load OpenAI image");
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).style.display =
+                        "none";
                     }}
                   />
                 </div>
@@ -67,9 +50,9 @@ const ChatUI: React.FC<ChatUIProps> = ({
               <div className="message-content">
                 <div className="message-text">
                   {message.role === "assistant"
-                   ? (typeof message.content === 'string' 
-                        ? formatMessage(message.content) 
-                        : message.content) 
+                    ? typeof message.content === "string"
+                      ? formatMessage(message.content)
+                      : message.content
                     : message.content}
                 </div>
               </div>
@@ -81,7 +64,8 @@ const ChatUI: React.FC<ChatUIProps> = ({
                     className="avatar-image"
                     onError={(e) => {
                       console.error("Failed to load AI_RT image");
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).style.display =
+                        "none";
                     }}
                   />
                 </div>
@@ -135,7 +119,8 @@ const ChatUI: React.FC<ChatUIProps> = ({
                   className="avatar-image"
                   onError={(e) => {
                     console.error("Failed to load OpenAI image");
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                    (e.currentTarget as HTMLImageElement).style.display =
+                      "none";
                   }}
                 />
               </div>

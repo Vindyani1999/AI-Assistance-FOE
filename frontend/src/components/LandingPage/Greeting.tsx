@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Box } from "@mui/material";
 import { useTheme } from "../../context/ThemeContext";
-import { fetchUserProfile } from "../../services/userAPI";
+import { fetchUserProfile } from "../../services/authAPI";
 
 function chooseGreeting(date = new Date()) {
   const h = date.getHours();
-  if (h >= 0 && h < 12) return "Good Morning";
-  if (h >= 12 && h < 15) return "Good Afternoon";
-  return "Good Evening";
+  if (h >= 0 && h < 12) return "Good Morning 🌤️";
+  if (h >= 12 && h < 15) return "Good Afternoon ☀️";
+  return "Good Evening ✨";
 }
 
 const Greeting: React.FC = () => {
@@ -47,21 +47,20 @@ const Greeting: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", ml: 8 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-        <Typography
-          variant="h5"
-          sx={{ fontWeight: 700, color: isDark ? "#eaf3ff" : "#13202b" }}
-        >
-          {greeting},
-        </Typography>
-        <Typography
-          variant="h5"
-          sx={{ fontWeight: 700, color: "primary.main" }}
-        >
-          {name ?? ""}!
-        </Typography>
-      </Box>
+    <Box sx={{ display: "flex", flexDirection: "column" }}>
+      <Typography
+        className="banner-hello"
+        sx={{ color: isDark ? "#cfe8ff" : "#1a2332" }}
+      >
+        {`Hi${name ? ` ${name}` : ""}, ${greeting}`}
+      </Typography>
+      <Typography
+        className="banner-greeting"
+        variant="h6"
+        sx={{ fontWeight: 500, color: isDark ? "#cfe8ff" : "#465a6a", mt: 0.5 }}
+      >
+        How can I assist you today?
+      </Typography>
     </Box>
   );
 };

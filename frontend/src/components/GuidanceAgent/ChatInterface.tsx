@@ -1,33 +1,29 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  apiService,
-  ChatMessage,
-  ChatSession,
-  fetchUserEmailFromProfile,
-} from "../../services/api";
+import { apiService, fetchUserEmailFromProfile } from "../../services/chatAPI";
+import { ChatMessage, ChatSession } from "../../utils/types";
 import "./ChatInterface.css";
 import { useTheme } from "../../context/ThemeContext";
 import LibraryAddIcon from "@mui/icons-material/LibraryAdd";
-
-interface ChatInterfaceProps {
-  sessionId?: string;
-}
+import MicIcon from "@mui/icons-material/Mic";
+// import IconButton from "@mui/material/IconButton";
+import VoiceChatPopupImpl from "./GuidanceVoicePopup";
+import { ChatInterfaceProps } from "../../utils/types";
+import { SOURCE_OPTIONS, SOURCE_OPTIONS_LECTURER } from "../../utils/CONSTANTS";
+import userRoleUtils from "../../utils/userRole";
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   sessionId = "default",
 }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  // Create a new chat session for the user
   const handleNewChat = async () => {
     if (!currentUser) return;
     try {
-      // Call API to create a new chat session with user email
       const newSession = await apiService.createNewChatSession(
         currentUser.email
       );
-      // Use backend session_id directly
       setUserSpecificSessionId(newSession.session_id);
       setMessages([]);
       loadChatSessions();
@@ -38,6 +34,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
   const [inputValue, setInputValue] = useState("");
   const [guidanceFilters, setGuidanceFilters] = useState<string[]>(["all"]);
+  const [availableSources, setAvailableSources] = useState(SOURCE_OPTIONS);
+  const [useUniversityDocs, setUseUniversityDocs] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
@@ -48,8 +46,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [userSpecificSessionId, setUserSpecificSessionId] =
     useState<string>(sessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [voicePopupVisible, setVoicePopupVisible] = useState(false);
+  const pendingVoiceIndexRef = useRef<number | null>(null);
+  const [voiceUploading, setVoiceUploading] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const isUndergrad = userRoleUtils.isUndergraduate(currentUser?.email as any);
 
-  // Get current user email from /auth/me endpoint
   useEffect(() => {
     async function fetchUser() {
       const email = await fetchUserEmailFromProfile();
@@ -60,14 +62,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     }
     fetchUser();
-    // Use backend sessionId directly
     setUserSpecificSessionId(sessionId);
   }, [sessionId, navigate]);
+
+  // Configure source chips and default selection based on user role and toggle
+  useEffect(() => {
+    if (!currentUser) return;
+    const email = currentUser?.email as string | undefined;
+    const isUG = userRoleUtils.isUndergraduate(email);
+    if (isUG) {
+      setAvailableSources(SOURCE_OPTIONS);
+      setGuidanceFilters(["all"]);
+    } else {
+      // non-students see the selected set depending on the toggle
+      const sources = useUniversityDocs
+        ? SOURCE_OPTIONS
+        : SOURCE_OPTIONS_LECTURER;
+      setAvailableSources(sources);
+      // Do not pre-select any chips by default — user must pick chits explicitly
+      setGuidanceFilters([]);
+    }
+  }, [currentUser, useUniversityDocs]);
 
   const loadChatHistory = useCallback(async () => {
     if (!currentUser) return;
     try {
-      const userId = currentUser.email; // Use email as user identifier
+      const userId = currentUser.email;
       const history = await apiService.getChatHistory(
         userSpecificSessionId,
         userId
@@ -83,7 +103,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     try {
       setSessionsLoading(true);
       setSessionsError(null);
-      const userId = currentUser.email; // Use email as user identifier
+      const userId = currentUser.email;
       const sessionsData = await apiService.getChatSessions(userId);
       setChatSessions(sessionsData.sessions);
     } catch (error) {
@@ -93,7 +113,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [currentUser]);
 
-  // Scroll to bottom when messages change
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -102,7 +121,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Load chat history on component mount
   useEffect(() => {
     if (currentUser && userSpecificSessionId) {
       loadChatHistory();
@@ -110,29 +128,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [userSpecificSessionId, currentUser, loadChatHistory, loadChatSessions]);
 
-  // const formatTimeAgo = (timestamp: string): string => {
-  //   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
-  //   const messageTime = new Date(new Date(timestamp).toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
-  //   const diffInMs = now.getTime() - messageTime.getTime();
-  //   const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  //   if (diffInHours < 1) {
-  //     return 'Just now';
-  //   } else if (diffInHours < 24) {
-  //     return `${diffInHours}h ago`;
-  //   } else {
-  //     const diffInDays = Math.floor(diffInHours / 24);
-  //     return `${diffInDays}d ago`;
-  //   }
-  // };
-
   const formatMessage = (content: string): JSX.Element => {
-    // Split content into paragraphs
     const paragraphs = content.split("\n\n").filter((p) => p.trim() !== "");
-
     return (
       <div className="formatted-message">
         {paragraphs.map((paragraph, index) => {
-          // Check if paragraph is a numbered list item (e.g., "1. **Sources**:")
           const numberedListMatch = paragraph.match(
             /^(\d+)\.\s*\*\*(.*?)\*\*:\s*([\s\S]*)/
           );
@@ -149,7 +149,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             );
           }
 
-          // Check if paragraph starts with ** (bold heading)
           const boldHeadingMatch = paragraph.match(
             /^\*\*(.*?)\*\*:\s*([\s\S]*)/
           );
@@ -163,7 +162,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             );
           }
 
-          // Regular paragraph with inline formatting
           const formattedText = paragraph
             .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold text
             .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic text
@@ -181,30 +179,210 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     );
   };
 
-  const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading || !currentUser) return;
+  const playAudioFromUrl = (url: string) =>
+    new Promise<void>(async (resolve, reject) => {
+      try {
+        console.debug("playAudioFromUrl: trying to fetch audio URL", url);
+        try {
+          const resp = await fetch(url, { method: "GET" });
+          if (resp.ok) {
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const audio = new Audio(blobUrl);
+            audio.onended = () => {
+              URL.revokeObjectURL(blobUrl);
+              resolve();
+            };
+            audio.onerror = (e) => {
+              URL.revokeObjectURL(blobUrl);
+              reject(e);
+            };
+            const p = audio.play();
+            if (p && typeof p.then === "function") p.catch(reject);
+            return;
+          } else {
+            console.debug(
+              "playAudioFromUrl: fetch returned non-ok",
+              resp.status
+            );
+          }
+        } catch (fetchErr) {
+          console.debug(
+            "playAudioFromUrl: fetch failed, will try direct playback",
+            fetchErr
+          );
+        }
 
-    const userMessage = inputValue.trim();
-    setInputValue("");
+        const audio = new Audio(url);
+        audio.crossOrigin = "anonymous";
+        audio.onended = () => resolve();
+        audio.onerror = (e) => reject(e);
+        const p = audio.play();
+        if (p && typeof p.then === "function") p.catch(reject);
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+  const playAudioFromBase64 = (base64: string, mime = "audio/mpeg") =>
+    new Promise<void>((resolve, reject) => {
+      try {
+        console.debug("playAudioFromBase64: playing base64 audio, mime=", mime);
+        const bstr = atob(base64);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) u8arr[n] = bstr.charCodeAt(n);
+        const blob = new Blob([u8arr], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        audio.onerror = (e) => reject(e);
+        const p = audio.play();
+        if (p && typeof p.then === "function") p.catch(reject);
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+  const speakText = (text: string) =>
+    new Promise<void>((resolve) => {
+      try {
+        if (!window.speechSynthesis) return resolve();
+        const ut = new SpeechSynthesisUtterance(text);
+        ut.onend = () => resolve();
+        ut.onerror = () => resolve();
+        window.speechSynthesis.speak(ut);
+      } catch (e) {
+        resolve();
+      }
+    });
+
+  const playAssistantMedia = async (respOrText: any) => {
+    try {
+      setIsPlayingAudio(true);
+      if (typeof respOrText === "string") {
+        console.debug("playAssistantMedia: speaking string");
+        await speakText(respOrText);
+        return;
+      }
+
+      if (respOrText?.audio_url) {
+        console.debug(
+          "playAssistantMedia: found audio_url",
+          respOrText.audio_url
+        );
+        try {
+          await playAudioFromUrl(respOrText.audio_url);
+          return;
+        } catch (err) {
+          console.warn(
+            "playAssistantMedia: audio_url playback failed, falling back",
+            err
+          );
+        }
+      }
+      if (respOrText?.audio_base64) {
+        console.debug(
+          "playAssistantMedia: found audio_base64 (len)",
+          (respOrText.audio_base64 || "").length
+        );
+        try {
+          const mime =
+            respOrText.audio_mime || respOrText.audioType || "audio/mpeg";
+          await playAudioFromBase64(respOrText.audio_base64, mime);
+          return;
+        } catch (err) {
+          console.warn(
+            "playAssistantMedia: audio_base64 playback failed, falling back",
+            err
+          );
+        }
+      }
+
+      const t =
+        respOrText?.response ||
+        respOrText?.assistant_text ||
+        respOrText?.text ||
+        "";
+      if (t) {
+        console.debug(
+          "playAssistantMedia: falling back to TTS",
+          t.slice(0, 80)
+        );
+        await speakText(t);
+      } else {
+        console.debug(
+          "playAssistantMedia: no audio or text available to speak"
+        );
+      }
+    } catch (e) {
+      // swallow playback error
+    } finally {
+      setIsPlayingAudio(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!currentUser) return;
+    if (!inputValue.trim() || isLoading) return;
+    // Non-undergraduates must select at least one guidance source (chit)
+    if (!isUndergrad && (!guidanceFilters || guidanceFilters.length === 0)) {
+      setError("Please select at least one guidance source before sending.");
+      return;
+    }
+    await sendText(inputValue.trim());
+  };
+
+  const sendText = async (
+    text: string,
+    options?: { skipLocal?: boolean; force?: boolean }
+  ) => {
+    const skipLocal = options?.skipLocal || false;
+    const force = options?.force || false;
+    if (!text || (!force && isLoading) || !currentUser) return;
+    // Enforce chit selection for non-undergraduates unless forced.
+    const isUG = userRoleUtils.isUndergraduate(currentUser?.email as any);
+    if (!isUG && (!guidanceFilters || guidanceFilters.length === 0) && !force) {
+      setError("Please select at least one guidance source before sending.");
+      return;
+    }
+    const userMessage = text;
+    setInputValue((prev) => (prev === text ? "" : prev));
     setIsLoading(true);
     setError(null);
 
-    // Add user message to UI immediately
-    const newUserMessage: ChatMessage = { role: "user", content: userMessage };
-    setMessages((prev) => [...prev, newUserMessage]);
-
-    // Debugging: log userId and sessionId before sending
+    if (!skipLocal) {
+      const newUserMessage: ChatMessage = {
+        role: "user",
+        content: userMessage,
+      };
+      setMessages((prev) => [...prev, newUserMessage]);
+    }
 
     try {
-      // Build guidance_filter to send to backend. If 'all' is selected or nothing selected, send 'all'.
-      const guidanceToSend =
-        !guidanceFilters ||
-        guidanceFilters.length === 0 ||
-        guidanceFilters.includes("all")
-          ? "all"
-          : guidanceFilters.join(",");
+      let guidanceToSend: string | undefined;
+      const isUndergrad = userRoleUtils.isUndergraduate(
+        currentUser?.email as any
+      );
+      if (isUndergrad) {
+        guidanceToSend =
+          !guidanceFilters ||
+          guidanceFilters.length === 0 ||
+          guidanceFilters.includes("all")
+            ? "all"
+            : guidanceFilters.join(",");
+      } else {
+        // Non-undergrads: if nothing selected, omit guidance_filter so backend
+        // receives no restriction. If selections exist, join them.
+        guidanceToSend =
+          guidanceFilters && guidanceFilters.length > 0
+            ? guidanceFilters.join(",")
+            : undefined;
+      }
 
-      // Augment message sent to backend with a human-readable directive when a restricted source is selected.
       let outgoingMessage = userMessage;
       if (guidanceToSend !== "all") {
         const readable = guidanceFilters
@@ -221,19 +399,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const response = await apiService.sendMessage(
         outgoingMessage,
         userSpecificSessionId,
-        guidanceToSend
+        guidanceToSend,
+        useUniversityDocs
       );
       const assistantMessage: ChatMessage = {
         role: "assistant",
         content: response.response,
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      // Only play assistant audio/TTS if the voice popup is currently open
+      if (voicePopupVisible) {
+        (async () => {
+          try {
+            await playAssistantMedia(response);
+          } catch (e) {
+            console.warn("assistant playback error", e);
+          }
+        })();
+      }
       loadChatSessions();
-      // Reset guidance filters to initial state after successful send
-      setGuidanceFilters(["all"]);
+      // Reset selection to sensible default based on role
+      if (userRoleUtils.isUndergraduate(currentUser?.email as any)) {
+        setGuidanceFilters(["all"]);
+      } else {
+        setGuidanceFilters([]);
+      }
     } catch (error) {
       setError("Failed to send message. Please try again.");
-      setMessages((prev) => prev.slice(0, -1));
+      if (!options?.skipLocal) setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -245,13 +438,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       sendMessage();
     }
   };
-
-  const SOURCE_OPTIONS = [
-    { key: "all", label: "All" },
-    { key: "student_handbook", label: "Student handbook" },
-    { key: "exam_manual", label: "Exam manual" },
-    { key: "by_law", label: "By-law" },
-  ];
 
   const toggleFilter = (key: string) => {
     if (key === "all") {
@@ -266,25 +452,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setPrev.add(key);
       }
       const arr = Array.from(setPrev);
-      return arr.length === 0 ? ["all"] : arr;
+      // For undergraduates, if nothing is selected fallback to 'all'.
+      // For non-undergrads allow an empty selection (no guidance filter sent).
+      if (arr.length === 0) {
+        if (userRoleUtils.isUndergraduate(currentUser?.email as any))
+          return ["all"];
+        return [];
+      }
+      return arr;
     });
   };
 
-  // const clearChat = async () => {
-  //   if (!currentUser) return;
-  //   try {
-  //     const userId = currentUser.email; // Use email as user identifier
-  //     console.log('[FRONTEND] Sending userId for clearChat:', userId);
-  //     await apiService.clearChat(userSpecificSessionId, userId);
-  //     setMessages([]);
-  //     setError(null);
-  //     // Refresh chat sessions to update metadata
-  //     loadChatSessions();
-  //   } catch (error) {
-  //     console.error('Error clearing chat:', error);
-  //     setError('Failed to clear chat');
-  //   }
-  // };
+  const handleDocsToggle = (useUniv: boolean) => {
+    setUseUniversityDocs(useUniv);
+    // Do not auto-select chips when toggling document groups.
+    // Keep existing chip selection (or lack of selection) so the user explicitly picks chits.
+  };
 
   const handleFeedback = async (
     messageIndex: number,
@@ -299,10 +482,164 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         feedbackType,
         userId
       );
-      // You could add UI feedback here, like showing a success message
-      // console.log(`Feedback sent: ${feedbackType} for message ${messageIndex}`);
     } catch (error) {
       // console.error('Error sending feedback:', error);
+    }
+  };
+
+  const handleVoiceTranscription = (text: string) => {
+    return;
+  };
+
+  // Called when upload starts — insert a pending user bubble
+  const handleVoiceSend = () => {
+    const placeholder: ChatMessage = {
+      role: "user",
+      content: "Sending voice...",
+    };
+    setMessages((prev) => {
+      const next = [...prev, placeholder];
+      pendingVoiceIndexRef.current = next.length - 1;
+      return next;
+    });
+    // mark upload in progress; do not set assistant loading yet
+    setVoiceUploading(true);
+  };
+
+  // Called when backend returns full response for voice upload
+  const handleVoiceResponse = (resp: any) => {
+    // Extract transcript
+    let transcript =
+      resp?.transcript ||
+      resp?.text ||
+      resp?.transcription ||
+      resp?.result ||
+      "";
+    if (!transcript && resp?.conversation_history) {
+      const ch = resp.conversation_history as any[];
+      for (let i = ch.length - 1; i >= 0; i--) {
+        if (ch[i]?.role === "user" && ch[i]?.content) {
+          transcript = ch[i].content;
+          break;
+        }
+      }
+    }
+
+    const assistantText = resp?.response || "";
+
+    // If server already returned an assistant response, apply both user and assistant
+    if (assistantText) {
+      setMessages((prev) => {
+        const next = [...prev];
+        const idx = pendingVoiceIndexRef.current;
+        if (idx !== null && idx >= 0 && idx < next.length) {
+          next[idx] = { role: "user", content: transcript || "(voice)" };
+        } else {
+          next.push({ role: "user", content: transcript || "(voice)" });
+        }
+        // Append assistant reply
+        next.push({ role: "assistant", content: assistantText });
+        return next;
+      });
+      // Play assistant audio / TTS and show talking.gif while speaking
+      // Only play assistant audio/TTS if guidance voice popup is open
+      if (voicePopupVisible) {
+        (async () => {
+          try {
+            setIsPlayingAudio(true);
+            // try audio_url
+            if (resp?.audio_url) {
+              const audio = new Audio(resp.audio_url);
+              await audio.play();
+            } else if (resp?.audio_base64) {
+              const bstr = atob(resp.audio_base64);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) u8arr[n] = bstr.charCodeAt(n);
+              const blob = new Blob([u8arr], { type: "audio/mpeg" });
+              const url = URL.createObjectURL(blob);
+              const audio = new Audio(url);
+              await audio.play();
+              URL.revokeObjectURL(url);
+            } else if (resp?.response || resp?.assistant_text || resp?.text) {
+              const t = resp?.response || resp?.assistant_text || resp?.text;
+              if (window.speechSynthesis) {
+                await new Promise<void>((resolve) => {
+                  const ut = new SpeechSynthesisUtterance(t);
+                  ut.onend = () => resolve();
+                  window.speechSynthesis.speak(ut);
+                });
+              }
+            }
+          } catch (e) {
+            console.warn("play assistant audio failed", e);
+          } finally {
+            setIsPlayingAudio(false);
+          }
+        })();
+      }
+      // clear pending marker and loading
+      pendingVoiceIndexRef.current = null;
+      setVoiceUploading(false);
+      setIsLoading(false);
+      // Refresh sessions metadata
+      loadChatSessions();
+    } else if (transcript) {
+      // No assistant reply yet: replace the pending user bubble with the transcript
+      setMessages((prev) => {
+        const next = [...prev];
+        const idx = pendingVoiceIndexRef.current;
+        if (idx !== null && idx >= 0 && idx < next.length) {
+          next[idx] = { role: "user", content: transcript };
+        } else {
+          next.push({ role: "user", content: transcript });
+        }
+        return next;
+      });
+      // clear pending marker and mark upload done
+      pendingVoiceIndexRef.current = null;
+      setVoiceUploading(false);
+      // Now route the transcript through the regular sendText flow (skip adding local user msg)
+      // Use the new /chat/route endpoint which routes the latest persisted user
+      // message (saved by /chat/voice) through the agent without inserting
+      // another duplicate user message.
+      (async () => {
+        try {
+          setIsLoading(true);
+          const userId = currentUser?.email;
+          const resp = await apiService.routeLatest(
+            userSpecificSessionId,
+            userId
+          );
+          const assistantMessage: ChatMessage = {
+            role: "assistant",
+            content: resp.response,
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+          // Speak the assistant response from routed voice
+          // Only play routed assistant audio/TTS if guidance voice popup is open
+          if (voicePopupVisible) {
+            try {
+              await playAssistantMedia(resp);
+            } catch (e) {
+              console.warn("assistant playback error (routed)", e);
+            }
+          }
+          loadChatSessions();
+        } catch (e) {
+          setError("Failed to route voice message to agent");
+        } finally {
+          setIsLoading(false);
+        }
+      })();
+    } else {
+      // no transcript and no assistant reply: show error and clean up
+      setMessages((prev) =>
+        prev.filter((_, i) => i !== pendingVoiceIndexRef.current)
+      );
+      pendingVoiceIndexRef.current = null;
+      setVoiceUploading(false);
+      setError("No transcription returned from server");
     }
   };
 
@@ -316,7 +653,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="chat-messages">
           {messages.length === 0 && (
             <div className="welcome-message">
-              Welcome! I'm your Guidance Agent. How can I assist you today?
+              Welcome! I'm your Guidance Agent.
             </div>
           )}
 
@@ -338,9 +675,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 )}
                 <div className="message-content">
                   <div className="message-text">
-                    {message.role === "assistant"
-                      ? formatMessage(message.content)
-                      : message.content}
+                    {message.role === "assistant" ? (
+                      formatMessage(message.content)
+                    ) : // If this is the pending voice upload bubble, show a small loading spinner there as well
+                    index === pendingVoiceIndexRef.current ? (
+                      <span className="pending-voice">
+                        <span className="pending-spinner" aria-hidden="true">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </span>
+                        {/* <span style={{ marginLeft: 8 }}>Sending voice...</span> */}
+                      </span>
+                    ) : (
+                      message.content
+                    )}
                   </div>
                 </div>
                 {message.role === "user" && (
@@ -428,28 +777,51 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         <div className="chat-input-container">
           <div className="input-wrapper">
-            {/* Guidance source filter - small horizontal buttons inside input area */}
-            <div
-              className="filter-row"
-              role="toolbar"
-              aria-label="Guidance source filters"
-            >
-              {SOURCE_OPTIONS.map((opt) => {
-                const selected =
-                  guidanceFilters.includes(opt.key) ||
-                  (opt.key === "all" && guidanceFilters.length === 0);
-                return (
+            {/* Guidance source filter - toggle + chips grouped together */}
+            <div className="filters-toggle-container">
+              {!isUndergrad && (
+                <div className="toggle-row">
                   <button
-                    key={opt.key}
-                    className={`filter-btn ${selected ? "selected" : ""}`}
-                    onClick={() => toggleFilter(opt.key)}
-                    aria-pressed={selected}
                     type="button"
+                    className={`toggle-btn ${
+                      useUniversityDocs ? "active" : ""
+                    }`}
+                    onClick={() => handleDocsToggle(true)}
                   >
-                    {opt.label}
+                    University docs
                   </button>
-                );
-              })}
+                  <button
+                    type="button"
+                    className={`toggle-btn ${
+                      !useUniversityDocs ? "active" : ""
+                    }`}
+                    onClick={() => handleDocsToggle(false)}
+                  >
+                    Governance docs
+                  </button>
+                </div>
+              )}
+
+              <div
+                className="filter-row"
+                role="toolbar"
+                aria-label="Guidance source filters"
+              >
+                {availableSources.map((opt) => {
+                  const selected = guidanceFilters.includes(opt.key);
+                  return (
+                    <button
+                      key={opt.key}
+                      className={`filter-btn ${selected ? "selected" : ""}`}
+                      onClick={() => toggleFilter(opt.key)}
+                      aria-pressed={selected}
+                      type="button"
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <textarea
@@ -464,7 +836,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div className="input-buttons">
               <button
                 onClick={sendMessage}
-                disabled={isLoading || !inputValue.trim()}
+                disabled={
+                  isLoading ||
+                  !inputValue.trim() ||
+                  (!isUndergrad &&
+                    (!guidanceFilters || guidanceFilters.length === 0))
+                }
                 className="input-btn send-btn"
                 title="Send message"
               >
@@ -480,16 +857,55 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   <polygon points="22,2 15,22 11,13 2,9 22,2" />
                 </svg>
               </button>
+
+              <button
+                onClick={() => {
+                  // Prevent opening voice popup if non-undergrad and no chips selected
+                  if (
+                    !isUndergrad &&
+                    (!guidanceFilters || guidanceFilters.length === 0)
+                  ) {
+                    setError(
+                      "Please select at least one guidance source before using voice input."
+                    );
+                    return;
+                  }
+                  setVoicePopupVisible(true);
+                }}
+                disabled={
+                  isLoading ||
+                  !currentUser ||
+                  (!isUndergrad &&
+                    (!guidanceFilters || guidanceFilters.length === 0))
+                }
+                className="input-btn mic-btn"
+                title="Voice input"
+                aria-label="Open voice input"
+                type="button"
+              >
+                <MicIcon />
+              </button>
+
               <button
                 onClick={handleNewChat}
                 className="input-btn new-chat-btn"
                 title="Start a new chat"
+                type="button"
               >
                 <LibraryAddIcon />
               </button>
             </div>
           </div>
         </div>
+        <VoiceChatPopupImpl
+          open={voicePopupVisible}
+          sessionId={userSpecificSessionId}
+          userEmail={currentUser?.email}
+          onClose={() => {
+            setVoicePopupVisible(false);
+            if (currentUser && userSpecificSessionId) loadChatHistory();
+          }}
+        />
       </div>
 
       <div className="sidebar">
@@ -522,7 +938,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     if (session.session_id !== userSpecificSessionId) {
                       setUserSpecificSessionId(session.session_id);
                       setMessages([]);
-                      // Chat history will reload automatically via useEffect
                     }
                   }}
                 >
@@ -530,9 +945,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     {session.topic.split(" ").slice(0, 4).join(" ")}
                     {session.topic.split(" ").length > 4 ? "..." : ""}
                   </div>
-                  {/* <div className="chat-timestamp">
-                    {session.message_count} messages • {formatTimeAgo(session.updated_at)}
-                  </div> */}
                 </div>
               ))
             )}

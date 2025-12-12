@@ -81,14 +81,11 @@ def save_chunks_with_ids(doc_dir, chunk_size=400, chunk_overlap=60, output_json=
 # Example usage
 if __name__ == "__main__":
     save_chunks_with_ids(
-        doc_dir="data/documents/student_handbook",  # adjust folder path
+        doc_dir="data/documents/procurement_guidelines_and_manual",  # adjust folder path
         chunk_size=400,
         chunk_overlap=60,
-        output_json="student_handbook_chunks_400_60.json"
+        output_json="procurement_guidelines_and_manual_400_60.json"
     )
-
-
-
 
 
 

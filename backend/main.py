@@ -9,9 +9,14 @@ Designed to work with the React frontend.
 import argparse
 import sys
 import os
-import uvicorn
+from posthog import host
+import uvicorn 
 
-def run_fastapi(host="0.0.0.0", port=8000, reload=True):
+from dotenv import load_dotenv
+load_dotenv()
+
+# 127.0.0.1
+def run_fastapi(host=os.getenv("BASE_URL"), port=os.getenv("PORT"), reload=True):
     """Run the FastAPI application"""
     print(f"Starting FastAPI server on {host}:{port}")
     print(f"API will be available at: http://{host}:{port}")
@@ -27,14 +32,14 @@ def main():
     parser = argparse.ArgumentParser(description="AgentGraph FastAPI Backend Server")
     parser.add_argument(
         "--host", 
-        default="0.0.0.0",
-        help="Host to bind to (default: 0.0.0.0)"
+        default=os.getenv("BASE_URL"),
+        help="Host to bind to (default: 127.0.0.1)"
     )
     parser.add_argument(
         "--port", 
         type=int,
-        default=8000,
-        help="Port to bind to (default: 8000)"
+        default=os.getenv("PORT"),
+        help="Port to bind to (default: 9000)"
     )
     parser.add_argument(
         "--no-reload",

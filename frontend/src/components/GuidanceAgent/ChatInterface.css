@@ -198,9 +198,11 @@
 }
 
 .chat-history-section {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* allow children to shrink and enable scrolling */
 }
 
 .chat-history-section h3 {
@@ -216,12 +218,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1 1 auto; /* take remaining height inside section */
+  overflow-y: auto; /* enable vertical scrolling for long lists */
+  padding: 0.5rem;
+  min-height: 0;
 }
 
 /* Light Theme Chat History */
 [data-theme="light"] .chat-history-item,
 .light-theme .chat-history-item {
-  padding: 0.75rem;
+  padding: 0.1rem 0.75rem;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -253,6 +259,28 @@
   color: #555555;
 }
 
+/* delete button shown on hover */
+.chat-history-item .delete-btn {
+  background: transparent;
+  border: none;
+  color: #b33a3a;
+  opacity: 0;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: opacity 120ms ease, transform 120ms ease;
+  display: flex;
+  align-items: center;
+}
+.chat-history-item:hover .delete-btn {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.chat-history-item .delete-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 [data-theme="light"] .chat-timestamp,
 .light-theme .chat-timestamp {
   font-size: 0.7rem;
@@ -272,7 +300,7 @@
 /* Dark Theme Chat History */
 [data-theme="dark"] .chat-history-item,
 .dark-theme .chat-history-item {
-  padding: 0.75rem;
+  padding: 0.1rem 0.75rem;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -384,13 +412,49 @@
   border-radius: 0;
 }
 
+/* Banner at top of chat area */
+.chat-banner {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin: 1rem 1rem 0 1rem;
+}
+.chat-banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.6) contrast(0.95);
+}
+.chat-banner-overlay {
+  position: absolute;
+  left: 28px;
+  top: 28px;
+  color: white;
+  z-index: 2;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+.greeting-text {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+.greeting-subtext {
+  margin: 6px 0 0 0;
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
 /* Right Sidebar */
 .sidebar {
   width: 280px;
   background: var(--secondary-bg);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  height: 100vh; /* make sidebar occupy full viewport height */
+  overflow: hidden; /* contain internal scrolling to the history list */
   /* padding: 1rem; */
   gap: 1.5rem;
   border-radius: 0 8px 8px 0;
@@ -725,30 +789,70 @@
 }
 
 /* Guidance filter horizontal button group */
-.filter-row {
-  position: absolute;
-  top: 8px;
-  left: 12px;
+.filters-toggle-container {
   display: flex;
-  gap: 6px;
+  gap: 12px;
   align-items: center;
-  z-index: 3;
+  padding: 8px 12px 6px 12px;
+}
+
+.toggle-row {
+  display: inline-flex;
+  background: var(--bg-3);
+  padding: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 8px; /* container rounded corners to match overall pill */
+  overflow: hidden;
+}
+.toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 0; /* no radius on individual buttons by default */
+  transition: background 120ms ease, color 120ms ease;
+}
+/* left-most button: round left corners */
+.toggle-btn:first-child {
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+}
+/* right-most button: round right corners */
+.toggle-btn:last-child {
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+.toggle-btn.active {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.08));
+  color: white;
+}
+/* end of compact toggle base styles */
+
+/* Filter chips (chits) - restore pill design */
+
+.filter-row {
+  display: flex;
+  gap: 6px; /* reduced spacing between chips */
+  align-items: center;
 }
 
 .filter-btn {
   background: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-color);
-  padding: 2px 8px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 0.75rem;
+  padding: 4px 8px; /* reduced padding for smaller chips */
+  border-radius: 14px; /* slightly smaller pill radius */
+  font-size: 0.82rem; /* smaller text */
   line-height: 1;
-  min-height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.12s ease;
+  min-height: 24px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.06s ease, box-shadow 0.12s ease;
+}
+
+.filter-btn:focus {
+  outline: 2px solid rgba(90, 50, 50, 0.12);
+  outline-offset: 2px;
 }
 
 .filter-btn:hover {
@@ -757,14 +861,103 @@
 }
 
 .filter-btn.selected {
-  background: #efe1d0; /* light brown */
+  /* Use the theme button color for selected chips to give a brown accent */
+  background: var(--button-bg);
   border-color: var(--button-bg);
-  color: #2b1f18;
+  color: #ffffff;
+}
+
+/* Docs toggle (visible to lecturers) - compact segmented styling */
+.toggle-row {
+  display: inline-flex;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 4px;
+  align-items: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.toggle-row .toggle-btn {
+  all: unset;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 0; /* middle edges should have no radius */
+  font-size: 0.86rem;
+  line-height: 1;
+  min-height: 26px;
+  color: var(--text-color);
+  transition: background 0.14s ease, color 0.14s ease, transform 0.08s ease;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* left-most button: round left corners only */
+.toggle-row .toggle-btn:first-child {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+/* right-most button: round right corners only */
+.toggle-row .toggle-btn:last-child {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.toggle-row .toggle-btn:hover {
+  transform: translateY(-1px);
+}
+
+.toggle-row .toggle-btn:first-child.active {
+  /* University docs - left button */
+  background: linear-gradient(90deg, #7a4545, #997979);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(90, 50, 50, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.toggle-row .toggle-btn:last-child.active {
+  /* Governance docs - right button (reverse gradient) */
+  background: linear-gradient(270deg, #7a4545, #997979);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(90, 50, 50, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.toggle-row .toggle-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 6px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Focus styles for accessibility */
+.toggle-row .toggle-btn:focus {
+  outline: 2px solid rgba(90, 50, 50, 0.18);
+  outline-offset: 2px;
+}
+
+/* Make filter chips stand out a bit more on dark theme */
+@media (prefers-color-scheme: dark) {
+  .filter-btn.selected {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  }
 }
 
 /* Ensure textarea has extra top padding so text doesn't overlap the filter buttons */
 .input-wrapper .chat-input {
-  padding-top: 2.4rem; /* leaves space for small tabs */
+  padding-top: 1rem; /* smaller top padding now chips are inline */
 }
 
 @media (max-width: 480px) {
@@ -775,7 +968,7 @@
   }
   .filter-btn {
     padding: 2px 6px;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     min-height: 20px;
   }
   .input-wrapper .chat-input {
@@ -1175,4 +1368,165 @@
   .typing-dot {
     animation: none;
   }
+}
+
+.mic-btn {
+  background: var(--button-bg);
+  border-radius: 50%;
+  padding: 0.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  color: white;
+}
+
+.mic-btn:hover {
+  background: var(--button-hover);
+}
+
+.mic-btn.recording {
+  background: red !important;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+}
+
+/* Confirmation modal styles */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999; /* very high to override other stacking contexts */
+}
+
+.confirm-modal {
+  background: #f0f0f0;
+  color: #333333;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  width: 320px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+}
+
+.confirm-title {
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.confirm-body {
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.95;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.confirm-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.confirm-btn.confirm-delete {
+  background: #b33a3a;
+  color: white;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.confirm-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* ==========================================================
+   Light-mode scrollbar + active-item (brown border) tweaks
+   - Ensures scrollbars in the history list are light when the
+     OS/browser is in light mode or the app uses the light theme.
+   - Makes the currently opened/active chat item show a 2px
+     brown border (full-item border) for better visibility.
+   ========================================================== */
+
+/* Prefer OS/browser light mode */
+@media (prefers-color-scheme: light) {
+  .chat-history-list::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .chat-history-list::-webkit-scrollbar-track {
+    background: #f3f3f3;
+    border-radius: 8px;
+  }
+
+  .chat-history-list::-webkit-scrollbar-thumb {
+    background: #d6d6d6;
+    border-radius: 8px;
+    border: 2px solid #f3f3f3; /* gives a gentle inset look */
+  }
+
+  .chat-history-list::-webkit-scrollbar-thumb:hover {
+    background: #c0c0c0;
+  }
+
+  /* Firefox */
+  .chat-history-list {
+    scrollbar-color: #d6d6d6 #f3f3f3; /* thumb track */
+    scrollbar-width: thin;
+  }
+}
+
+/* Also support app-level light classes often used in this project */
+[data-theme="light"] .chat-history-list,
+.light-theme .chat-history-list,
+body.light .chat-history-list {
+  scrollbar-color: #d6d6d6 #f3f3f3;
+}
+
+/* Active chat item: use a full 2px brown border and remove the
+   left-only highlight so the active item appears as a clear card.
+   We cover several common active selectors used in the codebase. */
+[data-theme="light"] .chat-history-item.active,
+.light-theme .chat-history-item.active,
+[data-theme="light"] .chat-history-item.selected,
+.light-theme .chat-history-item.selected,
+.chat-history-item.active,
+.chat-history-item.selected {
+  border-left: none; /* override previous left-only accent */
+  border: 2px solid #8b4513; /* brown - saddle brown */
+  box-shadow: 0 6px 18px rgba(139, 69, 19, 0.06);
+  background: #ffffff; /* keep active item readable in light mode */
+  box-sizing: border-box; /* ensure border doesn't shift layout */
+}
+
+/* Slightly adjust hover so active item remains distinct */
+.chat-history-item.active:hover,
+.chat-history-item.selected:hover {
+  transform: none;
+  box-shadow: 0 8px 22px rgba(139, 69, 19, 0.08);
 }

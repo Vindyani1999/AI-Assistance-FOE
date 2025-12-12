@@ -29,50 +29,6 @@ class LoadToolsConfig:
             app_config["tavily_search_api"]["tavily_search_max_results"])
 
     
-        
-        # Swiss Airline Policy RAG configs
-        self.policy_rag_llm = app_config["swiss_airline_policy_rag"]["llm"]
-        self.policy_rag_llm_temperature = float(
-            app_config["swiss_airline_policy_rag"]["llm_temperature"])
-        self.policy_rag_embedding_model = app_config["swiss_airline_policy_rag"]["embedding_model"]
-        self.policy_rag_vectordb_directory = str(here(
-            app_config["swiss_airline_policy_rag"]["vectordb"]))  # needs to be strin for summation in chromadb backend: self._settings.require("persist_directory") + "/chroma.sqlite3"
-        self.policy_rag_unstructured_docs_directory = str(here(
-            app_config["swiss_airline_policy_rag"]["unstructured_docs"]))
-        self.policy_rag_k = app_config["swiss_airline_policy_rag"]["k"]
-        self.policy_rag_chunk_size = app_config["swiss_airline_policy_rag"]["chunk_size"]
-        self.policy_rag_chunk_overlap = app_config["swiss_airline_policy_rag"]["chunk_overlap"]
-        self.policy_rag_collection_name = app_config["swiss_airline_policy_rag"]["collection_name"]
-
-
-        # Stories RAG configs
-        self.stories_rag_llm = app_config["stories_rag"]["llm"]
-        self.stories_rag_llm_temperature = float(
-            app_config["stories_rag"]["llm_temperature"])
-        self.stories_rag_embedding_model = app_config["stories_rag"]["embedding_model"]
-        self.stories_rag_vectordb_directory = str(here(
-            app_config["stories_rag"]["vectordb"]))  # needs to be strin for summation in chromadb backend: self._settings.require("persist_directory") + "/chroma.sqlite3"
-        self.stories_rag_unstructured_docs_directory = str(here(
-            app_config["stories_rag"]["unstructured_docs"]))
-        self.stories_rag_k = app_config["stories_rag"]["k"]
-        self.stories_rag_chunk_size = app_config["stories_rag"]["chunk_size"]
-        self.stories_rag_chunk_overlap = app_config["stories_rag"]["chunk_overlap"]
-        self.stories_rag_collection_name = app_config["stories_rag"]["collection_name"]
-
-        # Travel SQL Agent configs
-        self.travel_sqldb_directory = str(here(
-            app_config["travel_sqlagent_configs"]["travel_sqldb_dir"]))
-        self.travel_sqlagent_llm = app_config["travel_sqlagent_configs"]["llm"]
-        self.travel_sqlagent_llm_temperature = float(
-            app_config["travel_sqlagent_configs"]["llm_temperature"])
-
-        # Chinook SQL agent configs
-        self.chinook_sqldb_directory = str(here(
-            app_config["chinook_sqlagent_configs"]["chinook_sqldb_dir"]))
-        self.chinook_sqlagent_llm = app_config["chinook_sqlagent_configs"]["llm"]
-        self.chinook_sqlagent_llm_temperature = float(
-            app_config["chinook_sqlagent_configs"]["llm_temperature"])
-
         # Graph configs
         self.thread_id = str(
             app_config["graph_configs"]["thread_id"])
@@ -125,5 +81,57 @@ class LoadToolsConfig:
         self.exam_manual_rag_chunk_overlap = app_config["exam_manual_rag"]["chunk_overlap"]
         self.exam_manual_rag_collection_name = app_config["exam_manual_rag"]["collection_name"] 
         
-        
+
+        # Procurement Guidelines RAG configs
+        self.procurement_guidelines_rag_llm = app_config["procurement_guidelines_rag"]["llm"]
+        self.procurement_guidelines_rag_llm_temperature = float(
+            app_config["procurement_guidelines_rag"]["llm_temperature"]
+        )
+        self.procurement_guidelines_rag_embedding_model = app_config["procurement_guidelines_rag"]["embedding_model"]
+        self.procurement_guidelines_rag_vectordb_directory = str(here(
+            app_config["procurement_guidelines_rag"]["vectordb"]
+        ))
+        self.procurement_guidelines_rag_unstructured_docs_directory = str(here(
+            app_config["procurement_guidelines_rag"]["unstructured_docs"]
+        ))
+        self.procurement_guidelines_rag_k = app_config["procurement_guidelines_rag"]["k"]
+        self.procurement_guidelines_rag_chunk_size = app_config["procurement_guidelines_rag"]["chunk_size"]
+        self.procurement_guidelines_rag_chunk_overlap = app_config["procurement_guidelines_rag"]["chunk_overlap"]
+        self.procurement_guidelines_rag_collection_name = app_config["procurement_guidelines_rag"]["collection_name"]
+
+        # Establishment Code RAG configs
+        self.establishment_code_rag_llm = app_config["establishment_code_rag"]["llm"]
+        self.establishment_code_rag_llm_temperature = float(
+            app_config["establishment_code_rag"]["llm_temperature"]
+        )
+        self.establishment_code_rag_embedding_model = app_config["establishment_code_rag"]["embedding_model"]
+        self.establishment_code_rag_vectordb_directory = str(here(
+            app_config["establishment_code_rag"]["vectordb"]
+        ))
+        self.establishment_code_rag_unstructured_docs_directory = str(here(
+            app_config["establishment_code_rag"]["unstructured_docs"]
+        ))
+        self.establishment_code_rag_k = app_config["establishment_code_rag"]["k"]
+        self.establishment_code_rag_chunk_size = app_config["establishment_code_rag"]["chunk_size"]
+        self.establishment_code_rag_chunk_overlap = app_config["establishment_code_rag"]["chunk_overlap"]
+        self.establishment_code_rag_collection_name = app_config["establishment_code_rag"]["collection_name"]
+
+
+        # UGC Circulars RAG configs
+        self.ugc_circulars_rag_llm = app_config["ugc_circulars_rag"]["llm"]
+        self.ugc_circulars_rag_llm_temperature = float(
+            app_config["ugc_circulars_rag"]["llm_temperature"]
+        )
+        self.ugc_circulars_rag_embedding_model = app_config["ugc_circulars_rag"]["embedding_model"]
+        self.ugc_circulars_rag_vectordb_directory = str(here(
+            app_config["ugc_circulars_rag"]["vectordb"]
+        ))
+        self.ugc_circulars_rag_unstructured_docs_directory = str(here(
+            app_config["ugc_circulars_rag"]["unstructured_docs"]
+        ))
+        self.ugc_circulars_rag_k = app_config["ugc_circulars_rag"]["k"]
+        self.ugc_circulars_rag_chunk_size = app_config["ugc_circulars_rag"]["chunk_size"]
+        self.ugc_circulars_rag_chunk_overlap = app_config["ugc_circulars_rag"]["chunk_overlap"]
+        self.ugc_circulars_rag_collection_name = app_config["ugc_circulars_rag"]["collection_name"]
+
 #===============================================================

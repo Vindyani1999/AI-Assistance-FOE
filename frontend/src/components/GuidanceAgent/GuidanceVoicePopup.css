@@ -1,0 +1,225 @@
+.gvp-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  .gvp-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .gvp-card {
+    position: relative;
+    /* Match the gif background (soft off-white) so the card blends with the visual */
+    background: #fbfbfb;
+    border-radius: 14px;
+    padding: 24px;
+    width: 600px;
+    min-height: 480px;
+    max-width: calc(100% - 32px);
+    box-shadow: 0 14px 48px rgba(0, 0, 0, 0.35);
+    z-index: 1401;
+  }
+  .gvp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .gvp-header .gvp-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .gvp-body {
+    /* margin-top: 12px; */
+    display: flex;
+    flex-direction: column;
+    /* gap: 18px; */
+    align-items: center;
+  }
+
+  .gvp-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* Container that holds the base gif and the centered icon. Fixed size so centering is predictable. */
+  .gvp-gif-container {
+    width: 600px;
+    height: 400px;
+    position: relative;
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* Base large gif (always visible) */
+  .gvp-gif-base {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+    display: block;
+  }
+
+  /* Center icon overlay */
+  .gvp-center-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1403;
+  }
+
+  .gvp-center-svg {
+    width: 50px !important;
+    height: 50px !important;
+    color: rgba(105, 105, 105, 0.6);
+    pointer-events: auto; /* allow clicking when shown */
+  }
+
+  /* Top chip overlay (small label above the gif) */
+  .gvp-top-chip {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    z-index: 1406;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+    font-weight: 600;
+  }
+
+  /* Timer overlay positioned on the gif (bottom center) */
+  .gvp-timer {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 30px; /* moved slightly higher to sit above gif */
+    background: rgba(255, 255, 255, 0.85);
+    padding: 6px 10px;
+    border-radius: 14px;
+    font-size: 14px;
+    color: #434343; /* neutral time color */
+    z-index: 1404;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  }
+
+  .gvp-timer-text {
+    margin-right: 10px;
+    font-weight: 600;
+  }
+  .gvp-send-btn {
+    background: transparent;
+    color: #8b4513; /* saddlebrown to match site brown theme */
+    border: 2px solid #8b4513; /* 2px thick brown border */
+    padding: 5px; /* 5px padding as requested */
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .gvp-send-btn:hover {
+    background: rgba(139, 69, 19, 0.04);
+  }
+
+  .gvp-transcript {
+    width: 100%;
+    background: #f6f6f6;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .gvp-transcript-label {
+    font-size: 12px;
+    color: #666;
+  }
+  .gvp-transcript-text {
+    margin-top: 6px;
+  }
+  .gvp-messages {
+    width: 100%;
+    max-height: 460px; /* allow more room for messages */
+    overflow: auto;
+  }
+
+  .gvp-message-row {
+    margin-top: 8px;
+  }
+  .gvp-message-role {
+    font-size: 12px;
+    color: #444;
+  }
+  .gvp-message-text {
+    margin-top: 4px;
+  }
+  .gvp-error {
+    color: #b00020;
+  }
+
+  .gvp-playback-controls {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 30px; /* placed 50px above bottom of gif */
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    z-index: 1407;
+    pointer-events: auto;
+  }
+  .gvp-play-btn {
+    background: transparent;
+    border: 2px solid #8b4513;
+    color: #8b4513;
+    padding: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  }
+  .gvp-stop-btn {
+    background: #8b4513;
+    color: #fff;
+    border: none;
+    padding: 7px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  }
+
+  @media (max-width: 900px) {
+    .gvp-card {
+      width: calc(100% - 48px);
+      min-height: 520px;
+    }
+    .gvp-gif-container {
+      width: 420px;
+      height: 420px;
+    }
+    .gvp-center-svg {
+      width: 110px !important;
+      height: 110px !important;
+    }
+    .gvp-timer {
+      bottom: 42px;
+      font-size: 13px;
+    }
+  }
+}

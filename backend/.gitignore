@@ -7,6 +7,16 @@ ENV/
 env.bak/
 venv.bak/
 .venv_*/
-data/vectordb
+
+data/vectordb 
+
 data/memory
+
+data/data/documents
+
+/data/data/documents
+
+=======
+#dfgh
+#sgfsv
 

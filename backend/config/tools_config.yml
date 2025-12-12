@@ -2,6 +2,7 @@ primary_agent:
   llm: z-ai/glm-4.5-air:free #google/gemini-2.0-flash-exp:free #z-ai/glm-4.5-air:free #z-ai/glm-4.5-air:free #gpt-3.5-turbo
   llm_temperature: 0.0
 
+
 exam_manual_rag:
   unstructured_docs: "data/documents/exam_manual"
   vectordb: "data/vectordb/exam_manual_vectordb"
@@ -46,6 +47,29 @@ by_law_rag:
   chunk_overlap: 50
   k: 4
 
+procurement_guidelines_rag:
+  unstructured_docs: "data/documents/procurement_guidelines_and_manual"
+  vectordb: "data/vectordb/procurement_guidelines_and_manual_vectordb"
+  collection_name: procurement_guidelines_and_manual-rag-chroma
+  llm: microsoft/phi-2
+  llm_temperature: 0.0
+  embedding_model: intfloat/e5-base-v2
+  chunk_size: 400
+  chunk_overlap: 60
+  k: 3
+
+establishment_code_rag:
+  unstructured_docs: "data/documents/establishments_code_volume"   # Folder containing both Vol I & II PDFs
+  vectordb: "data/vectordb/establishment_code_vectordb"   # Single combined vector DB
+  collection_name: establishment_code-rag-chroma
+  llm: x-ai/grok-4.1-fast:free
+  llm_temperature: 0.0
+  embedding_model: intfloat/e5-base-v2
+  chunk_size: 400
+  chunk_overlap: 60
+  k: 3
+
+
 stories_rag:
   unstructured_docs: "data/documents/stories"
   vectordb: "data/vectordb/stories_vectordb"
@@ -56,6 +80,18 @@ stories_rag:
   chunk_size: 50
   chunk_overlap: 5
   k: 2
+  
+ugc_circulars_rag:
+  llm: "openai"  # or your LLM for RAG generation
+  llm_temperature: 0.0
+  embedding_model: "intfloat/e5-base-v2"
+  vectordb: "data/vectordb/ugc_circulars_vectordb"
+  unstructured_docs: "data/documents/ugc_circulars"
+  k: 3
+  chunk_size: 400
+  chunk_overlap: 60
+  collection_name: "ugc_circulars_rag"
+
 
 travel_sqlagent_configs:
   travel_sqldb_dir: "backend/data/databases/travel.sqlite"

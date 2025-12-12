@@ -1,14 +1,12 @@
-import { SignupPayload, VerifyOtpResponse } from '../utils/authInterfaces';
-let Base_Url_Auth = process.env.REACT_APP_AUTH_URL||'http://10.50.227.182:5000';
-
-if (Base_Url_Auth.endsWith('/')) Base_Url_Auth = Base_Url_Auth.slice(0, -1);
-if (Base_Url_Auth.endsWith("/")) Base_Url_Auth = Base_Url_Auth.slice(0, -1);
+import { SignupPayload, VerifyOtpResponse } from "../utils/types";
+import { Auth_Base_URL } from "../App";
 
 // Login API
 // Helper to get the latest access token
 export function getAccessToken() {
   return localStorage.getItem("auth_token");
 }
+
 
 // Helper to update access token from response headers (if present)
 function updateAccessTokenFromResponse(response: Response) {
@@ -22,7 +20,7 @@ export async function login(
   email: string,
   password: string
 ): Promise<{ message: string; user?: any; accessToken?: string }> {
-  const response = await fetch(`${Base_Url_Auth}/auth/login`, {
+  const response = await fetch(`${Auth_Base_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -47,7 +45,7 @@ export async function login(
 export async function signup(
   payload: SignupPayload
 ): Promise<{ message: string }> {
-  const response = await fetch(`${Base_Url_Auth}/auth/signup`, {
+  const response = await fetch(`${Auth_Base_URL}/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -62,7 +60,7 @@ export async function signup(
 
 // Request OTP to be sent to email
 export async function requestOtp(email: string): Promise<{ message: string }> {
-  const response = await fetch(`${Base_Url_Auth}/auth/request-otp`, {
+  const response = await fetch(`${Auth_Base_URL}/auth/request-otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" }, // No Authorization header
     body: JSON.stringify({ email }),
@@ -80,7 +78,7 @@ export async function verifyOtp(
   email: string,
   otp: string
 ): Promise<VerifyOtpResponse> {
-  const response = await fetch(`${Base_Url_Auth}/auth/verify-otp`, {
+  const response = await fetch(`${Auth_Base_URL}/auth/verify-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -95,4 +93,20 @@ export async function verifyOtp(
   const data = await response.json();
   // console.log('role :', data.role, '\n name :', data.name, '\n department :', data.department, '\n id :', data.id, '\n');
   return data;
+}
+
+export async function fetchUserProfile() {
+  const token = getAccessToken();
+  if (!token) throw new Error("No auth token");
+  const response = await fetch(`${Auth_Base_URL}/auth/me`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch user profile");
+  }
+  return response.json();
 }

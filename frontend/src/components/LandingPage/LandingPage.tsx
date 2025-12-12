@@ -15,12 +15,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import "./LandingPage.css";
 // sidebar only — dashboard and other content live in route components
-
-interface LandingPageProps {
-  userProfile?: any;
-  agents?: any[];
-  onLogout?: () => void;
-}
+import { LandingPageProps } from "../../utils/types";
 
 const LandingPage: React.FC<LandingPageProps> = ({
   userProfile,

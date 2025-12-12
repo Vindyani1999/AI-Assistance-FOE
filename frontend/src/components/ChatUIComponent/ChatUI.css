@@ -10,14 +10,27 @@
 .dark-theme .message-content,
 [data-theme='dark'] .message-content {
   background: #23272f;
-  color: #eaf3ff;
+  color: #ffffff;
 }
+.message-content,
+.message-content {
+  background: #23272f;
+  color: #19191a;
+}
+
 .dark-theme .message.user .message-content,
 [data-theme='dark'] .message.user .message-content {
   background: #23272f;
   color: #eaf3ff;
   border: 1px solid #334155;
 }
+/* Light theme overrides for USER messages */
+.chat-container:not(.dark-theme) .message.user .message-content {
+  background: #e3f2fd !important; /* your original light theme color */
+  color: #000 !important;         /* <-- this fixes it */
+  border: 1px solid #cfd8dc;
+}
+
 .dark-theme .chat-input-container,
 [data-theme='dark'] .chat-input-container {
   background: #23272f;

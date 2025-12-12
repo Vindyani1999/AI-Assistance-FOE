@@ -13,7 +13,7 @@ print(f"🔐 Loaded API Key: {os.getenv('OPENAI_API_KEY2')}")
 class DeepSeekLLM(BaseLLM):
     api_key: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY2"))
     base_url: str = "https://openrouter.ai/api/v1/chat/completions"
-    model: str = "deepseek/deepseek-r1-0528:free" # Replace with the correct model name for DeepSeek
+    model: str = "z-ai/glm-4.5-air:free" # Replace with the correct model name for DeepSeek
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         """

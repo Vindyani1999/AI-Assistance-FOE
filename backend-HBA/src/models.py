@@ -124,3 +124,4 @@ class MRBSSwapRequest(Base):
     offerer = relationship("MRBSUser", foreign_keys=[offered_by])
     requested_booking = relationship("MRBSEntry", foreign_keys=[requested_booking_id])
     offered_booking = relationship("MRBSEntry", foreign_keys=[offered_booking_id])
+

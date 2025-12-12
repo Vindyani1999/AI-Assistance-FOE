@@ -13,7 +13,7 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(logger);
 app.use(rateLimiter);
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.BACKEND_AUTH_CORS_ORIGIN,
     credentials: true
 }));
 app.use(express.json());
@@ -30,6 +30,8 @@ mongoose.connect(process.env.MONGODB_URI, {
     console.log('MongoDB connected');
     const PORT = process.env.PORT || 5001;
     app.listen(PORT, () => console.log(`Auth server running on port ${PORT}`));
+    console.log(process.env.BACKEND_AUTH_CORS_ORIGIN);
+    
 }).catch((err) => {
     console.error('MongoDB connection error:', err);
     process.exit(1);

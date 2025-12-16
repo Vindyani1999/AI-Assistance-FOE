@@ -1,0 +1,26 @@
+thread_id,timestamp,user_query,response
+1,00:06:31,hi,Hello! How can I help you today?
+1,00:07:45,give me a 5 exam rules in the exam day,"Based on the student handbook, here are **5 key exam rules for exam day**:
+
+## **1. Arrival Time**
+- **Must reach the examination hall at least 10 minutes before the scheduled time**
+
+## **2. Required Documents**
+- **Must carry University Identity Card/Record Book and Admission Card**
+- **Must produce these documents to duty staff whenever requested**
+
+## **3. Prohibited Items**
+- **No mobile phones** or any unauthorized materials are allowed in the examination hall
+- **No short notes, equations, or subject-related notes** written on calculator case, pencil case, palm, or any part of the body or dress
+
+## **4. Calculator Rules**
+- **Only non-programmable calculators are allowed**
+- **FX991-ES and FX991-ES Plus calculators are permitted** (subject to memory being erased)
+- **No borrowing of calculators, drawing equipment, or stationary** from other candidates
+
+## **5. Examination Hall Conduct**
+- **Must observe strict silence** during the examination
+- **Answer sheets and rough sheets must be blank and date-stamped** before starting to answer
+- **Must not remove any used or unused examination stationary** from the examination hall
+
+These rules are strictly enforced to ensure fair examination conditions and maintain academic integrity. Failure to comply may result in disciplinary action."

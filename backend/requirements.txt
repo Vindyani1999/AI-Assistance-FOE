@@ -31,3 +31,4 @@ motor
 assemblyai
 pyprojroot
 langgraph
+tabulate

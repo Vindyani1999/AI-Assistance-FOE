@@ -118,8 +118,9 @@ class ChatBot:
             (message, event["messages"][-1].content)
         )
 
-        Memory.write_chat_history_to_file(
-            chat_history=chatbot, folder_path=PROJECT_CFG.memory_dir, thread_id=TOOLS_CFG.thread_id
-        )
+        # Memory CSV writing disabled - MongoDB handles persistence
+        # Memory.write_chat_history_to_file(
+        #     chat_history=chatbot, folder_path=PROJECT_CFG.memory_dir, thread_id=TOOLS_CFG.thread_id
+        # )
 
         return "", chatbot

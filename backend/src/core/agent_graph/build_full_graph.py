@@ -4,6 +4,7 @@ import os
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage
 from .tool_tavily_search import load_tavily_search_tool
 from .load_tools_config import LoadToolsConfig
 from .agent_backend import State, BasicToolNode, route_tools, plot_agent_schema
@@ -20,6 +21,14 @@ from .tool_lookup_ugc_circulars import lookup_ugc_circulars
 
 TOOLS_CFG = LoadToolsConfig()
 
+# System prompt for the AI agent
+SYSTEM_PROMPT = """You are a helpful AI assistant for university students and staff.
+Provide clear, accurate, and concise responses based on the information available in the tools.
+
+IMPORTANT: You may use section headers and emphasized text for clarity, but do NOT use markdown syntax such as ## for headers or ** for bold text.
+Use plain text formatting only (for example, capitalized titles, line breaks, or simple separators).
+Use simple numbered lists or bullet points when needed, keeping the formatting minimal and clean.
+"""
 
 def build_graph(agent_type="ruhuna"):
     """
@@ -64,7 +73,11 @@ def build_graph(agent_type="ruhuna"):
     llm_with_tools = primary_llm.bind_tools(tools)
 
     def chatbot(state: State):
-        return {"messages": [llm_with_tools.invoke(state["messages"])]}
+        # Prepend system message if not already present
+        messages = state["messages"]
+        if not messages or not isinstance(messages[0], SystemMessage):
+            messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
+        return {"messages": [llm_with_tools.invoke(messages)]}
 
     graph_builder.add_node("chatbot", chatbot)
     tool_node = BasicToolNode(tools=tools)

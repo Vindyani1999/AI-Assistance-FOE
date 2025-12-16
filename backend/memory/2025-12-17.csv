@@ -24,3 +24,23 @@ thread_id,timestamp,user_query,response
 - **Must not remove any used or unused examination stationary** from the examination hall
 
 These rules are strictly enforced to ensure fair examination conditions and maintain academic integrity. Failure to comply may result in disciplinary action."
+1,00:32:03,give me a 5 exam rules in the exam day?,"Based on the exam manual, here are 5 important exam rules for exam day:
+
+1. **Electronic Devices Prohibited**
+   - No electronic means are allowed in the examination room, including mobile phones, computers, tablets, bluetooth devices, wrist watches, etc.
+
+2. **Dress Code Requirements**
+   - All candidates must wear laboratory coats (as specified by the relevant department), cover shoes, and adhere to personal safety measures (tie up hair, avoid baggy clothes and hanging ornaments)
+   - Male candidates should participate without beard and mustache
+   - All candidates must wear the tag with their registration number
+
+3. **Immediate Departure After Completion**
+   - As soon as candidates complete the examination, they must leave the laboratory/department premises immediately
+
+4. **Briefing Before Examination**
+   - All candidates shall be briefed by the chief examiner on the format of the examination and expectations before the commencement of the examination
+   - Special instructions should be provided clearly after students get seated
+
+5. **No Spare Materials Provided**
+   - There will be no spare pencils, pens, erasers, rulers, calculators provided by supervisors in an examination room/laboratory
+   - Students must bring their own writing materials"

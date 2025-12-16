@@ -1,0 +1,13 @@
+thread_id,timestamp,user_query,response
+1,23:39:54,"how many departments available in the facylty
+
+[Search only in: By-law]","Based on the search results from the by-law, I can see information about the Faculty of Engineering at the University of Ruhuna. The text mentions several fields of specialization that appear to correspond to different departments:
+
+1. **Civil and Environmental Engineering**
+2. **Electrical and Information Engineering** 
+3. **Mechanical and Manufacturing Engineering**
+4. **Computer Engineering**
+
+These are listed as separate fields in the credit distribution table, suggesting there are **4 main departments** in the Faculty of Engineering. Each department has its own core modules, technical elective requirements, and specific course structures.
+
+The by-law also mentions that students specialize in one of these fields after completing a common core course in the first two semesters."

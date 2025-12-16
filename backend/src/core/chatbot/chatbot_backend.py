@@ -104,18 +104,42 @@ class ChatBot:
         Returns:
             tuple: ("", updated_chat_history)
         """
+        from langchain_core.messages import AIMessage
+        import logging
+        
+        logger = logging.getLogger("ai-agent")
+        
         # Use the same thread_id for memory
         config = config_template.copy()
 
-        events = graph.stream(
+        # Collect all messages from the stream
+        all_messages = []
+        events = list(graph.stream(
             {"messages": [("user", message)]}, config, stream_mode="values"
-        )
-
+        ))
+        
+        # Get all messages from all events
         for event in events:
-            event["messages"][-1].pretty_print()
+            all_messages.extend(event["messages"])
+            
+        logger.info(f"Total messages received: {len(all_messages)}")
+        for i, msg in enumerate(all_messages):
+            logger.info(f"Message {i}: {type(msg).__name__} - {msg.content[:100] if hasattr(msg, 'content') else 'N/A'}")
+
+        # Find the last AI message (not a tool message)
+        last_ai_message = None
+        for msg in reversed(all_messages):
+            if isinstance(msg, AIMessage) and not msg.tool_calls:
+                last_ai_message = msg
+                logger.info(f"Found final AI message: {msg.content}")
+                break
+
+        # Use the last AI message, or empty string if none found
+        bot_response = last_ai_message.content if last_ai_message else ""
+        logger.info(f"Final bot_response: '{bot_response}'")
 
         chatbot.append(
-            (message, event["messages"][-1].content)
+            (message, bot_response)
         )
 
         Memory.write_chat_history_to_file(

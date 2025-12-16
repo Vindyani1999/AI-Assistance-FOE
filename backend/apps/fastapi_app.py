@@ -19,6 +19,7 @@ import assemblyai as aai
 # Local imports (ensure project root is on path)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from apps.mongo_models import session_doc, message_doc
+from apps.csv_backup import save_message_to_csv, delete_csv_backup
 from src.core.chatbot.chatbot_backend import ChatBot, ruhuna_graph, ugc_graph
 from src.core.chatbot.load_config import LoadProjectConfig
 from src.core.agent_graph.load_tools_config import LoadToolsConfig
@@ -130,12 +131,35 @@ async def process_chat_message(session_id: str, user_id: str, user_message: str,
     # Obtain response from chatbot (graph optional)
     _, updated_chatbot = ChatBot.respond(current_history, user_message, graph=graph) if graph else ChatBot.respond(current_history, user_message)
 
-    # Persist user message
-    await mongo_db.messages.insert_one(message_doc(session_id, user_id, "user", user_message))
+    # === CSV BACKUP: Save user message to CSV first ===
+    save_message_to_csv(session_id, user_id, "user", user_message)
+    
+    # Persist user message to MongoDB
+    try:
+        await mongo_db.messages.insert_one(message_doc(session_id, user_id, "user", user_message))
+        logger.info(f"User message saved to MongoDB for session {session_id}")
+    except Exception as e:
+        logger.error(f"Failed to save user message to MongoDB: {e}")
+        # CSV backup is retained if MongoDB fails
+        raise
 
     bot_response = updated_chatbot[-1][1] if updated_chatbot else "Sorry, I couldn't process your message."
-    # Persist assistant message
-    await mongo_db.messages.insert_one(message_doc(session_id, user_id, "assistant", bot_response))
+    
+    # === CSV BACKUP: Save assistant message to CSV ===
+    save_message_to_csv(session_id, user_id, "assistant", bot_response)
+    
+    # Persist assistant message to MongoDB
+    try:
+        await mongo_db.messages.insert_one(message_doc(session_id, user_id, "assistant", bot_response))
+        logger.info(f"Assistant message saved to MongoDB for session {session_id}")
+        
+        # === CSV CLEANUP: Delete CSV backup after successful MongoDB save ===
+        delete_csv_backup(session_id)
+        
+    except Exception as e:
+        logger.error(f"Failed to save assistant message to MongoDB: {e}")
+        # CSV backup is retained if MongoDB fails
+        raise
 
     # Update session metadata (upsert to be safe)
     # Derive a better topic than simply using the latest raw user message.

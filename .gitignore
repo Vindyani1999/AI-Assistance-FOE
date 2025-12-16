@@ -102,7 +102,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -212,8 +211,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
-.env.test
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -243,7 +240,6 @@ logs
 *.log
 
 # IDE/Editor files
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -310,3 +306,4 @@ backend-HBA/.env
 .github\instructions\codacy.instructions.md
 
 
+config.bat

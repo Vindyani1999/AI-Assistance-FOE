@@ -86,7 +86,6 @@ const RECOMMENDATION_TYPES = {
 } as const;
 
 const BookingChatInterface: React.FC = () => {
-  /* ===== STATE MANAGEMENT ===== */
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -105,7 +104,8 @@ const BookingChatInterface: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [bookingOptions, setBookingOptions] = useState<{code: string; time: string; id: number}[]>([]);
   const [allRoomOptions, setAllRoomOptions] = useState<string[]>([]);
-  
+  const [showAllRooms, setShowAllRooms] = useState(false);
+
   const [formData, setFormData] = useState<FormData>({
     room_name: "LT1",
     name: "",
@@ -139,7 +139,6 @@ const BookingChatInterface: React.FC = () => {
     `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   );
 
-  /* ===== EFFECTS ===== */
   useEffect(() => {
     const getEmail = async () => {
       const userEmail = await fetchUserEmailFromProfile();
@@ -152,13 +151,31 @@ const BookingChatInterface: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    if (calendarCellInfo) {
-      if (email) fetch_moduleCodes_by_user_email(email);
-    }
-  }, [calendarCellInfo]);
+  // useEffect(() => {
+  //   if (calendarCellInfo) {
+  //     if (email) {
+  //     fetch_moduleCodes_by_user_email(email);
+  //     fetch_all_halls();
+  //   }
+  //   }
+  // }, [calendarCellInfo]);
 
-  /* ===== UTILITY FUNCTIONS ===== */
+  useEffect(() => {
+  const loadDialogData = async () => {
+    if (calendarCellInfo && email) {
+      console.log("Dialog opened, loading data...");
+      
+      const modules = await fetch_moduleCodes_by_user_email(email);
+      console.log(" Modules loaded:", modules);
+      
+      const rooms = await fetch_all_halls();
+      console.log(" All rooms loaded:", rooms);
+    }
+  };
+  
+  loadDialogData();
+}, [calendarCellInfo, email]);
+
   const handleChatUpdate = () => setRefreshCalendar((prev) => prev + 1);
 
   const formatDate = (timeString: string): string => {
@@ -211,7 +228,6 @@ const BookingChatInterface: React.FC = () => {
 
   const getTodayDate = () => new Date().toISOString().split("T")[0];
 
-  /* ===== VALIDATION ===== */
   const validateUpdateField = (field: string, value: string): string => {
     switch (field) {
       case "name":
@@ -237,7 +253,6 @@ const BookingChatInterface: React.FC = () => {
     }
   };
 
-  /* ===== FORM HANDLERS ===== */
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     const error = validateUpdateField(field, value);
@@ -288,6 +303,7 @@ const BookingChatInterface: React.FC = () => {
 
   const handleCloseUpdateDialog = () => {
     setIsOpen(false);
+    setShowAllRooms(false);
     setUpdateErrors({
       name: "",
       room_name: "",
@@ -328,16 +344,19 @@ const BookingChatInterface: React.FC = () => {
     }
   };
 
-  const fetch_all_halls = async () => {
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/all_halls`);
-      setAllRoomOptions(response.data);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Error fetching all halls:", error);
-      return [];
-    }
-  };
+const fetch_all_halls = async () => {
+  try {
+    console.log("🔍 Fetching all halls...");
+    const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/all_halls`);
+    console.log("✅ Fetched all halls:", response.data);
+    setAllRoomOptions(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching all halls:", error);
+    setAllRoomOptions([]);
+    return [];
+  }
+};
 
   const fetch_halls_by_moduleCode = async (moduleCode: string) => {
     try {
@@ -361,40 +380,47 @@ const BookingChatInterface: React.FC = () => {
   };
 
   const fetchBookingById = async (bookingId: number) => {
-    try {
-      setIsUpdating(true);
-      
-      const response = await axios.get(
-        `${process.env.REACT_APP_HBA_URL}/booking/fetch_booking_by_id`,
-        { params: { booking_id: bookingId } }
-      );
+  try {
+    setIsUpdating(true);
+    
+    const response = await axios.get(
+      `${process.env.REACT_APP_HBA_URL}/booking/fetch_booking_by_id`,
+      { params: { booking_id: bookingId } }
+    );
 
-      const bookingData = response.data;
+    const bookingData = response.data;
 
-      if (bookingData.name) {
-        await fetch_halls_by_moduleCode(bookingData.name);
-      }
-
-      setFormData({
-        room_name: bookingData.room_name,
-        name: bookingData.name,
-        room_id: bookingData.room_id,
-        date: bookingData.timestamp,
-        start_time: bookingData.start_time,
-        end_time: bookingData.end_time,
-      });
-      
-      if (email) {
-        await fetch_moduleCodes_by_user_email(email);
-      }
-      
-      setIsUpdating(false);
-    } catch (error) {
-      console.error("❌ Error fetching booking:", error);
-      notify('error', "❌ Failed to fetch booking details");
-      setIsUpdating(false);
+    // Fetch module-specific rooms if module code exists
+    if (bookingData.name) {
+      await fetch_halls_by_moduleCode(bookingData.name);
     }
-  };
+
+    setFormData({
+      room_name: bookingData.room_name,
+      name: bookingData.name,
+      room_id: bookingData.room_id,
+      date: bookingData.timestamp,
+      start_time: bookingData.start_time,
+      end_time: bookingData.end_time,
+    });
+    
+    // Make sure module codes are loaded
+    if (email) {
+      await fetch_moduleCodes_by_user_email(email);
+    }
+    
+    // Ensure all rooms are loaded (don't refetch if already loaded)
+    if (allRoomOptions.length === 0) {
+      await fetch_all_halls();
+    }
+    
+    setIsUpdating(false);
+  } catch (error) {
+    console.error("❌ Error fetching booking:", error);
+    notify('error', "❌ Failed to fetch booking details");
+    setIsUpdating(false);
+  }
+};
 
   const deleteBooking = async (bookingId: number) => {
     try {
@@ -480,7 +506,6 @@ const BookingChatInterface: React.FC = () => {
     }
   };
 
-  /* ===== BOOKING LOGIC ===== */
   const bookRecommendation = async (recommendation: Recommendation) => {
     if (!recommendation.suggestion) {
       console.error("No suggestion data available for booking");
@@ -572,7 +597,6 @@ const BookingChatInterface: React.FC = () => {
     }
   };
 
-  /* ===== MESSAGE FORMATTING ===== */
   const formatMessageWithRecommendations = (
     text: string,
     recommendations?: Recommendation[]
@@ -780,21 +804,48 @@ const BookingChatInterface: React.FC = () => {
 
   const formatMessage = (text: string): string => text;
 
-  const renderFormField = (
-    label: string,
-    field: keyof FormData,
-    type: "select" | "date" | "time",
-    options?: string[],
-    disabled?: boolean,
-    helperText?: string
-  ) => {
-    const isError = !!updateErrors[field as keyof ValidationErrors];
-    const errorMessage = updateErrors[field as keyof ValidationErrors];
+const renderFormField = (
+  label: string,
+  field: keyof FormData,
+  type: "select" | "date" | "time",
+  options?: string[],
+  disabled?: boolean,
+  helperText?: string
+) => {
+  const isError = !!updateErrors[field as keyof ValidationErrors];
+  const errorMessage = updateErrors[field as keyof ValidationErrors];
 
-    if (type === "select") {
+  if (type === "select") {
+    if (field === "room_name") {
+      const roomsToShow = showAllRooms ? allRoomOptions : selectedRoomOptions;
+
       return (
         <div className="dialog-form-field">
-          <label className="dialog-form-label">{label} *</label>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '8px' 
+          }}>
+            <label className="dialog-form-label">{label} *</label>
+            <Button
+              size="small"
+              onClick={() => {
+                setShowAllRooms(showAllRooms);
+              }}
+              style={{
+                textTransform: 'none',
+                fontSize: '12px',
+                padding: '4px 8px',
+                minWidth: 'auto',
+                backgroundColor: showAllRooms ? '#047857' : '#968d8dff',
+                color: 'white'
+              }}
+            >
+              {showAllRooms ? '🔍 Show Module Rooms' : '🏢 Show All Rooms'}
+            </Button>
+          </div>
+          
           <FormControl 
             fullWidth 
             error={isError} 
@@ -804,14 +855,9 @@ const BookingChatInterface: React.FC = () => {
             <InputLabel sx={{ fontSize: "14px" }}>{label}</InputLabel>
             <Select
               value={formData[field] || ""}
-              onChange={async (e) => {
+              onChange={(e) => {
                 const value = String(e.target.value);
                 handleChange(field, value);
-                
-                if (field === "name") {
-                  setSelectedRoomOptions([]); 
-                  await fetch_halls_by_moduleCode(value);
-                }
               }}
               className="dialog-select"
               MenuProps={{
@@ -823,25 +869,46 @@ const BookingChatInterface: React.FC = () => {
                 }
               }}
             >
-              {options && options.length > 0 ? (
-                options.map((option) => (
+              {roomsToShow && roomsToShow.length > 0 ? (
+                roomsToShow.map((option) => (
                   <MenuItem key={option} value={option}>
                     {option}
                   </MenuItem>
                 ))
               ) : (
                 <MenuItem disabled value="">
-                  {field === "room_name" && !formData.name 
-                    ? "Select module code first"
-                    : "No options available"}
+                  {showAllRooms 
+                    ? (allRoomOptions.length === 0 ? "Loading all rooms..." : "No rooms available")
+                    : !formData.name 
+                      ? "Select module code first or click 'Show All Rooms'"
+                      : "No module-specific rooms found"}
                 </MenuItem>
               )}
             </Select>
+            
             {errorMessage && (
               <p className="dialog-helper-text error">{errorMessage}</p>
             )}
             {!errorMessage && helperText && (
               <p className="dialog-helper-text info">{helperText}</p>
+            )}
+            {showAllRooms && roomsToShow.length > 0 && (
+              <p className="dialog-helper-text info" style={{ 
+                marginTop: '4px', 
+                fontSize: '11px',
+                color: '#047857'
+              }}>
+                 Showing all {roomsToShow.length} available rooms
+              </p>
+            )}
+            {!showAllRooms && roomsToShow.length > 0 && (
+              <p className="dialog-helper-text info" style={{ 
+                marginTop: '4px', 
+                fontSize: '11px',
+                color: '#968d8dff'
+              }}>
+                Showing {roomsToShow.length} module-specific rooms
+              </p>
             )}
           </FormControl>
         </div>
@@ -850,44 +917,100 @@ const BookingChatInterface: React.FC = () => {
 
     return (
       <div className="dialog-form-field">
-        <TextField
-          fullWidth
-          type={type}
-          label={label}
-          value={type === "time" ? (formData[field] ? (formData[field] as string).slice(0, 5) : "") : (formData[field] as string).slice(0, 10)}
-          onChange={(e) => handleChange(field, e.target.value)}
-          error={isError}
-          disabled={isUpdating}
-          InputLabelProps={{ shrink: true }}
-          inputProps={type === "date" ? { min: getTodayDate() } : type === "time" ? { step: 300 } : {}}
-          InputProps={
-            type === "date" || type === "time"
-              ? {
-                  onClick: (e: any) => {
-                    const el = (e.target as HTMLInputElement) || (e.currentTarget?.querySelector('input') as HTMLInputElement);
-                    if (el?.showPicker) {
-                      try {
-                        el.showPicker();
-                      } catch {}
-                    }
-                  },
-                  onFocus: (e: any) => {
-                    const el = (e.target as HTMLInputElement) || (e.currentTarget?.querySelector('input') as HTMLInputElement);
-                    if (el?.showPicker) {
-                      try {
-                        el.showPicker();
-                      } catch {}
-                    }
-                  },
+        <label className="dialog-form-label">{label} *</label>
+        <FormControl 
+          fullWidth 
+          error={isError} 
+          disabled={disabled || isUpdating} 
+          className="dialog-form-control"
+        >
+          <InputLabel sx={{ fontSize: "14px" }}>{label}</InputLabel>
+          <Select
+            value={formData[field] || ""}
+            onChange={async (e) => {
+              const value = String(e.target.value);
+              handleChange(field, value);
+              
+              if (field === "name") {
+                setSelectedRoomOptions([]); 
+                await fetch_halls_by_moduleCode(value);
+              }
+            }}
+            className="dialog-select"
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  maxHeight: 300,
+                  overflow: 'auto'
                 }
-              : undefined
-          }
-          helperText={errorMessage}
-          className="dialog-input"
-        />
+              }
+            }}
+          >
+            {options && options.length > 0 ? (
+              options.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))
+            ) : (
+              <MenuItem disabled value="">
+                No options available
+              </MenuItem>
+            )}
+          </Select>
+          {errorMessage && (
+            <p className="dialog-helper-text error">{errorMessage}</p>
+          )}
+          {!errorMessage && helperText && (
+            <p className="dialog-helper-text info">{helperText}</p>
+          )}
+        </FormControl>
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="dialog-form-field">
+      <TextField
+        fullWidth
+        type={type}
+        label={label}
+        value={type === "time" 
+          ? (formData[field] ? (formData[field] as string).slice(0, 5) : "") 
+          : (formData[field] as string).slice(0, 10)}
+        onChange={(e) => handleChange(field, e.target.value)}
+        error={isError}
+        disabled={isUpdating}
+        InputLabelProps={{ shrink: true }}
+        inputProps={type === "date" ? { min: getTodayDate() } : type === "time" ? { step: 300 } : {}}
+        InputProps={
+          type === "date" || type === "time"
+            ? {
+                onClick: (e: any) => {
+                  const el = (e.target as HTMLInputElement) || (e.currentTarget?.querySelector('input') as HTMLInputElement);
+                  if (el?.showPicker) {
+                    try {
+                      el.showPicker();
+                    } catch {}
+                  }
+                },
+                onFocus: (e: any) => {
+                  const el = (e.target as HTMLInputElement) || (e.currentTarget?.querySelector('input') as HTMLInputElement);
+                  if (el?.showPicker) {
+                    try {
+                      el.showPicker();
+                    } catch {}
+                  }
+                },
+              }
+            : undefined
+        }
+        helperText={errorMessage}
+        className="dialog-input"
+      />
+    </div>
+  );
+};
 
   const renderSwapFormField = (
     label: string,
@@ -1109,7 +1232,8 @@ const BookingChatInterface: React.FC = () => {
 
         <DialogContent className="dialog-content">
           {renderFormField("Module Code", "name", "select", moduleOptions)}
-          {renderFormField("Room Name", "room_name", "select", selectedRoomOptions, !formData.name, !formData.name ? "Select module code first" : undefined)}
+          {/* {renderFormField("Room Name", "room_name", "select", selectedRoomOptions, !formData.name, !formData.name ? "Select module code first" : undefined)} */}
+          {renderFormField("Room Name", "room_name", "select")}
           {renderFormField("Booking Date", "date", "date")}
 
           <div className="dialog-field-row">

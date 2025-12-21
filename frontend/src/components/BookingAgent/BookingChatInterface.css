@@ -1984,7 +1984,29 @@
   border-bottom-color: #3a3a42;
 }
 
-/* Dialog Responsive */
+.dialog-form-field button {
+  background-color: rgba(90, 50, 50, 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(90, 50, 50, 0.3);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.dialog-form-field button:hover {
+  background-color: rgba(90, 50, 50, 0.2);
+  border-color: rgba(90, 50, 50, 0.5);
+}
+
+.booking-dialog.dark .dialog-form-field button {
+  background-color: rgba(224, 186, 186, 0.1);
+  color: #e0baba;
+  border-color: rgba(224, 186, 186, 0.3);
+}
+
+.booking-dialog.dark .dialog-form-field button:hover {
+  background-color: rgba(224, 186, 186, 0.2);
+  border-color: rgba(224, 186, 186, 0.5);
+}
 @media (max-width: 768px) {
   .dialog-content {
     padding: 24px 20px;

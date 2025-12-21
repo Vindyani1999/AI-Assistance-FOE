@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -99,16 +99,25 @@ def check_availability(room_name: str, date: date, start_time: str, end_time: st
 
 
 @router.post("/booking/add")
-def add_booking_endpoint(request: BookingRequest, db: Session = Depends(get_db)):
-    from core.booking_service import add_booking
-    return add_booking(
-        request.room_name,
-        request.name,
-        request.date,
-        request.start_time,
-        request.end_time,
-        "system",
-        db
+def add_booking_endpoint(
+    request: BookingRequest, 
+    background_tasks: BackgroundTasks, 
+    db: Session = Depends(get_db),
+    user_email: str = Depends(get_current_user_email)  
+):
+    
+    from core.booking_service import BookingService
+    
+    booking_service = BookingService(db)
+    
+    return booking_service.add_booking(
+        room_name=request.room_name,
+        name=request.name,
+        date=str(request.date),
+        start_time=request.start_time,
+        end_time=request.end_time,
+        created_by=user_email,  
+        background_tasks=background_tasks  
     )
 
 

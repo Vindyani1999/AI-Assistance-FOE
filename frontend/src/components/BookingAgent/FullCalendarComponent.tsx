@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { fetchUserEmailFromProfile } from "../../services/api";
+import { getAccessToken } from "../../services/authAPI";
 import { toast } from "react-toastify";
 import RightDrawer from "./RightDrawer";
 
@@ -36,10 +37,13 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
   const [roomOptions, setRoomOptions] = useState<string[]>([]);
   const [selectedRoomOptions, setSelectedRoomOptions] = useState<string[]>([]);
   const [lastClicked, setLastClicked] = useState<string | null>(null);
+  const [showAllRooms, setShowAllRooms] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
   const { notify } = useNotification();
 
   const [formData, setFormData] = useState({
-    room_name: "LT1",
+    room_name: "",
     name: "",
     date: "",
     start_time: "",
@@ -85,8 +89,14 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
 
   const fetch_moduleCodes = async (email: string) => {
     try {
+      const token = getAccessToken();
       const response = await axios.get(
-        `${process.env.REACT_APP_HBA_URL}/booking/fetch_moduleCodes_by_user_email?email=${email}`
+        `${process.env.REACT_APP_HBA_URL}/booking/fetch_moduleCodes_by_user_email?email=${email}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setModuleOptions(response.data);
       return response.data;
@@ -99,34 +109,56 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
 
   const fetch_all_halls = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_HBA_URL}/booking/all_halls`);
+      const token = getAccessToken();
+      const response = await axios.get(
+        `${process.env.REACT_APP_HBA_URL}/booking/all_halls`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setRoomOptions(response.data);
       return response.data;
     } catch (error: any) {
       toast.error("❌ Failed to fetch halls");
       console.error("❌ Error fetching all halls:", error);
+      setRoomOptions([]);
       return [];
     }
   };
 
   const fetch_halls_by_moduleCode = async (moduleCode: string) => {
     try {
+      const token = getAccessToken();
       const response = await axios.get(
-        `${process.env.REACT_APP_HBA_URL}/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`
+        `${process.env.REACT_APP_HBA_URL}/booking/fetch_halls_by_moduleCode?module_code=${moduleCode}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setSelectedRoomOptions(response.data);
       return response.data;
     } catch (error) {
       toast.error("❌ Failed to fetch halls by module code");
       console.error("❌ Error fetching halls:", error);
+      setSelectedRoomOptions([]);
       return [];
     }
   };
 
   const load = async (selectedRoom: any) => {
     try {
+      const token = getAccessToken();
       const response = await axios.get(
-        `${process.env.REACT_APP_HBA_URL}/fetch_bookings?room_name=${selectedRoom}`
+        `${process.env.REACT_APP_HBA_URL}/fetch_bookings?room_name=${selectedRoom}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const bookings = response.data;
 
@@ -171,14 +203,68 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
   };
 
   const createBooking = async () => {
+    setIsCreating(true);
+
     try {
-      const response = await axios.post(`${process.env.REACT_APP_HBA_URL}/booking/add`, formData);
+      const token = getAccessToken();
+
+      if (!token) {
+        notify("error", "❌ Authentication required. Please log in.");
+        setIsCreating(false);
+        return;
+      }
+
+      if (!email) {
+        notify("error", "❌ User email not available. Please refresh and try again.");
+        setIsCreating(false);
+        return;
+      }
+
+      console.log("📤 Sending booking request:", formData);
+
+      const response = await axios.post(
+        `${process.env.REACT_APP_HBA_URL}/booking/add`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       notify("success", "✅ Booking created successfully!");
       console.log("✅ Booking created:", response.data);
+
+      // Refresh calendar and close dialog
+      await load(roomName);
       setIsOpen(false);
+
+      // Reset form
+      setFormData({
+        room_name: "",
+        name: "",
+        date: "",
+        start_time: "",
+        end_time: "",
+      });
+      setShowAllRooms(false);
+      setSelectedRoomOptions([]);
+
     } catch (error: any) {
-      notify("error", "❌ Failed to create booking");
-      console.error(error);
+      console.error("❌ Booking creation error:", error);
+
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        notify("error", "❌ Authentication failed. Please log in again.");
+      } else if (error.response?.status === 404) {
+        notify("error", "❌ Room not found.");
+      } else if (error.response?.data?.detail) {
+        notify("error", `❌ ${error.response.data.detail}`);
+      } else {
+        notify("error", "❌ Failed to create booking");
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -218,7 +304,30 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
       notify("warning", "⚠️ Please fill in all fields.");
       return;
     }
+
+    if (!email) {
+      notify("error", "❌ User email not available. Please refresh and try again.");
+      return;
+    }
+
+    if (isCreating) {
+      return; // Prevent double submission
+    }
+
     createBooking();
+  };
+
+  const handleCloseDialog = () => {
+    setIsOpen(false);
+    setShowAllRooms(false);
+    setSelectedRoomOptions([]);
+    setFormData({
+      room_name: "",
+      name: "",
+      date: "",
+      start_time: "",
+      end_time: "",
+    });
   };
 
   const openPickerOnInteraction = (e: any) => {
@@ -228,7 +337,15 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
     if (el?.showPicker) {
       try {
         el.showPicker();
-      } catch {}
+      } catch { }
+    }
+  };
+
+  const getRoomsToDisplay = () => {
+    if (showAllRooms) {
+      return roomOptions;
+    } else {
+      return selectedRoomOptions;
     }
   };
 
@@ -319,7 +436,7 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
             initialView="timeGridWeek"
             selectable={true}
             editable={true}
-            nwIndicator={true}
+            nowIndicator={true}
             headerToolbar={{
               left: "prev,next today",
               center: "title",
@@ -334,7 +451,7 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
 
       <Dialog
         open={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={handleCloseDialog}
         fullWidth
         maxWidth="xs"
         PaperProps={{ className: "booking-dialog-paper", "data-theme": "" }}
@@ -347,7 +464,9 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
 
         <DialogContent>
           <Box mb={2}>
-            <p>*Select module code first</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--dialog-muted-text)', marginBottom: '8px' }}>
+              *Select module code first
+            </p>
             <FormControl fullWidth>
               <InputLabel>Module Code</InputLabel>
               <Select
@@ -355,6 +474,7 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
                 onChange={(e) => {
                   handleChange("name", e.target.value);
                   fetch_halls_by_moduleCode(e.target.value);
+                  setShowAllRooms(false);
                 }}
               >
                 {moduleOptions.map((code) => (
@@ -367,21 +487,85 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
           </Box>
 
           <Box mb={2}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '8px'
+            }}>
+              <InputLabel
+                style={{
+                  position: 'relative',
+                  transform: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}
+              >
+                Room Name
+              </InputLabel>
+              <Button
+                size="small"
+                onClick={() => {
+                  setShowAllRooms(!showAllRooms);
+                }}
+                style={{
+                  textTransform: 'none',
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                  minWidth: 'auto',
+                  backgroundColor: showAllRooms ? '#047857' : '#968d8dff',
+                  color: 'white',
+                  borderRadius: '6px'
+                }}
+              >
+                {showAllRooms ? '🔍 Show Module Rooms' : '🏢 Show All Rooms'}
+              </Button>
+            </div>
+
             <FormControl fullWidth>
               <InputLabel>Room Name</InputLabel>
               <Select
                 value={formData.room_name}
                 onChange={(e) => handleChange("room_name", e.target.value)}
-                disabled={!formData.name}
+                disabled={!showAllRooms && !formData.name}
                 MenuProps={{ PaperProps: { style: { maxHeight: 300 } } }}
                 sx={{ minWidth: 220 }}
               >
-                {selectedRoomOptions.map((room) => (
-                  <MenuItem key={room} value={room}>
-                    {room}
+                {getRoomsToDisplay().length > 0 ? (
+                  getRoomsToDisplay().map((room) => (
+                    <MenuItem key={room} value={room}>
+                      {room}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled value="">
+                    {showAllRooms
+                      ? (roomOptions.length === 0 ? "Loading all rooms..." : "No rooms available")
+                      : !formData.name
+                        ? "Select module code first or click 'Show All Rooms'"
+                        : "No module-specific rooms available"}
                   </MenuItem>
-                ))}
+                )}
               </Select>
+
+              {showAllRooms && getRoomsToDisplay().length > 0 && (
+                <p style={{
+                  marginTop: '4px',
+                  fontSize: '11px',
+                  color: '#047857'
+                }}>
+                  Showing all {getRoomsToDisplay().length} available rooms
+                </p>
+              )}
+              {!showAllRooms && getRoomsToDisplay().length > 0 && (
+                <p style={{
+                  marginTop: '4px',
+                  fontSize: '11px',
+                  color: '#968d8dff'
+                }}>
+                  Showing {getRoomsToDisplay().length} module-specific rooms
+                </p>
+              )}
             </FormControl>
           </Box>
 
@@ -432,11 +616,61 @@ const FullCalendarComponent: React.FC<Props> = ({ refreshKey, onCellClick }) => 
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setIsOpen(false)} className="btn-cancel">
+          <Button
+            onClick={handleCloseDialog}
+            className="btn-cancel"
+            disabled={isCreating}
+          >
             Cancel
           </Button>
-          <Button onClick={handleCreate} variant="contained" className="btn-green">
-            Create
+          <Button
+            onClick={handleCreate}
+            variant="contained"
+            className="btn-green"
+            disabled={isCreating}
+            sx={{
+              position: 'relative',
+              minWidth: '100px',
+            }}
+          >
+            {isCreating ? (
+              <>
+                <span style={{ opacity: 0 }}>Create</span>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite',
+                    }}
+                  />
+                  <span>Creating...</span>
+                </div>
+                <style>
+                  {`
+                    @keyframes spin {
+                      0% { transform: rotate(0deg); }
+                      100% { transform: rotate(360deg); }
+                    }
+                  `}
+                </style>
+              </>
+            ) : (
+              'Create'
+            )}
           </Button>
         </DialogActions>
       </Dialog>

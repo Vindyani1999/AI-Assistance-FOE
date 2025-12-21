@@ -785,6 +785,6 @@ def fetch_halls_by_module_code(module_code: str, db: Session):
     module = db.query(MRBSModule).filter(MRBSModule.module_code == module_code).first()
     if not module:
         return []  
-    halls = self.db.query(MRBSRoom).filter(MRBSRoom.capacity >= module.number_of_students).all()
+    halls = db.query(MRBSRoom).filter(MRBSRoom.capacity >= module.number_of_students).all()
     
     return [hall.room_name for hall in halls]

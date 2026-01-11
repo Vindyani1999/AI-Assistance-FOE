@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "${frontend.url}")
 public class UploadController {
     @Autowired
     private ExcelService excelService;

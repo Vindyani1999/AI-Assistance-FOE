@@ -36,7 +36,8 @@ def load_data():
             "semester": int(row["semester"]) if "semester" in row and pd.notna(row["semester"]) else None,
             "iscommon": bool(row.get("iscommon", False)),
             "department": row.get("department", None),
-            "students": int(row["no_of_students"])
+            "students": int(row["no_of_students"]),
+            "name": row.get("name", None),
         })
 
     halls = []
@@ -112,27 +113,27 @@ def build_exam_model(modules, halls, days, slots_per_day):
 
     # Hall capacity coverage: when a module is assigned at (d,s),
     # sum(capacity[h] * presence) >= students
-    for m in modules:
-        code = m["code"]
-        students = m["students"]
-        for d in range(num_days):
-            for s in range(num_slots):
-                pres_over_halls = [presence[(code, d, s, h)] for h in range(num_halls)]
-                # Build linear expr sum(capacity * pres)
-                coeffs = [halls[h]["capacity"] for h in range(num_halls)]
-                # Add conditional capacity constraint only when assign_ds is true
-                # sum(capacity[h] * pres_over_halls[h]) >= students  if assign_ds[(code,d,s)]
-                # CP-SAT requires building a linear expression and using OnlyEnforceIf on the constraint.
-                model.Add(
-                    sum(coeffs[h] * pres_over_halls[h] for h in range(num_halls)) >= students
-                ).OnlyEnforceIf(assign_ds[(code, d, s)])
+    # for m in modules:
+    #     code = m["code"]
+    #     students = m["students"]
+    #     for d in range(num_days):
+    #         for s in range(num_slots):
+    #             pres_over_halls = [presence[(code, d, s, h)] for h in range(num_halls)]
+    #             # Build linear expr sum(capacity * pres)
+    #             coeffs = [halls[h]["capacity"] for h in range(num_halls)]
+    #             # Add conditional capacity constraint only when assign_ds is true
+    #             # sum(capacity[h] * pres_over_halls[h]) >= students  if assign_ds[(code,d,s)]
+    #             # CP-SAT requires building a linear expression and using OnlyEnforceIf on the constraint.
+    #             model.Add(
+    #                 sum(coeffs[h] * pres_over_halls[h] for h in range(num_halls)) >= students
+    #             ).OnlyEnforceIf(assign_ds[(code, d, s)])
 
-    # At most one exam per hall per (day, slot)
-    for d in range(num_days):
-        for s in range(num_slots):
-            for h_idx in range(num_halls):
-                pres_list = [presence[(m["code"], d, s, h_idx)] for m in modules]
-                model.Add(sum(pres_list) <= 1)
+    # # At most one exam per hall per (day, slot)
+    # for d in range(num_days):
+    #     for s in range(num_slots):
+    #         for h_idx in range(num_halls):
+    #             pres_list = [presence[(m["code"], d, s, h_idx)] for m in modules]
+    #             model.Add(sum(pres_list) <= 1)
 
     # For the soft objective we can reuse assign_ds as dp[(code,d,s)]
     dp = assign_ds  # rename for clarity in rest of your code
@@ -214,7 +215,9 @@ def generate_exam_json(status, solver, module_vars, modules, halls, days, presen
             "students": total_students,
             "department": m.get("department"),
             "semester": m.get("semester"),
-            "iscommon": m.get("iscommon", False)
+            "iscommon": m.get("iscommon", False),
+            "name": m.get("name")
+            
         }
         result["timetable"].append(entry)
 

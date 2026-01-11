@@ -7,6 +7,7 @@ from src.recurrence.recurrence_service import handle_recurring_booking
 from src.recurrence.recurrence_prompt import RECURRENCE_PROMPT
 from src.recurrence.recurrence_parser import extract_recurrence
 from src.recurrence.recurrence_utils import build_rrule_from_extracted
+from middleware.auth import get_current_user_email 
 import json
 import re
 from datetime import datetime
@@ -67,15 +68,19 @@ def validate_time_format(time_str: str) -> bool:
         return False
 
 @router.post("/ask_llm/")
-async def ask_llm(request: QuestionRequest, db=Depends(get_db)):
+async def ask_llm(request: QuestionRequest, db=Depends(get_db), user_email: str = Depends(get_current_user_email)):
     session_id = request.session_id
     question = request.question.strip()
     session = session_store.get(session_id, {
         "action": None,
         "params": {},
         "last_asked": None,
-        "missing_fields": []
+        "missing_fields": [],
+        "user_email": user_email  # Store user email in session
     })
+
+    # Update session with current user email
+    session["user_email"] = user_email
 
     # If waiting for missing param answer
     if session["last_asked"]:
@@ -106,7 +111,7 @@ async def ask_llm(request: QuestionRequest, db=Depends(get_db)):
                     "start_time": recurrence_data.get("start_time"),
                     "end_time": recurrence_data.get("end_time"),
                     "recurrence_rule": recurrence_rule,
-                    "created_by": "system",
+                    "created_by": user_email,  # Use authenticated user email
                 }
             }
             print(f"[Recurrence Parser] params final:\n{params}")
@@ -197,6 +202,9 @@ Respond in **only JSON format**, without explanations.
                 if key not in params or not params[key]:
                     params[key] = value
 
+            # Add user email to params for booking operations
+            params["created_by"] = user_email
+
             session["action"] = action
             session["params"] = params
             session["last_asked"] = None
@@ -239,78 +247,23 @@ Respond in **only JSON format**, without explanations.
             db=db,
         )
     elif action == "add_booking":
-        # availability = check_availability(
-        #     room_name=params["room_name"],
-        #     date=params["date"],
-        #     start_time=params["start_time"],
-        #     end_time=params["end_time"],
-        #     db=db,
-        # )
-        # if availability["status"] != "available":
-        #     return {
-        #         "status": "unavailable",
-        #         "message": f"{params['room_name']} is NOT available on {params['date']} from {params['start_time']} to {params['end_time']}."
-        #     }
-        # return add_booking(
-    # # First check availability
-    #     availability = check_availability(
-    #     room_name=params["room_name"],
-    #     date=params["date"],
-    #     start_time=params["start_time"],
-    #     end_time=params["end_time"],
-    #     db=db,
-    # )
-    #     print("Availability response:", availability)
-
-    #     if availability["status"] != "available":
-    #         return {
-    #         "status": "unavailable",
-    #         "message": f"{params['room_name']} is NOT available on {params['date']} from {params['start_time']} to {params['end_time']}."
-    #     }
-
-    # # Then add booking if available
-    #     return add_booking(
-    #         room_name=params["room_name"],
-    #         date=params["date"],
-    #         start_time=params["start_time"],
-    #         end_time=params["end_time"],
-    #         created_by=params.get("created_by", "system"),
-    #         db=db,
-    #     )
         result = add_booking(
             room_name=params["room_name"],
             date=params["date"],
             name=params["module_code"],
             start_time=params["start_time"],
             end_time=params["end_time"],
-            created_by=params.get("created_by", "system"),
+            created_by=user_email,  # Use authenticated user email
             db=db,
         )
         return result
     
     elif action == "add_recurring_booking":
-        # unavailable_dates = []
-        # for occurrence in rule.between(start_date_dt, end_date_dt, inc=True):
-        #     date_str = occurrence.strftime("%Y-%m-%d")
-        #     availability = check_availability(
-        #         room_name=params["room_name"],
-        #         date=date_str,
-        #         start_time=params["start_time"],
-        #         end_time=params["end_time"],
-        #         db=db,
-        #     )
-        #     if availability["status"] != "available":
-        #         unavailable_dates.append(date_str)
-
-        # if unavailable_dates:
-        #     return {
-        #         "status": "unavailable",
-        #         "message": f"{params['room_name']} is NOT available on the following dates: {', '.join(unavailable_dates)}."
-        #     }
-
-        # All available - create bookings
+        # Pass user email to recurring booking
+        params["created_by"] = user_email
         result = await handle_recurring_booking(params, db)
         return result
+        
     elif action == "alternatives":
         return check_available_slotes(
             date=params["date"],
@@ -324,6 +277,7 @@ Respond in **only JSON format**, without explanations.
             date=params["date"],
             start_time=params["start_time"],
             end_time=params["end_time"],
+            user_email=user_email,  # Pass authenticated user email for authorization
             db=db,
         )
         
@@ -337,19 +291,18 @@ Respond in **only JSON format**, without explanations.
             new_date=params.get("new_date"),
             new_start_time=params.get("new_start_time"),
             new_end_time=params.get("new_end_time"),
-            modified_by=params.get("modified_by", "system"),
+            modified_by=user_email,  # Pass authenticated user email for authorization
             db=db,
         )
     return {"status": "error", "message": "Unhandled action."}
 
-
-
 @router.post("/book_recommendation/")
-async def book_recommendation(request: RecommendationBookingRequest, db=Depends(get_db)):
+async def book_recommendation(request: RecommendationBookingRequest, db=Depends(get_db), user_email: str = Depends(get_current_user_email)):
+    """Book recommendation endpoint with user authentication"""
     try:
         result = book_recommendation_directly(
             recommendation=request.recommendation,
-            created_by=request.created_by,
+            created_by=user_email,  # Use authenticated user email
             db=db
         )
         return result

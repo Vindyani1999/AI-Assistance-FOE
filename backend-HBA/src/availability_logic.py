@@ -96,26 +96,29 @@ def fetch_booking_by_id(booking_id: int, db: Session):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-from datetime import datetime
-
-def update_booking_general(booking_id: int, room_id: int,name:str,date:str, start_timestamp: int, end_timestamp: int, db: Session):
+def update_booking_general(booking_id: int, room_id: int, name: str, date: str, start_timestamp: int, end_timestamp: int, modified_by: str, db: Session):
     try:
         booking = db.query(models.MRBSEntry).filter(models.MRBSEntry.id == booking_id).first()
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
-        logging.info(f"Updating booking: {booking_id}, {booking.name}, {date}, {start_timestamp}, {end_timestamp}")
-        # ✅ Update with valid fields
+        logging.info(f"Updating booking: {booking_id}, {booking.name}, {date}, {start_timestamp}, {end_timestamp} by {modified_by}")
+        
+        # Update with valid fields
         booking.room_id = room_id
         booking.start_time = start_timestamp
         booking.end_time = end_timestamp
         booking.timestamp = date
-        booking.modified_by = "system"
-        booking.name=name# or pass from request
+        booking.modified_by = modified_by  
+        booking.name = name
 
         db.commit()
         db.refresh(booking)
 
-        return {"status": "success", "message": "Booking updated successfully"}
+        return {
+            "status": "success", 
+            "message": "Booking updated successfully",
+            "modified_by": modified_by
+        }
     except Exception as e:
         print(f"Error updating booking: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -230,7 +233,8 @@ def add_booking(room_name: str,name: str, date: str, start_time: str, end_time: 
             "room": room_name,
             "date": date,
             "start_time": start_time,
-            "end_time": end_time
+            "end_time": end_time,
+            "created_by": created_by  
         }
         
     except HTTPException:
@@ -254,6 +258,7 @@ def check_available_slotes(room_name: str, date: str, start_time: str, end_time:
     date_obj = datetime.strptime(date, "%Y-%m-%d")
     start_time = datetime.combine(date_obj, datetime.min.time()) + timedelta(hours=7)  # 7 AM
     end_time = datetime.combine(date_obj, datetime.min.time()) + timedelta(hours=21)  # 9 PM
+
 
     all_slots = []
     current = start_time
@@ -345,10 +350,11 @@ def book_recommendation_directly(recommendation: Dict[str, Any], created_by: str
         start_time = start_dt.strftime("%H:%M") 
         end_time = end_dt.strftime("%H:%M")
         
-        print(f"Booking recommendation: {room_name} on {date} from {start_time} to {end_time}")
+        print(f"Booking recommendation: {room_name} on {date} from {start_time} to {end_time} by {created_by}")
         
         result = add_booking(
             room_name=room_name,
+            name="Recommendation Booking", 
             date=date,
             start_time=start_time,
             end_time=end_time,
@@ -421,6 +427,13 @@ def update_booking(original_room_name: str, original_date: str, original_start_t
             return {"status": "booking_not_found", 
                    "message": f"No booking found for {original_room_name} on {original_date} from {original_start_time} to {original_end_time}."}
         
+        # AUTHORIZATION CHECK: Only creator can update
+        if booking.create_by != modified_by:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Access denied. Only the booking creator ({booking.create_by}) can update this booking."
+            )
+        
         final_room_name = new_room_name or original_room_name
         final_date = new_date or original_date
         final_start_time = new_start_time or original_start_time
@@ -464,14 +477,17 @@ def update_booking(original_room_name: str, original_date: str, original_start_t
             "message": "Booking updated successfully",
             "booking_id": booking.id,
             "original": {"room": original_room_name, "date": original_date, "start_time": original_start_time, "end_time": original_end_time},
-            "updated": {"room": final_room_name, "date": final_date, "start_time": final_start_time, "end_time": final_end_time}
+            "updated": {"room": final_room_name, "date": final_date, "start_time": final_start_time, "end_time": final_end_time},
+            "modified_by": modified_by
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error updating booking: {e}")
 
-def cancel_booking(room_name: str, date: str, start_time: str, end_time: str, db: Session):
+def cancel_booking(room_name: str, date: str, start_time: str, end_time: str, user_email: str, db: Session):
     try:
         room = db.query(models.MRBSRoom).filter(models.MRBSRoom.room_name == room_name).first()
         
@@ -498,6 +514,13 @@ def cancel_booking(room_name: str, date: str, start_time: str, end_time: str, db
                 "message": f"No booking found for {room_name} on {date} from {start_time} to {end_time}."
             }
         
+        # AUTHORIZATION CHECK: Only creator can cancel
+        if booking.create_by != user_email:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Access denied. Only the booking creator ({booking.create_by}) can cancel this booking."
+            )
+        
         db.delete(booking)
         db.commit()
         
@@ -507,6 +530,8 @@ def cancel_booking(room_name: str, date: str, start_time: str, end_time: str, db
             "cancelled_booking_id": booking.id
         }
         
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid date/time format: {e}")
     except Exception as e:
@@ -561,3 +586,4 @@ def fetch_user_profile_by_email(email: str, db: Session):
         "email": user.email,
         "role": user.role
     }
+    

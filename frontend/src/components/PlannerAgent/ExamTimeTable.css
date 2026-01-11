@@ -1,0 +1,95 @@
+/* Light theme (default) */
+[data-theme="light"],
+.light-theme {
+  --ett-bg: #ffffff;
+  --ett-foreground: #0b1721;
+  --ett-border: #e6edf2;
+  --ett-cell-bg: #ffffff;
+  --ett-cell-foreground: #0b1721;
+}
+
+.light-theme .exam-timetable,
+[data-theme="light"] .exam-timetable {
+  background: var(--ett-bg);
+  color: var(--ett-foreground);
+}
+
+.light-theme .exam-table,
+[data-theme="light"] .exam-table {
+  border: 1px solid var(--ett-border);
+}
+
+.light-theme .calendar-grid,
+[data-theme="light"] .calendar-grid,
+.light-theme .exam-cell,
+[data-theme="light"] .exam-cell {
+  border: 1px solid var(--ett-border);
+  background: var(--ett-cell-bg);
+  color: var(--ett-cell-foreground);
+}
+
+/* Dark theme (matches BookingChatInterface.css) */
+[data-theme="dark"],
+.dark-theme {
+  --ett-bg: #0b1220;
+  --ett-foreground: #d6e6f5;
+  --ett-border: #2f3842;
+  --ett-cell-bg: #0f1720;
+  --ett-cell-foreground: #d6e6f5;
+  --ett-accent: #244b7a;
+}
+
+/* Container */
+.dark-theme .exam-timetable,
+[data-theme="dark"] .exam-timetable {
+  background: var(--ett-bg);
+  color: var(--ett-foreground);
+}
+
+/* Table border / grid lines (dark) */
+.dark-theme .exam-table,
+[data-theme="dark"] .exam-table {
+  border: 1px solid var(--ett-border);
+  box-shadow: none;
+}
+
+/* Ensure calendar grid lines are dark in dark theme */
+.dark-theme .calendar-grid,
+[data-theme="dark"] .calendar-grid,
+.dark-theme .calendar-grid .exam-row,
+[data-theme="dark"] .calendar-grid .exam-row,
+.dark-theme .calendar-cell,
+[data-theme="dark"] .calendar-cell,
+.dark-theme .exam-cell,
+[data-theme="dark"] .exam-cell {
+  border: 1px solid #2b3946 !important; /* dark grid lines */
+  background: var(--ett-cell-bg);
+  color: var(--ett-cell-foreground);
+}
+
+/* Header / row styles */
+.dark-theme .exam-header,
+[data-theme="dark"] .exam-header {
+  background: #0d1a23;
+  color: #bde3ff;
+  border-bottom: 1px solid #28343b;
+}
+
+/* Selected / hover states */
+.dark-theme .exam-cell.selected,
+[data-theme="dark"] .exam-cell.selected {
+  background: #16222a;
+  box-shadow: 0 0 0 2px rgba(36,75,122,0.12);
+}
+
+.dark-theme .exam-cell:hover,
+[data-theme="dark"] .exam-cell:hover {
+  background: #121923;
+}
+
+/* Small accessibility / focus */
+.dark-theme .exam-cell:focus,
+[data-theme="dark"] .exam-cell:focus {
+  outline: 2px solid rgba(36,75,122,0.24);
+  outline-offset: 2px;
+}

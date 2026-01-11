@@ -129,54 +129,126 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [userSpecificSessionId, currentUser, loadChatHistory, loadChatSessions]);
 
   const formatMessage = (content: string): JSX.Element => {
-    const paragraphs = content.split("\n\n").filter((p) => p.trim() !== "");
-    return (
-      <div className="formatted-message">
-        {paragraphs.map((paragraph, index) => {
-          const numberedListMatch = paragraph.match(
-            /^(\d+)\.\s*\*\*(.*?)\*\*:\s*([\s\S]*)/
-          );
-          if (numberedListMatch) {
-            const [, number, title, content] = numberedListMatch;
-            return (
-              <div key={index} className="message-section">
-                <div className="section-header">
-                  <span className="section-number">{number}.</span>
-                  <span className="section-title">{title}</span>
-                </div>
-                <div className="section-content">{content.trim()}</div>
-              </div>
-            );
-          }
+    // Helper to process inline formatting (bold, italic, code)
+    const processInline = (text: string) => {
+      let processed = text
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold text
+        .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic text
+        .replace(/`(.*?)`/g, "<code>$1</code>"); // Code text
+      return <span dangerouslySetInnerHTML={{ __html: processed }} />;
+    };
 
-          const boldHeadingMatch = paragraph.match(
-            /^\*\*(.*?)\*\*:\s*([\s\S]*)/
-          );
-          if (boldHeadingMatch) {
-            const [, title, content] = boldHeadingMatch;
-            return (
-              <div key={index} className="message-section">
-                <div className="section-title-only">{title}</div>
-                <div className="section-content">{content.trim()}</div>
-              </div>
-            );
-          }
+    // Split content into blocks by double newline or table/list starts
+    // We'll process it line by line to handle complex structures like tables and lists
+    const lines = content.split("\n");
+    const blocks: JSX.Element[] = [];
+    let currentBlock: any[] = [];
+    let currentType: "paragraph" | "list" | "table" | null = null;
+    let listType: "ul" | "ol" | null = null;
 
-          const formattedText = paragraph
-            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold text
-            .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic text
-            .replace(/`(.*?)`/g, "<code>$1</code>"); // Code text
+    const flushBlock = (index: number) => {
+      if (currentBlock.length === 0) return;
 
-          return (
-            <div
-              key={index}
-              className="message-paragraph"
-              dangerouslySetInnerHTML={{ __html: formattedText }}
-            />
+      if (currentType === "list") {
+        const ListTag = listType === "ol" ? "ol" : "ul";
+        blocks.push(
+          <ListTag key={`list-${index}`} className="message-list">
+            {currentBlock.map((item, i) => (
+              <li key={i}>{processInline(item)}</li>
+            ))}
+          </ListTag>
+        );
+      } else if (currentType === "table") {
+        // Simple table parser
+        const rows = currentBlock.filter((r) => !r.match(/^[\s|:-]+$/));
+        if (rows.length > 0) {
+          blocks.push(
+            <div key={`table-wrapper-${index}`} className="table-responsive">
+              <table className="message-table">
+                <thead>
+                  <tr>
+                    {rows[0]
+                      .split("|")
+                      .filter((c: string) => c.trim() !== "")
+                      .map((cell: string, i: number) => (
+                        <th key={i}>{processInline(cell.trim())}</th>
+                      ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice(1).map((row, i) => (
+                    <tr key={i}>
+                      {row
+                        .split("|")
+                        .filter((c: string) => c.trim() !== "")
+                        .map((cell: string, j: number) => (
+                          <td key={j}>{processInline(cell.trim())}</td>
+                        ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           );
-        })}
-      </div>
-    );
+        }
+      } else {
+        blocks.push(
+          <div key={`p-${index}`} className="message-paragraph">
+            {processInline(currentBlock.join(" "))}
+          </div>
+        );
+      }
+      currentBlock = [];
+      currentType = null;
+    };
+
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+
+      // Detect Table
+      if (trimmedLine.startsWith("|") && trimmedLine.endsWith("|")) {
+        if (currentType !== "table" && currentType !== null) flushBlock(index);
+        currentType = "table";
+        currentBlock.push(trimmedLine);
+      }
+      // Detect List (unordered)
+      else if (trimmedLine.match(/^[-*]\s+/)) {
+        if (currentType !== "list" && currentType !== null) flushBlock(index);
+        currentType = "list";
+        listType = "ul";
+        currentBlock.push(trimmedLine.replace(/^[-*]\s+/, ""));
+      }
+      // Detect List (ordered)
+      else if (trimmedLine.match(/^\d+\.\s+/)) {
+        if (currentType !== "list" && currentType !== null) flushBlock(index);
+        currentType = "list";
+        listType = "ol";
+        currentBlock.push(trimmedLine.replace(/^\d+\.\s+/, ""));
+      }
+      // Empty line
+      else if (trimmedLine === "") {
+        flushBlock(index);
+      }
+      // Paragraph or continuation
+      else {
+        if (currentType === "list") {
+          // Continue list item if indented or just continuing
+          currentBlock[currentBlock.length - 1] += " " + trimmedLine;
+        } else if (currentType === "table") {
+          // Tables shouldn't really have random lines, but we'll treat it as end of table
+          flushBlock(index);
+          currentType = "paragraph";
+          currentBlock.push(trimmedLine);
+        } else {
+          currentType = "paragraph";
+          currentBlock.push(trimmedLine);
+        }
+      }
+    });
+
+    flushBlock(lines.length);
+
+    return <div className="formatted-message">{blocks}</div>;
   };
 
   const playAudioFromUrl = (url: string) =>
